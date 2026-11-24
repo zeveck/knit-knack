@@ -63,7 +63,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .logo span { display: inline-block; color: var(--cream); text-shadow: 0 3px 0 var(--cranberry-dk), 0 6px 18px rgba(0, 0, 0, 0.55); }
 .logo .logo-a { transform: rotate(-4deg); margin-right: 0.18em; }
 .logo .logo-b { color: var(--honey-lt); transform: rotate(3deg); }
-.logo-sub { margin-top: 10px; font-family: 'Caveat', cursive; font-size: clamp(22px, 3.6vw, 32px); color: #f3e3c4; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7); }
+.logo-sub { text-wrap: balance; margin-top: 10px; font-family: 'Caveat', cursive; font-size: clamp(22px, 3.6vw, 32px); color: #f3e3c4; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7); }
 .tap-start {
   position: absolute; left: 50%; bottom: calc(7vh + var(--sab)); transform: translateX(-50%);
   border: 0; border-radius: 999px; padding: 16px 36px; font-size: 24px; font-weight: 600; color: #fff6ea; background: var(--cranberry); white-space: nowrap;
@@ -86,7 +86,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .cover::after { content: ''; position: absolute; inset: 9px; border: 2.5px dashed rgba(246, 236, 217, 0.55); border-radius: 12px; pointer-events: none; }
 .cover > * { position: relative; z-index: 1; }
 .cover h1 { font-size: 34px; letter-spacing: 0.01em; }
-.cover .sub { font-family: 'Caveat', cursive; font-size: 22px; opacity: 0.9; }
+.cover .sub { font-family: 'Caveat', cursive; font-size: 22px; opacity: 0.9; text-wrap: balance; }
 .ribbons { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
 .ribbon { width: 22px; height: 34px; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%); background: rgba(246, 236, 217, 0.18); }
 .ribbon.won { background: linear-gradient(#e85a6a, var(--cranberry)); }
@@ -102,7 +102,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .front-btns .btn.continue, .front-btns .btn.wide { grid-column: 1 / -1; }
 .front-btns .btn .sub { font-weight: 400; font-size: 14px; opacity: 0.85; display: block; }
 .front-btns .btn .lbl { text-align: left; }
-@media (min-width: 760px) { .front-btns { grid-template-columns: 2fr 1fr 1fr 1fr; } .front-btns .btn.continue, .front-btns .btn.wide { grid-column: auto; } }
+@media (min-width: 760px) { .front-btns { grid-template-columns: 1.3fr 1fr 1fr 1fr; } .front-btns .btn .lbl { white-space: nowrap; } .front-btns .btn.continue, .front-btns .btn.wide { grid-column: auto; } }
 
 .tabs { display: flex; gap: 6px; margin: 18px 0 12px; overflow-x: auto; touch-action: pan-x; scrollbar-width: none; padding: 2px 2px 6px; }
 .tabs::-webkit-scrollbar { display: none; }
@@ -423,3 +423,7 @@ gh-feedback { font-family: 'Fredoka', sans-serif; }
 .book-complete h2 { font-size: 30px; color: var(--plum); }
 .book-complete p { color: var(--ink-soft); max-width: 420px; }
 .gold-ribbon { width: 54px; height: 82px; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%); background: linear-gradient(#fff0b8, #e6b83e 45%, #a8781a); filter: drop-shadow(0 3px 4px rgba(0,0,0,.3)); animation: flip 0.9s ease both; }
+
+/* touch screens: the keyboard list in How to play is for keyboards */
+@media (pointer: coarse) and (hover: none) { .howto-keys { display: none; } }
+.card h3, .card .tech { text-wrap: balance; }

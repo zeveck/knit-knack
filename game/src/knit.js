@@ -474,7 +474,7 @@ export function knitOne({ animate = true } = {}) {
       if (res.r % 10 === 0) sparkleRow = { r: res.r, t0: performance.now() + 120 };
       if (res.r === 1) tip('turn', 'The work turns. Now you knit back the other way.');
       if (res.r === 2) tip('yarn', `Tap a yarn ${layout === 'port' ? 'below' : 'on the right'} to change color, any time, on any stitch.`);
-      afterCounts();
+      if (res.finished) S.checkUnlocks(); else afterCounts(); // unlock toasts wait for the celebration
     }
     S.saveNow();
   } else if (animate) S.saveSoon();
@@ -519,7 +519,7 @@ export function knitMany(n, { fast = false } = {}) {
       if (!res) break;
       last = res;
       if (res.rowEnd) S.checkUnlocks();
-      if (res.finished) { hud(); refreshBar(); S.saveNow(); toasts.pump(); return finishPiece(); }
+      if (res.finished) { hud(); refreshBar(); S.saveNow(); return finishPiece(); }
     } else last = knitOne();
   }
   if (fast) { hud(); refreshBar(); S.saveNow(); toasts.pump(); }

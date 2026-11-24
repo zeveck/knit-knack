@@ -112,8 +112,10 @@ export function frame(t) {
   // the piece: pops in after the bind-off (scale), slightly bounces, then settles flat
   const dprArt = Math.min(3, window.devicePixelRatio || 1);
   const uiH = ui.offsetHeight || 180;
-  const bw = Math.min(w * 0.28, 200), bh = bw * (396 / 468);
-  const top = 64, bottom = h - uiH - bh * 0.55;
+  // a short screen (a phone held sideways): a smaller basket on the floor in the corner, the piece above the words
+  const short = h < 500;
+  const bw = short ? Math.min(w * 0.16, h * 0.32) : Math.min(w * 0.28, 200), bh = bw * (396 / 468);
+  const top = short ? 56 : 64, bottom = short ? h - uiH - 8 : h - uiH - bh * 0.55;
   if (art && art.width) {
     const maxW = w * 0.84, maxH = Math.max(80, bottom - top);
     const k0 = Math.min(maxW / (art.width / dprArt), maxH / (art.height / dprArt), 1.6);
@@ -161,7 +163,7 @@ export function frame(t) {
     g.restore();
   }
   // Purl in her basket, bottom corner, cheering (frames 0..3 at 8 fps once), then settling asleep
-  const b = { x: w < 600 ? 8 : w * 0.06, y: h - uiH - bh * 0.92, w: bw, h: bh };
+  const b = short ? { x: 10, y: h - bh - 6, w: bw, h: bh } : { x: w < 600 ? 8 : w * 0.06, y: h - uiH - bh * 0.92, w: bw, h: bh };
   const fi = Math.floor((el_ - 800) / 125);
   let frameNo = 'sleep';
   if (fi >= 0 && fi < 8) frameNo = [0, 1, 2, 1, 2, 3, 3, 3][fi];

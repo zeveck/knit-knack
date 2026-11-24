@@ -80,7 +80,7 @@ export function openHowTo() {
     mk(drawYarns, 'Change yarn any time', 'Tap a yarn in the yarn bar, on any stitch. Follow chart switches yarns for you; pick any yarn from the basket to knit your own way. Rip back undoes stitches.'),
     mk(drawFinish, 'Finish, display, unlock', 'Finish a piece and Display it on your gallery wall. Every piece you finish opens the next pattern, and stitches unlock needles, yarns and more.'),
   );
-  const keys = el('p', { class: 'keys-list', html: '<kbd>Space</kbd> <kbd>Enter</kbd> <kbd>K</kbd> knit · <kbd>Backspace</kbd> <kbd>U</kbd> rip back · <kbd>1</kbd>–<kbd>4</kbd> chart yarns · <kbd>5</kbd>–<kbd>9</kbd> recent yarns · <kbd>Y</kbd> any yarn · <kbd>C</kbd> follow chart · <kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd> zoom · <kbd>V</kbd> preview · <kbd>G</kbd> glossary · <kbd>R</kbd> read the pattern · <kbd>M</kbd> mute · <kbd>Esc</kbd> menu · <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd> report a bug' });
+  const keys = el('p', { class: 'keys-list howto-keys', html: '<kbd>Space</kbd> <kbd>Enter</kbd> <kbd>K</kbd> knit · <kbd>Backspace</kbd> <kbd>U</kbd> rip back · <kbd>1</kbd>–<kbd>4</kbd> chart yarns · <kbd>5</kbd>–<kbd>9</kbd> recent yarns · <kbd>Y</kbd> any yarn · <kbd>C</kbd> follow chart · <kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd> zoom · <kbd>V</kbd> preview · <kbd>G</kbd> glossary · <kbd>R</kbd> read the pattern · <kbd>M</kbd> mute · <kbd>Esc</kbd> menu · <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd> report a bug' });
   openSheet('howto', el('div', {}, cards, keys), { title: 'How to play' });
 }
 function bg(g) { const gr = g.createLinearGradient(0, 0, 160, 160); gr.addColorStop(0, '#7a5378'); gr.addColorStop(1, '#4a2f4d'); g.fillStyle = gr; g.fillRect(0, 0, 160, 160); }
@@ -112,8 +112,9 @@ export function openCredits() {
     el('h3', { text: 'Made with' }), el('p', { text: 'gamegen, with code-drawn knitting; painted art, music and sounds made for this game.' }),
     el('h3', { text: 'Fonts' }),
     el('p', { text: 'Fredoka, copyright 2016 The Fredoka Project Authors (github.com/hafontia/Fredoka-One). Caveat, copyright 2014 The Caveat Project Authors (github.com/googlefonts/caveat). Both are under the SIL Open Font License 1.1, and their license files (fonts/OFL-fredoka.txt, fonts/OFL-caveat.txt) come with the game.' }),
-    el('h3', { text: 'Bug reports' }), el('p', { text: 'Found a bug? Open the menu and pick "Report a bug", or press Ctrl+Shift+F (you\'ll need a GitHub account).' }),
   );
+  // only once the game has a repo to report to (the button shows then too)
+  if (window.gameReport && window.gameReport.shown()) box.append(el('h3', { text: 'Bug reports' }), el('p', { text: 'Found a bug? Open the menu and pick "Report a bug", or press Ctrl+Shift+F (you\'ll need a GitHub account).' }));
   openSheet('credits', box, { title: 'Credits' });
 }
 

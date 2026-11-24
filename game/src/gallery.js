@@ -141,7 +141,7 @@ function detail(id) {
   acts.append(again, move);
   if (p.wear) { const d = el('button', { class: 'btn sage', text: 'Put it on a doll' }); d.addEventListener('click', () => { closeSheet(); go('dolls', g.id); }); acts.append(d); }
   const used = new Set(g.yarns.map((y) => y.color + y.type)).size;
-  const when = new Date(g.finished).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  const when = new Date(g.finished).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }).replace(/ /g, '\u00a0');
   openSheet('piece', el('div', { class: 'detail' }, big, el('div', { class: 'rename' }, input, save),
     el('div', { class: 'facts', text: `${p.name} · ${fmt(g.yarns.length)} stitches · ${used} yarn${used > 1 ? 's' : ''} · finished ${when}${wornBy(g.id) ? ' · worn by a doll' : ''}` }), acts), { title: g.name });
   requestAnimationFrame(() => { const w = Math.min(big.clientWidth - 20, 520), h = Math.min(innerHeight * 0.45, 460); big.replaceChildren(fitCanvas(pieceRender(g, p, cellFor(p, w, h, 4, 24)), w, h)); });
