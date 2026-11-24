@@ -47,3 +47,27 @@
 .slot-piece .tick .ic { width: 16px; height: 16px; }
 .slot-acts { display: flex; justify-content: center; margin-top: 12px; }
 .empty-note.dark { background: var(--cream); color: var(--ink-soft); }
+
+/* ---------- Knitting Bag */
+.bag-screen { overflow-y: auto; touch-action: pan-y; }
+.bag-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.bag-tabs .tab { position: relative; }
+.bag-tabs .dot { position: absolute; top: 4px; right: 4px; width: 9px; height: 9px; border-radius: 50%; background: var(--honey); box-shadow: 0 0 0 2px var(--paper); }
+.bag-preview { position: relative; height: clamp(150px, 26vh, 240px); border-radius: 18px; overflow: hidden; margin: 8px 0 12px; background: radial-gradient(circle at 40% 30%, #8a6585, #4a2f4d); box-shadow: var(--shadow); }
+.bag-preview canvas { width: 100%; height: 100%; display: block; }
+.bag-preview .pv-label { position: absolute; left: 10px; bottom: 8px; background: rgba(34, 22, 46, 0.78); color: var(--cream); border-radius: 999px; padding: 4px 12px; font-size: 14px; font-weight: 600; max-width: calc(100% - 20px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bag-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.bag-card { position: relative; border: 0; border-radius: 14px; background: var(--paper); box-shadow: var(--shadow-sm); padding: 8px 8px 10px; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; min-height: 150px; }
+.bag-card .thumb { width: 100%; height: 84px; display: block; }
+.bag-grid.dolls .bag-card .thumb { height: 130px; }
+.bag-card .nm { font-weight: 600; color: var(--ink); font-size: 15px; line-height: 1.15; }
+.bag-card .sub { font-size: 12px; color: var(--ink-soft); }
+.bag-card .lock { font-size: 12.5px; color: var(--plum); font-weight: 600; display: flex; gap: 4px; align-items: flex-start; line-height: 1.25; text-align: left; }
+.bag-card .lock .ic { width: 14px; height: 14px; flex: none; margin-top: 1px; }
+.bag-card.locked { background: rgba(251, 244, 230, 0.6); }
+.bag-card.locked .nm { color: var(--ink-soft); }
+.bag-card.on { box-shadow: var(--shadow-sm), 0 0 0 3px var(--sage-dk); }
+.bag-card .tick { position: absolute; top: 6px; left: 6px; background: var(--sage-dk); color: #fff; border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; }
+.bag-card .tick .ic { width: 16px; height: 16px; }
+.bag-card .badge { top: 4px; right: 4px; }
+.bag-note { color: var(--ink-soft); font-size: 14px; margin-top: 12px; }

@@ -3,10 +3,16 @@
 // placeholders.
 import * as dolls from './dolls.js';
 import { loadDolls } from './worn.js';
+import { previewCard } from './previewCard.js';
+import * as card from './cardRenderer.js';
+import * as bag from './bag.js';
 
 export function init({ menu }) {
-  dolls.setMenu(menu);
+  dolls.setMenu(menu); bag.setMenu(menu);
   loadDolls();
+  previewCard.setRenderer(card.renderCard);
+  const st = previewCard.state.bind(previewCard);
+  previewCard.state = (c) => ({ ...st(c), doll: card.lastDoll });
 }
 export const dress = (dollId, gid) => dolls.dress(dollId, gid, { quiet: false });
 export const scarfAddRows = () => null;
