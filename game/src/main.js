@@ -167,7 +167,8 @@ window.__game = {
     };
   },
   frames: () => frameLog,
-  audioState: () => { const a = audio.audioState(); return { context: a.context, musicMuted: a.musicMuted, sfxMuted: a.sfxMuted, family: a.family, ticks: a.ticks, music: a.music }; },
+  audioState: () => { const a = audio.audioState(); return { context: a.context, musicMuted: a.musicMuted, sfxMuted: a.sfxMuted, family: a.family, ticks: a.ticks, music: a.music, voices: a.voices, deck: a.deck }; },
+  musicSeekEnd: (n) => audio.musicSeekEnd(n),
   knit: (n = 1, { fast = false } = {}) => { if (currentScreen() !== 'knit') return null; return knit.knitMany(n, { fast }); },
   rip: (n = 1) => { if (currentScreen() !== 'knit') return null; knit.ripMany(n); return window.__game.state().stitch; },
   finish: () => {

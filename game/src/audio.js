@@ -255,7 +255,15 @@ function ensureDeck() {
     const el = new Audio(); el.preload = 'auto'; el.crossOrigin = 'anonymous';
     let node = null, g = null;
     try { node = ctx.createMediaElementSource(el); g = ctx.createGain(); g.gain.value = 0; node.connect(g); g.connect(musicBus); } catch { g = null; }
-    deck.push({ el, g, src: '' });
+    const d = { el, g, src: '', fails: 0 };
+    // a track that can't load (offline before it was ever cached) hands over to the next one
+    el.addEventListener('error', () => {
+      if (deck[active] !== d || !musicSet || !d.src) return;
+      d.fails++;
+      if (d.fails <= MUSIC[musicSet].length) crossTo(nextTrack(), 1);
+    });
+    el.addEventListener('playing', () => { d.fails = 0; });
+    deck.push(d);
   }
 }
 function nextTrack() {
@@ -312,7 +320,9 @@ function applyVolumes() {
 export function setVolumes(m, s) { musicVol = m; sfxVol = s; applyVolumes(); }
 export function setMuted(mm, sm = mm) { musicMuted = !!mm; sfxMuted = !!sm; applyVolumes(); if (sfxMuted) ripLoopStop(); }
 export const muted = () => musicMuted && sfxMuted;
-export function audioState() { return { context: ctx ? ctx.state : undefined, musicMuted, sfxMuted, family, ticks: { wood: ticks.wood.length, metal: ticks.metal.length, glass: ticks.glass.length }, music: musicSet, voices: voices.length }; }
+export function audioState() { return { context: ctx ? ctx.state : undefined, musicMuted, sfxMuted, family, ticks: { wood: ticks.wood.length, metal: ticks.metal.length, glass: ticks.glass.length }, music: musicSet, voices: voices.length, deck: deck.map((d, i) => ({ src: d.src.split('/').pop(), active: i === active, gain: d.g ? +d.g.gain.value.toFixed(2) : null, paused: d.el.paused, t: +d.el.currentTime.toFixed(1), dur: +(d.el.duration || 0).toFixed(1) })) }; }
+// debug: jump the playing track to n seconds before its end (to check the crossfade and the shuffle)
+export function musicSeekEnd(n = 5) { const d = deck[active]; if (d && isFinite(d.el.duration)) d.el.currentTime = Math.max(0, d.el.duration - n); }
 export function suspendForHidden(hidden) {
   if (!ctx) return;
   if (hidden) { deck.forEach((d) => d.el.pause()); ctx.suspend(); }

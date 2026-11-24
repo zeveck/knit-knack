@@ -19,7 +19,11 @@ function build() {
   ui = el('div', { class: 'fin-ui' });
   root.append(canvas, el('div', { class: 'fin-top', text: 'Bound off and blocked!' }), ui);
   g = canvas.getContext('2d');
+  // a press that comes hard on the heels of another (thumbs still drumming from the last stitch)
+  // doesn't pick: only a tap after a short pause does
+  root.addEventListener('pointerdown', (e) => { const now = performance.now(); root._calm = now - (root._lastDown || -1e9) > 700; root._lastDown = now; }, true);
 }
+const calm = () => root._calm !== false;
 
 function touchOf(p) {
   if (p.touch) { const k = String(p.touch.kind || p.touch).toLowerCase().replace(/[^a-z]/g, ''); if (['pompom', 'tassel', 'eyes', 'buttons'].includes(k)) return k; if (k === 'buttoneyes') return 'eyes'; if (k === 'button') return 'buttons'; }
@@ -48,15 +52,15 @@ function enter(id) {
   );
   btns = el('div', { class: 'btns' });
   const display = el('button', { class: 'btn primary big', text: 'Display it' });
-  onTap(display, () => { audio.play('ui'); go('gallery', { display: gal.id }); });
+  onTap(display, (e) => { if (e.detail && !calm()) return; audio.play('ui'); go('gallery', { display: gal.id }); });
   btns.append(display);
   if (pat.wear) {
     const doll = el('button', { class: 'btn big sage', text: 'Put it on a doll' });
-    onTap(doll, () => { audio.play('ui'); S.hang(gal.id); go('dolls', gal.id); });
+    onTap(doll, (e) => { if (e.detail && !calm()) return; audio.play('ui'); S.hang(gal.id); go('dolls', gal.id); });
     btns.append(doll);
   }
   const later = el('button', { class: 'btn ghost', text: 'Not now' });
-  onTap(later, () => { audio.play('card'); S.toBasket(gal.id); go('book'); });
+  onTap(later, (e) => { if (e.detail && !calm()) return; audio.play('card'); S.toBasket(gal.id); go('book'); });
   btns.append(later);
   ui.append(btns);
   setTimeout(() => btns.classList.add('show'), 1500);
@@ -77,8 +81,14 @@ function enter(id) {
   setTimeout(() => audio.play('purr'), 1700);
   setTimeout(() => { if (currentScreen() === 'finished' && pat.wear && !S.get().tips.includes('doll')) { S.get().tips.push('doll'); } }, 1600);
   if (!S.get().tips.includes('display')) { S.get().tips.push('display'); S.saveSoon(); setTimeout(() => { if (currentScreen() === 'finished') ui.append(el('div', { class: 'facts', text: pat.wear ? 'Display it hangs it in your gallery. Put it on a doll: meet Pip!' : 'Display it hangs it in your gallery.' })); }, 1600); }
+  // knit keys still drumming from the last stitch never pick for you: a key acts only after a pause
+  let lastKey = performance.now();
   setKeyHandler((e) => {
-    if (e.key === 'Enter' || e.key === ' ') { if (btns.classList.contains('show')) display.click(); return true; }
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'k' || e.key === 'K') {
+      const now = performance.now(), quiet = now - lastKey > 700; lastKey = now;
+      if (quiet && !e.repeat && e.key === 'Enter' && btns.classList.contains('show')) display.click();
+      return true;
+    }
     if (e.key === 'Escape') { later.click(); return true; }
     return false;
   });

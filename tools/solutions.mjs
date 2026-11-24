@@ -80,6 +80,11 @@ const INIT = () => {
     }).observe(host, { childList: true });
   };
   addEventListener('DOMContentLoaded', rec);
+  // "Report a bug" must never open by accident: count every open
+  addEventListener('DOMContentLoaded', () => {
+    const fb = document.getElementById('report');
+    if (fb && fb.open) { const o = fb.open.bind(fb); fb.open = (...a) => { sessionStorage.setItem('__reports', String(+(sessionStorage.getItem('__reports') || 0) + 1)); return o(...a); }; }
+  });
 };
 
 const FNV = (ys) => { let h = 2166136261; for (const y of ys) { const s = `${y.color}|${y.type};`; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } } return (h >>> 0).toString(16); };
@@ -276,11 +281,12 @@ async function main() {
     end.duplicateToasts = dup;
     end.state = await G(() => { const s = window.__game.state(); return { piecesFinished: s.piecesFinished, lifetime: s.lifetimeStitches, unlockedPatterns: s.unlockedPatterns, yarns: s.unlockedYarns, needles: s.unlocked.needles.length, dolls: s.unlocked.dolls, gallery: s.gallery.length, wall: s.wall.length, basket: s.basket.length }; });
   }
+  end.reportOpens = await G(() => +(sessionStorage.getItem('__reports') || 0));
   end.errors = errors;
   const okN = results.filter((r) => r.ok).length;
   console.log(JSON.stringify({ patterns: `${okN}/${results.length}`, ...end }, null, 1));
   await browser.close();
   if (srv) srv.close();
-  process.exit(okN === results.length && !(end.notOnce || []).length && !errors.length ? 0 : 1);
+  process.exit(okN === results.length && !(end.notOnce || []).length && !errors.length && !end.reportOpens ? 0 : 1);
 }
 main().catch((e) => { console.error(e); process.exit(2); });
