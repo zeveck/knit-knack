@@ -46,10 +46,13 @@ openai (imagegen2, anim8gen), gemini (nanogen), elevenlabs (audiogen), node, pyt
 - [x] 6 Play-test — DoD passes (47/47 twice, hashes match; whole-game run, 43 unlocks once each; 100k scarf; feedback; offline). Fixed in eca7ca4, b927d53, ae999e6, 587fcde, 84ca10a. tools/solutions.mjs replays all 47. Leftover small layout items: doll shelf (landscape tag, desktop arm overlap, phone empty wood), landscape wall tag size, 1920 empty space, ruler label formats/size, scarf HUD over knitting on phone, Clementine orphan, right needle under desktop panel, grouped toasts.
 - [x] 7 Final review — round 1: 1 must-fix + 8 should (fixed 993681e, 3acda60); round 2: no must-fix, 7 should + lead notes (fixed 10f0d9e, 5eafc0d, a9e1260, deff481: purl underlay in yarn shade, strand, start zoom fit + remembered, real-stitch preview card, toys plush + shelf, friendly blurbs, finish turns into the object, canvas cap). solutions.mjs 47/47.
 - [x] 8 Polish — 12 should-fix + 6 nice fixed (7e4f77b), rescanned at 4 sizes, solutions 47/47.
-- [ ] 9 Wrap up — wrap-up helper: github-social, social card check, README (making-of), media screenshots, art sheet; then publish to knitknack.synapticnoise.com, gallery, plans card + design page update
+- [x] 9 Wrap up — README (making-of), media/ screenshots, social card + github-social.jpg, Pages workflow, title links. Published 2026-11-24 at https://knitknack.synapticnoise.com (repo zeveck/knit-knack, public; DNS CNAME added at GoDaddy; HTTPS on; Report a bug → zeveck/knit-knack issues). Live game checked on desktop and iPhone 15, no errors. Gallery: added at the top of synapticnoise.com. Plans card: Published (Play, Plan, Design, Art). Design page updated to the game as built. Art sheet: https://synapticnoise.com/plans/knit-knack/art/ (art-sheet.py output patched for phone overflow: grid minmax(min(var(--w),100%)) and scroll-margin; rebuild loses it).
 
 ## Notes for --continue
 
 - Design accepted after 2 review rounds. Mockups to reuse: nook-land-a.jpg = bg-nook-land (style anchor); purl-cat-a.png = purl-cat candidate; basket-a.png = basket candidate; cmp-giraffe-a.png = giraffe comparison; knit-swatch-a.jpg = 1 of the 3 look-target swatches.
 - Confirm imagegen2 (gpt-image-2.6) pricing at the start of the art phase.
 - Read comments/feedback on the shared design first.
+
+- Note: bulk design/screenshots (~580 MB) are kept out of git; a curated set (pattern sheets, doll sheet, stitch lab) is committed. Earlier committed verification screenshots were removed from the unpublished history before the first push.
+- Spending: about $12.33 of $50 (design/ASSETS.md).
