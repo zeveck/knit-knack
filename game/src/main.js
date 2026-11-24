@@ -17,6 +17,7 @@ import * as book from './book.js';
 import * as finished from './finished.js';
 import * as gallery from './gallery.js';
 import { openMenu, setMenuHooks } from './menu.js';
+import * as features from './features.js';
 
 // ---------------------------------------------------------------- the frame log (web-target.md)
 const frameLog = [];
@@ -71,6 +72,7 @@ setMenuHooks({
   onSettings: () => { applySettings(); if (currentScreen() === 'knit') knit.enter(S.get().lastPiece); },
 });
 knit.setMenu(openMenu); book.setMenu(openMenu); gallery.setMenu(openMenu);
+features.init({ menu: openMenu });
 toasts.onUse(() => { knit.onEquipChange(); });
 
 // ---------------------------------------------------------------- boot
@@ -186,8 +188,8 @@ window.__game = {
   writtenPattern: (id) => { const p = S.patternById(id); if (!p) return null; const piece = S.getPiece(id); return writtenPattern(chartOf(p), { name: p.name, source: p.source, yarns: slotYarnNames(piece ? piece.slots : p.slots) }).text; },
   addStitches: (n) => { S.addStitches(n); S.checkUnlocks(); toasts.pump(); S.saveSoon(); return S.get().lifetimeStitches; },
   equip: (kind, id) => { const ok = S.equip(kind, id); knit.onEquipChange(); return ok; },
-  dress: (dollId, galleryId) => { /* stub: the dolls helper fills in the dressing view */ const g = S.galleryById(galleryId); const p = g && S.patternById(g.pattern); if (!p || !p.wear) return false; const o = S.get().outfits; (o[dollId] = o[dollId] || {})[p.wear.slot] = galleryId; S.get().lastDoll = dollId; S.saveSoon(); return true; },
-  scarfAddRows: () => { /* stub: the scarf helper fills this in */ return null; },
+  dress: (dollId, galleryId) => features.dress(dollId, galleryId),
+  scarfAddRows: (n, yarn, pattern) => features.scarfAddRows(n, yarn, pattern),
   failSaves: (on) => { S.failSaves(on); return true; },
   resetSave: () => { S.resetSave(); location.reload(); return true; },
   toggleMute,
