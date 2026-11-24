@@ -458,3 +458,10 @@ gh-feedback { font-family: 'Fredoka', sans-serif; }
 /* touch screens: the keyboard list in How to play is for keyboards */
 @media (pointer: coarse) and (hover: none) { .howto-keys { display: none; } }
 .card h3, .card .tech { text-wrap: balance; }
+
+/* title-screen links (gallery lower-left, GitHub lower-right) */
+.title-link { position: absolute; bottom: calc(10px + var(--sab, 0px)); font: 500 13px/1 'Fredoka', sans-serif; color: rgba(247,239,224,0.55); text-decoration: none; padding: 8px 10px; z-index: 3; }
+.title-link:hover, .title-link:focus-visible { color: rgba(247,239,224,0.9); text-decoration: underline; }
+.title-link-gallery { left: calc(6px + var(--sal, 0px)); }
+.title-link-gh { right: calc(6px + var(--sar, 0px)); }
+@media (pointer: coarse) { .title-link { font-size: 12px; } }

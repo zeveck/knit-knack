@@ -104,6 +104,7 @@ async function boot() {
   const start = (e) => {
     if (currentScreen() !== 'title') return;
     if (window.gameReport && window.gameReport.isOpen()) return;
+    if (e && e.target && e.target.closest && e.target.closest('.title-link')) return;
     if (e && e.preventDefault) e.preventDefault();
     audio.unlock();
     applySettings();
