@@ -17,17 +17,23 @@ function img(key, src) {
 }
 async function json(key, src) { try { JSON_[key] = await (await fetch(src)).json(); } catch { JSON_[key] = null; } }
 
-// The art every screen needs, loaded during the title.
-export function loadScene() {
+// The art the title draws, loaded before it shows: the nooks, the basket, Purl asleep, the holders
+// and only the decor that's on. Purl's cheer and the other decor follow in loadSceneRest().
+export function loadScene(decorOn = []) {
   return Promise.all([
     img('nook-land', 'assets/bg/nook-land.webp'), img('nook-port', 'assets/bg/nook-port.webp'),
     json('nook-land', 'assets/bg/nook-land.json'), json('nook-port', 'assets/bg/nook-port.json'),
     json('holders', 'assets/items/holders.json'), json('dolls', 'assets/dolls/dolls.json'),
     img('basket-back', 'assets/sprites/basket-back.png'), img('basket-front', 'assets/sprites/basket-front.png'),
     img('purl', 'assets/sprites/purl-cat.png'),
-    ...[0, 1, 2, 3].map((i) => img(`cheer${i}`, `assets/sprites/purl-cheer/purl-cheer-${i}.png`)),
-    ...DECOR.map((d) => img(`decor-${d}`, `assets/items/decor-${d}.png`)),
+    ...DECOR.filter((d) => decorOn.includes(d)).map((d) => img(`decor-${d}`, `assets/items/decor-${d}.png`)),
     ...HOLDERS.map((h) => img(`holder-${h}`, `assets/items/holder-${h}.png`)),
+  ]);
+}
+export function loadSceneRest() {
+  return Promise.all([
+    ...[0, 1, 2, 3].map((i) => (IMG[`cheer${i}`] ? null : img(`cheer${i}`, `assets/sprites/purl-cheer/purl-cheer-${i}.png`))),
+    ...DECOR.filter((d) => !IMG[`decor-${d}`]).map((d) => img(`decor-${d}`, `assets/items/decor-${d}.png`)),
   ]);
 }
 // Gallery and finish art, loaded in the background after the title.

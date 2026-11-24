@@ -145,6 +145,7 @@ function relayout() {
     fillBar();
   }
   root.classList.toggle('big-buttons', !!S.get().settings.big && l !== 'land');
+  stripKey = '';
   work.setMaxFit(layout === 'desk' ? 46 : 28);
   const r = dom.basketSlot.getBoundingClientRect();
   const dpr = Math.min(3, window.devicePixelRatio || 1);
@@ -552,8 +553,20 @@ function hud() {
     if (w.countChanged && L.r > 1) frag.append(` (${w.count} sts)`);
     if (cur.reps) frag.append(el('span', { class: 'cnt', text: `rep ${cur.rep} of ${cur.reps} · st ${cur.st} of ${cur.of}` }));
     dom.words.replaceChildren(frag);
+    fitWords();
   }
   if (piece.follow) refreshNext();
+}
+// a long row shrinks to fit its strip (down to 15 px); if it still doesn't fit (one line in landscape),
+// it slides so the current stitch is always in view
+function fitWords() {
+  const w = dom.words;
+  w.style.fontSize = ''; w.scrollLeft = 0;
+  const over = () => w.scrollHeight > w.clientHeight + 1 || w.scrollWidth > w.clientWidth + 1;
+  let px = parseFloat(getComputedStyle(w).fontSize);
+  while (over() && px > 15) { px -= 1; w.style.fontSize = `${px}px`; }
+  const cur = w.querySelector('.cur');
+  if (cur && w.scrollWidth > w.clientWidth + 1) w.scrollLeft = Math.max(0, cur.offsetLeft - w.clientWidth * 0.35);
 }
 let lastNextSlot = null;
 function refreshNext() {

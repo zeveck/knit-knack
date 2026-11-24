@@ -64,7 +64,8 @@ function renderBook() {
   // chapter tabs
   const tabs = el('div', { class: 'tabs', role: 'tablist' });
   S.CHAPTERS.forEach((name, i) => {
-    const t = el('button', { class: 'tab' + (chapter === i + 1 ? ' on' : ''), role: 'tab', 'aria-selected': chapter === i + 1 ? 'true' : 'false' }, el('span', { class: 'n', text: i + 1 }), name);
+    const t = el('button', { class: 'tab' + (chapter === i + 1 ? ' on' : ''), role: 'tab', 'aria-selected': chapter === i + 1 ? 'true' : 'false' }, el('span', { class: 'n', text: i + 1 }), el('span', { class: 'nm', text: name }));
+    if (chapter !== i + 1) t.setAttribute('aria-label', `Chapter ${i + 1}: ${name}`);
     t.addEventListener('click', () => { if (chapter !== i + 1) { chapter = i + 1; audio.play('page'); renderBook(); } });
     tabs.append(t);
   });

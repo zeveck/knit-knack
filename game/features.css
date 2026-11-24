@@ -9,8 +9,10 @@
 .doll-cell .doll-stage canvas { position: absolute; left: 0; bottom: 0; pointer-events: none; }
 .doll-cell .board { width: 112%; height: 30px; margin: -10px 0 0; flex: none; background: url('assets/items/gallery-shelf.png') center / 100% 100% no-repeat; filter: drop-shadow(0 6px 6px rgba(20, 8, 10, 0.45)); }
 .doll-cell .tag { font-family: 'Caveat', cursive; font-size: 21px; background: #f3e6cc; color: var(--ink); padding: 0 12px; border-radius: 4px; margin-top: 4px; box-shadow: var(--shadow-sm); flex: none; }
-.doll-cell .lock-note { text-wrap: pretty; position: absolute; left: 3%; right: 3%; top: 24%; z-index: 2; background: rgba(34, 22, 46, 0.82); color: var(--cream); border-radius: 12px; padding: 8px 10px; font-size: 13px; line-height: 1.25; display: flex; gap: 6px; align-items: flex-start; text-align: left; box-shadow: var(--shadow-sm); }
-.doll-cell .lock-note .ic { width: 16px; height: 16px; flex: none; color: var(--honey-lt); margin-top: 1px; }
+.doll-cell .lock-note { text-wrap: pretty; overflow-wrap: break-word; position: absolute; left: 2%; right: 2%; top: 24%; z-index: 2; background: rgba(34, 22, 46, 0.82); color: var(--cream); border-radius: 12px; padding: 7px 8px; font-size: 13px; line-height: 1.25; display: block; text-align: left; box-shadow: var(--shadow-sm); }
+.doll-cell .lock-note .icw { float: left; margin: 1px 4px 0 0; }
+.doll-cell .lock-note .ic { width: 14px; height: 14px; color: var(--honey-lt); }
+@media (max-width: 500px) { .doll-cell .lock-note { font-size: 12px; padding: 6px 7px; } }
 .doll-cell:not(.locked):hover .doll-stage { filter: drop-shadow(0 0 10px rgba(242, 212, 138, 0.55)); }
 .shelf-dots { display: flex; gap: 6px; justify-content: center; padding-top: 8px; }
 .shelf-dots i { width: 8px; height: 8px; border-radius: 50%; background: rgba(246, 236, 217, 0.35); }
@@ -28,7 +30,8 @@
 .slot-btn .th { width: 44px; height: 40px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: rgba(91, 58, 94, 0.12); }
 .slot-btn .th .ic { width: 26px; height: 26px; color: var(--plum); }
 .slot-btn .nm { font-weight: 600; color: var(--plum); font-size: 15px; min-width: 0; display: flex; flex-direction: column; }
-.slot-btn .nm small { font-weight: 400; color: var(--ink-soft); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.slot-btn .nm small { font-weight: 400; color: var(--ink-soft); font-size: 12px; line-height: 1.15; overflow-wrap: anywhere; text-wrap: balance; }
+@media (max-width: 500px) { .slot-btn { gap: 4px; padding-right: 5px; } .slot-btn .th { width: 36px; } .slot-btn .nm { font-size: 14px; } .slot-btn .nm small { font-size: 11px; } }
 .slot-btn.worn { box-shadow: var(--shadow-sm), inset 0 0 0 2px var(--sage); }
 @media (min-width: 700px), (max-height: 500px) {
   .dressing .dress { flex-direction: row; }
@@ -143,3 +146,6 @@
 .hsec { color: var(--honey-lt); font-size: 15px; margin: 6px 2px 0; }
 .hnote { color: var(--cream); font-size: 14px; }
 .bpiece .nm { display: inline-flex; align-items: center; gap: 4px; } .bpiece .nm .ic { width: 15px; height: 15px; color: var(--plum); }
+.hcard p, .fact-pop { text-wrap: pretty; }
+.scarf-len .next, .hcard h3, .hcard small, .slot-piece .nm { text-wrap: balance; }
+.bag-card .nm, .bag-card .lock, .doll-cell .lock-note { text-wrap: balance; }

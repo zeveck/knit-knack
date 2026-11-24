@@ -250,7 +250,16 @@ function hud() {
     html = frag;
   } catch { html = document.createTextNode(`Row ${L.r}`); }
   const key = `${L.r}|${L.k}|${store.runs.length}`;
-  if (dom.words._k !== key) { dom.words._k = key; dom.words.replaceChildren(html); }
+  if (dom.words._k !== key) {
+    dom.words._k = key; dom.words.replaceChildren(html);
+    // shrink a long row to fit (down to 15 px), then slide so the current stitch shows
+    const w = dom.words; w.style.fontSize = ''; w.scrollLeft = 0;
+    const over = () => w.scrollHeight > w.clientHeight + 1 || w.scrollWidth > w.clientWidth + 1;
+    let px = parseFloat(getComputedStyle(w).fontSize);
+    while (over() && px > 15) { px -= 1; w.style.fontSize = `${px}px`; }
+    const cur = w.querySelector('.cur');
+    if (cur && w.scrollWidth > w.clientWidth + 1) w.scrollLeft = Math.max(0, cur.offsetLeft - w.clientWidth * 0.35);
+  }
   dom.stitchBtn.querySelector('.sp').textContent = SCARF_PATTERNS[queuedOrCurrent()].name;
 }
 const queuedOrCurrent = () => store.patternAtRow(rowNow() + (store.n % WIDTH ? 1 : 0));

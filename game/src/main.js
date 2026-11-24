@@ -4,7 +4,7 @@ import { initInput, setKeyHandler } from './input.js';
 import * as S from './state.js';
 import * as audio from './audio.js';
 import * as toasts from './toasts.js';
-import { loadScene, loadExtras } from './scene.js';
+import { loadScene, loadSceneRest, loadExtras } from './scene.js';
 import { loadYarnImages, normYarn, registerColorNames } from './yarn.js';
 import { setFibreTexture } from './stitches.js';
 import { writtenPattern } from './chart.js';
@@ -80,24 +80,25 @@ async function boot() {
   initInput(); initSheets();
   S.load();
   S.on('saveError', () => notice("Couldn't save just now. Your knitting is still here."));
-  audio.prefetch();
   const titleEl = document.querySelector('[data-screen="title"]');
-  titleEl.style.opacity = '0';
+  // the title waits (dark, with a small loader) for only what it draws; the rest loads behind it
+  const sv = S.get();
+  const lastY = (sv.lastPiece && sv.pieces[`w-${sv.lastPiece}`] && sv.pieces[`w-${sv.lastPiece}`].yarns.slice(-1)[0]) || sv.recent[0];
   const [book] = await Promise.all([
     loadPatterns(),
-    loadScene(), loadYarnImages(),
+    loadScene(sv.equipped.decor), loadYarnImages(['wool', ...(lastY && lastY.type ? [lastY.type] : [])]),
     document.fonts ? Promise.race([document.fonts.load('600 20px Fredoka'), new Promise((r) => setTimeout(r, 2500))]).then(() => document.fonts.load('24px Caveat')) : null,
   ]);
   S.setBook(book);
   // painted fibre tiles into the stitch sprites
   Promise.all(['assets/tex/tex-fibre.png', 'assets/tex/tex-fibre-fuzzy.png'].map((src) => new Promise((res) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = src; })))
     .then(([a, b]) => { if (a) setFibreTexture(a, b); });
-  loadExtras();
+  loadSceneRest().then(() => loadYarnImages()).then(() => loadExtras()).then(() => audio.prefetch());
   // a save from before Pip etc: queue nothing yet; checked as play goes on
   S.get().seenPatterns.length || S.get().seenPatterns.push(...S.BOOK.slice(0, S.patternsUnlocked()).map((p) => p.id));
   go('title');
   requestAnimationFrame(loop);
-  requestAnimationFrame(() => { titleEl.style.transition = 'opacity 0.5s'; titleEl.style.opacity = '1'; });
+  requestAnimationFrame(() => requestAnimationFrame(() => titleEl.classList.remove('booting')));
   const start = (e) => {
     if (currentScreen() !== 'title') return;
     if (window.gameReport && window.gameReport.isOpen()) return;

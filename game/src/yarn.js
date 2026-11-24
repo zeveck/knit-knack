@@ -58,8 +58,8 @@ export function normYarn(v, fallback = { color: '#efe4cf', type: 'wool' }) {
 // ---------------------------------------------------------------- the balls
 const FILE = { wool: 'wool', cotton: 'cotton', chunky: 'chunky', mohair: 'mohair', sparkle: 'sparkle', stripe: 'striping', velvet: 'velvet', glow: 'glow' };
 const imgs = {};
-export function loadYarnImages() {
-  return Promise.all(YARN_TYPES.map((t) => new Promise((res) => {
+export function loadYarnImages(types = YARN_TYPES) {
+  return Promise.all(types.filter((t) => !imgs[t]).map((t) => new Promise((res) => {
     const im = new Image();
     im.onload = () => { imgs[t] = im; res(); };
     im.onerror = () => res();
