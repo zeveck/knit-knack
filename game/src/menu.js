@@ -111,7 +111,7 @@ export function openCredits() {
     el('h3', { text: 'Idea' }), el('p', { text: 'Rich Conlan' }),
     el('h3', { text: 'Made with' }), el('p', { text: 'gamegen, with code-drawn knitting; painted art, music and sounds made for this game.' }),
     el('h3', { text: 'Fonts' }),
-    el('p', { text: 'Fredoka, copyright 2016 The Fredoka Project Authors (github.com/hafontia/Fredoka-One). Caveat, copyright 2014 The Caveat Project Authors (github.com/googlefonts/caveat). Both under the SIL Open Font License 1.1, included with the game as fonts/OFL-fredoka.txt and fonts/OFL-caveat.txt.' }),
+    el('p', { text: 'Fredoka, copyright 2016 The Fredoka Project Authors (github.com/hafontia/Fredoka-One). Caveat, copyright 2014 The Caveat Project Authors (github.com/googlefonts/caveat). Both are under the SIL Open Font License 1.1, and their license files (fonts/OFL-fredoka.txt, fonts/OFL-caveat.txt) come with the game.' }),
     el('h3', { text: 'Bug reports' }), el('p', { text: 'Found a bug? Open the menu and pick "Report a bug", or press Ctrl+Shift+F (you\'ll need a GitHub account).' }),
   );
   openSheet('credits', box, { title: 'Credits' });

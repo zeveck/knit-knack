@@ -32,8 +32,9 @@ export function init() {
   if (ready) return ready;
   ready = store.load().then(() => {
     const s = S.get();
-    // a reset save (no scarf in it, fewer lifetime stitches than the scarf has) clears the scarf too
-    if (!(s.scarf.stitches > 0) && store.n > 0 && s.lifetimeStitches < store.n) return store.reset();
+    // "Reset progress" clears the scarf itself (resetAll). A save that lost its scarf numbers (a corrupted
+    // or cleared localStorage) keeps the scarf: its stitches still count toward the lifetime total.
+    if (store.n > 0 && s.lifetimeStitches < store.n) s.lifetimeStitches = store.n;
     return null;
   }).then(() => {
     sync();
@@ -266,7 +267,8 @@ function setDigits(cm) {
     digitFmt = shape;
     dom.digits.replaceChildren(...[...txt].map((ch) => {
       if (!/\d/.test(ch)) return el('span', { class: 'sep', text: ch });
-      const col = el('span', { class: 'col' }, ...Array.from({ length: 10 }, (_, d) => el('span', { text: String(d) })));
+      // the 0-9 strip is drawn from data-d (CSS content): only the digit in the window is ever read as text
+      const col = el('span', { class: 'col', 'aria-hidden': 'true' }, ...Array.from({ length: 10 }, (_, d) => el('span', { 'data-d': String(d) })));
       return el('span', { class: 'dg' }, col);
     }));
     dom.unit.textContent = unit;
@@ -470,6 +472,8 @@ export async function addRows(n, yarn, pattern) {
 }
 export const scarfState = () => ({ stitches: store.n, rows: store.rows(), cm: store.cm(), runs: store.runs.slice(), yarns: store.table.length, current: store.current, pattern: store.patternAtRow(rowNow()), fabricCanvas: work && work.state().fabricCanvas, zoom: work && work.state().zoom, cellPx: work && work.state().cellPx, how: how ? { scale: how.s, target: how.target, pair: how.pairKey } : null });
 export const scarfWork = () => work;
+// Reset progress: the scarf goes too (awaited before the page reloads)
+export async function resetAll() { await init().catch(() => {}); await store.reset(); }
 
 // ================================================================ "How long is it?"
 const IMGS = {};

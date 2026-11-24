@@ -135,25 +135,45 @@ function serialize() {
   return JSON.stringify(out);
 }
 
+// The last save that loaded cleanly is kept under its own key, so a save that's been cut short or
+// mangled falls back to it instead of starting over.
+const PREV_KEY = `${SAVE_KEY}-prev`;
+function readSave(key) {
+  let text = null;
+  try { text = localStorage.getItem(key); } catch { return null; }
+  if (!text) return null;
+  try {
+    const raw = JSON.parse(text);
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    return { text, save: migrate(raw) };
+  } catch (e) { console.warn(`save ${key} unreadable`, e); return null; }
+}
 export function load() {
-  let raw = null;
-  try { raw = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); } catch { raw = null; }
-  S = fresh();
-  if (raw && typeof raw === 'object') {
-    try { S = migrate(raw); } catch (e) { console.warn('save unreadable, starting fresh', e); S = fresh(); }
-  }
+  const main = readSave(SAVE_KEY);
+  const got = main || readSave(PREV_KEY);
+  S = got ? got.save : fresh();
+  if (main) { try { localStorage.setItem(PREV_KEY, main.text); } catch { /* full: the main save still stands */ } }
+  else if (got) console.warn('save unreadable: using the last good one');
   return S;
 }
 
 function migrate(raw) {
   const s = fresh();
   Object.assign(s, raw);
+  // a field of the wrong type (a hand-edited or half-written save) falls back to its default
+  const def = fresh();
+  for (const [k, v] of Object.entries(def)) {
+    if (Array.isArray(v) ? !Array.isArray(s[k]) : (v !== null && typeof v !== typeof s[k])) s[k] = v;
+  }
+  if (!raw.pieces || typeof raw.pieces !== 'object' || Array.isArray(raw.pieces)) raw.pieces = {};
+  if (!Array.isArray(raw.gallery)) raw.gallery = [];
+  raw.gallery = raw.gallery.filter((g) => g && typeof g === 'object' && typeof g.id === 'string' && g.pattern);
   s.settings = { ...fresh().settings, ...(raw.settings || {}) };
   s.equipped = { ...fresh().equipped, ...(raw.equipped || {}) };
   s.scarf = { ...fresh().scarf, ...(raw.scarf || {}) };
   s.pieces = {};
-  for (const [id, p] of Object.entries(raw.pieces || {})) s.pieces[id] = { ...p, yarns: Array.isArray(p.yarns) ? p.yarns.map((y) => normYarn(y)) : decYarns(p.yarns) };
-  s.gallery = (raw.gallery || []).map((g) => ({ ...g, yarns: Array.isArray(g.yarns) ? g.yarns.map((y) => normYarn(y)) : decYarns(g.yarns) }));
+  for (const [id, p] of Object.entries(raw.pieces || {})) if (p && typeof p === 'object' && p.pattern) s.pieces[id] = { ...p, slots: p.slots && typeof p.slots === 'object' ? p.slots : {}, yarns: Array.isArray(p.yarns) ? p.yarns.map((y) => normYarn(y)) : decYarns(p.yarns) };
+  s.gallery = (raw.gallery || []).map((g) => ({ ...g, slots: g.slots && typeof g.slots === 'object' ? g.slots : {}, yarns: Array.isArray(g.yarns) ? g.yarns.map((y) => normYarn(y)) : decYarns(g.yarns) }));
   // saves from before the unlock counters: rebuild them from what's there
   if (typeof raw.lifetimeStitches !== 'number') {
     s.lifetimeStitches = s.gallery.reduce((t, g) => t + g.yarns.length, 0) + Object.values(s.pieces).reduce((t, p) => t + p.yarns.length, 0) + (s.scarf.stitches || 0);
@@ -187,7 +207,7 @@ export function saveSoon() {
   saveTimer = setTimeout(saveNow, wait);
 }
 export function resetSave() {
-  try { localStorage.removeItem(SAVE_KEY); } catch { /* ignore */ }
+  try { localStorage.removeItem(SAVE_KEY); localStorage.removeItem(PREV_KEY); } catch { /* ignore */ }
   S = fresh();
 }
 

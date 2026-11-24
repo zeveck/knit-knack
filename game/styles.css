@@ -322,6 +322,7 @@ input[type=range] { width: 100%; accent-color: var(--cranberry); height: 32px; t
 .pattern-text b { color: var(--ink); }
 .key { margin-top: 14px; padding: 10px 12px; background: var(--cream); border-radius: 12px; font-size: 15px; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; }
 .key b { color: var(--plum); }
+.key span, .pattern-text .ln { text-wrap: pretty; }
 .settings-list { display: grid; gap: 12px; }
 .set-row { display: flex; align-items: center; gap: 12px; min-height: 48px; }
 .set-row > span { flex: 1; font-weight: 500; }
@@ -375,6 +376,7 @@ input[type=range] { width: 100%; accent-color: var(--cranberry); height: 32px; t
 @keyframes arrive { from { transform: translate(0, 40vh) scale(1.8); opacity: 0.2; } }
 .wall-arrow { position: absolute; top: 50%; transform: translateY(-50%); z-index: 3; background: rgba(34, 22, 46, 0.7); }
 .wall-arrow.l { left: 6px; } .wall-arrow.r { right: 6px; }
+.wall-arrow:active { transform: translateY(-50%) scale(0.95); }
 .plaque { align-self: center; margin: 6px auto calc(8px + var(--sab)); padding: 6px 18px; border-radius: 8px; background: linear-gradient(#e7c56c, #b88a2c); color: #3a2408; font-weight: 600; font-size: 14px; box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.5); text-align: center; }
 .gal-actions { display: flex; gap: 10px; justify-content: center; padding: 8px; flex-wrap: wrap; }
 .basket-list { flex: 1; overflow-y: auto; touch-action: pan-y; padding: 14px; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; align-content: start; }

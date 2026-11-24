@@ -6,6 +6,8 @@
 //  - one document-level capture keydown listener routes keys to the active screen;
 //  - buttons are blurred after every pointer click (the focus ring is for keyboard focus only).
 
+import { openSheetName, closeSheet } from './ui.js';
+
 let lastKnit = -1e9;
 export const markKnit = () => { lastKnit = performance.now(); };
 export const sinceKnit = () => performance.now() - lastKnit;
@@ -70,6 +72,8 @@ export function initInput() {
     const t = e.target;
     const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable) && t.type !== 'range';
     if (typing) { if (e.key === 'Escape') t.blur(); return; }
+    // Escape closes an open sheet first, on every screen (never also leaving the screen or opening the menu)
+    if (e.key === 'Escape' && openSheetName()) { e.preventDefault(); e.stopPropagation(); closeSheet(); return; }
     if (keyHandler && keyHandler(e) === true) { e.preventDefault(); e.stopPropagation(); }
   }, true);
   // blur buttons after a pointer click, so Space/Enter never re-fire them

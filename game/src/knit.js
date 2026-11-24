@@ -472,7 +472,7 @@ export function knitOne({ animate = true } = {}) {
       setTimeout(() => { audio.play('row'); audio.play('counter', { gain: 0.8 }); }, 130);
       if (res.r % 10 === 0) sparkleRow = { r: res.r, t0: performance.now() + 120 };
       if (res.r === 1) tip('turn', 'The work turns. Now you knit back the other way.');
-      if (res.r === 2) tip('yarn', 'Tap a yarn below to change color, any time, on any stitch.');
+      if (res.r === 2) tip('yarn', `Tap a yarn ${layout === 'port' ? 'below' : 'on the right'} to change color, any time, on any stitch.`);
       afterCounts();
     }
     S.saveNow();

@@ -9,7 +9,7 @@
 .doll-cell .doll-stage canvas { position: absolute; left: 0; bottom: 0; pointer-events: none; }
 .doll-cell .board { width: 112%; height: 30px; margin: -10px 0 0; flex: none; background: url('assets/items/gallery-shelf.png') center / 100% 100% no-repeat; filter: drop-shadow(0 6px 6px rgba(20, 8, 10, 0.45)); }
 .doll-cell .tag { font-family: 'Caveat', cursive; font-size: 21px; background: #f3e6cc; color: var(--ink); padding: 0 12px; border-radius: 4px; margin-top: 4px; box-shadow: var(--shadow-sm); flex: none; }
-.doll-cell .lock-note { position: absolute; left: -6%; right: -6%; top: 24%; z-index: 2; background: rgba(34, 22, 46, 0.82); color: var(--cream); border-radius: 12px; padding: 8px 10px; font-size: 13px; line-height: 1.25; display: flex; gap: 6px; align-items: flex-start; text-align: left; box-shadow: var(--shadow-sm); }
+.doll-cell .lock-note { text-wrap: pretty; position: absolute; left: 3%; right: 3%; top: 24%; z-index: 2; background: rgba(34, 22, 46, 0.82); color: var(--cream); border-radius: 12px; padding: 8px 10px; font-size: 13px; line-height: 1.25; display: flex; gap: 6px; align-items: flex-start; text-align: left; box-shadow: var(--shadow-sm); }
 .doll-cell .lock-note .ic { width: 16px; height: 16px; flex: none; color: var(--honey-lt); margin-top: 1px; }
 .doll-cell:not(.locked):hover .doll-stage { filter: drop-shadow(0 0 10px rgba(242, 212, 138, 0.55)); }
 .shelf-dots { display: flex; gap: 6px; justify-content: center; padding-top: 8px; }
@@ -62,7 +62,7 @@
 .bag-grid.dolls .bag-card .thumb { height: 130px; }
 .bag-card .nm { font-weight: 600; color: var(--ink); font-size: 15px; line-height: 1.15; }
 .bag-card .sub { font-size: 12px; color: var(--ink-soft); }
-.bag-card .lock { font-size: 12.5px; color: var(--plum); font-weight: 600; display: flex; gap: 4px; align-items: flex-start; line-height: 1.25; text-align: left; }
+.bag-card .lock { text-wrap: pretty; font-size: 12.5px; color: var(--plum); font-weight: 600; display: flex; gap: 4px; align-items: flex-start; line-height: 1.25; text-align: left; }
 .bag-card .lock .ic { width: 14px; height: 14px; flex: none; margin-top: 1px; }
 .bag-card.locked { background: rgba(251, 244, 230, 0.6); }
 .bag-card.locked .nm { color: var(--ink-soft); }
@@ -78,10 +78,11 @@
 .scarf-screen .preview-slot { justify-content: stretch; }
 .scarf-len { width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: flex-end; padding: 2px 10px 2px 4px; color: var(--cream); text-align: right; gap: 2px; min-width: 0; }
 .scarf-len .num { display: flex; align-items: baseline; gap: 4px; font-weight: 700; font-size: 38px; line-height: 1; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5); color: var(--honey-lt); }
-.scarf-len .digits { display: inline-flex; height: 1em; overflow: hidden; }
+.scarf-len .digits { display: inline-flex; height: 1em; }
 .scarf-len .dg { display: inline-block; height: 1em; overflow: hidden; width: 0.62em; text-align: center; }
 .scarf-len .dg .col { display: flex; flex-direction: column; transition: transform 0.35s cubic-bezier(.3, 1.4, .5, 1); }
 .scarf-len .dg .col span { height: 1em; line-height: 1em; }
+.scarf-len .dg .col span::before { content: attr(data-d); }
 .scarf-len .sep { display: inline-block; line-height: 1em; }
 .scarf-len .unit { font-size: 0.5em; color: var(--cream); }
 .scarf-len .next { font-size: 13px; line-height: 1.2; opacity: 0.95; max-width: 100%; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7); }

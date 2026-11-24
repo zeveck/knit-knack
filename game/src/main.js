@@ -68,7 +68,7 @@ function applySettings() {
 }
 setMenuHooks({
   toggleMute,
-  onReset: () => { S.resetSave(); location.reload(); },
+  onReset: () => { S.resetSave(); features.resetScarf().finally(() => location.reload()); },
   onSettings: () => { applySettings(); if (currentScreen() === 'knit') knit.enter(S.get().lastPiece); },
 });
 knit.setMenu(openMenu); book.setMenu(openMenu); gallery.setMenu(openMenu);
@@ -191,7 +191,7 @@ window.__game = {
   dress: (dollId, galleryId) => features.dress(dollId, galleryId),
   scarfAddRows: (n, yarn, pattern) => features.scarfAddRows(n, yarn, pattern),
   failSaves: (on) => { S.failSaves(on); return true; },
-  resetSave: () => { S.resetSave(); location.reload(); return true; },
+  resetSave: () => { S.resetSave(); features.resetScarf().finally(() => location.reload()); return true; },
   toggleMute,
   previewCard,
 };
