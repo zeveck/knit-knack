@@ -1,0 +1,46 @@
+{
+  "_note": "Per holder sprite (256x256, holder-<id>.png). Pixel coords in the 256 sprite. groundY: the line the holder stands on (same line as the basket's bottom). rim: the front-rim ellipse; draw the tinted ball after the holder, clipped to pixels above the rim's lower (front) arc, or above rim.cy outside the ellipse's x range. ball: centre of the ball and its scale relative to a 256px yarn-set sprite (may extend above the sprite).",
+  "groundY": 248,
+  "bowl": {
+    "file": "holder-bowl.png",
+    "rim": {
+      "cx": 128,
+      "cy": 127,
+      "rx": 80,
+      "ry": 17
+    },
+    "ball": {
+      "cx": 128,
+      "cy": 121,
+      "scale": 0.559
+    }
+  },
+  "bag": {
+    "file": "holder-bag.png",
+    "rim": {
+      "cx": 123,
+      "cy": 80,
+      "rx": 67,
+      "ry": 25
+    },
+    "ball": {
+      "cx": 123,
+      "cy": 71,
+      "scale": 0.475
+    }
+  },
+  "teacup": {
+    "file": "holder-teacup.png",
+    "rim": {
+      "cx": 115,
+      "cy": 120,
+      "rx": 75,
+      "ry": 21
+    },
+    "ball": {
+      "cx": 115,
+      "cy": 113,
+      "scale": 0.525
+    }
+  }
+}

@@ -57,7 +57,7 @@ function renderBook() {
   btns.append(
     big('scarf', 'Infinite Scarf', cm ? `${cm >= 100 ? (cm / 100).toFixed(2) + ' m' : Math.round(cm) + ' cm'} long` : 'It never ends', () => go('scarf'), false, last ? 'wide' : ''),
     big('frame', 'Gallery', `${S.wall().length} on the wall`, () => go('gallery')),
-    big('bag', 'Knitting Bag', 'Needles and more', () => go('bag'), bagHasNew()),
+    big('bag', 'Knitting Bag', 'Your tools', () => go('bag'), bagHasNew()),
   );
   page.append(btns);
   // chapter tabs

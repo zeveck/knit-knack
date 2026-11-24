@@ -29,6 +29,7 @@ function build() {
   root = document.querySelector('[data-screen="knit"]');
   const ib = (name, label, cls = 'icon-btn') => { const b = el('button', { class: cls, 'aria-label': label, title: label }); b.innerHTML = ICON[name]; return b; };
   dom.canvas = el('canvas', { class: 'work', 'aria-label': 'Your knitting. Tap anywhere to knit a stitch.' });
+  dom.fx = el('canvas', { class: 'work fx', 'aria-hidden': 'true' });
   dom.menu = ib('menu', 'Menu (Esc)');
   dom.progLine = el('div', { class: 'prog-line' });
   dom.progBar = el('i');
@@ -53,7 +54,7 @@ function build() {
   dom.strip = el('div', { class: 'strip' }, dom.words, dom.q);
   dom.bar = el('div', { class: 'yarnbar' });
   dom.panel = el('aside', { class: 'panel' }, dom.strip, dom.bar);
-  root.append(dom.canvas, dom.top, dom.workArea, dom.basketSlot, dom.pvSlot, dom.panel);
+  root.append(dom.canvas, dom.fx, dom.top, dom.workArea, dom.basketSlot, dom.pvSlot, dom.panel);
 
   // yarn bar buttons (kept for the screen's life; only their balls are repainted)
   dom.skeins = ['A', 'B', 'C', 'D'].map((slot, i) => {
@@ -96,7 +97,8 @@ function build() {
     if (currentScreen() !== 'knit' || openSheetName()) return;
     if (e.target.closest('button, input, a, .toast, .chip')) return;
     e.preventDefault();
-    knitOne();
+    const r = knitOne();
+    if (r) { const b = root.getBoundingClientRect(); flyers.push({ x: e.clientX - b.left, y: e.clientY - b.top, t0: performance.now(), color: (piece && piece.yarns[r.index] || currentYarn()).color }); }
     if (S.get().settings.hold) startPointerHold(e.pointerId);
   });
   const endHold = (e) => { const t = pointerHolds.get(e.pointerId); if (t) { clearTimeout(t.to); clearInterval(t.iv); pointerHolds.delete(e.pointerId); } };
@@ -215,8 +217,68 @@ function newestPhoto() {
 }
 
 // ---------------------------------------------------------------- the basket slot (drawn by the always-on loop)
+const flyers = [];
+let castAnim = null, sparkleRow = null;
+// the effects overlay: cast-on reveal, the little loop flying from the tap to the needle, every-10th-row sparkle
+function drawFx(t) {
+  const c = dom.fx;
+  const busy = flyers.length || castAnim || sparkleRow;
+  if (!busy) { if (c._dirty) { c.getContext('2d').clearRect(0, 0, c.width, c.height); c._dirty = false; } return; }
+  const dpr = work.dpr;
+  const w = work.vw, h = work.vh;
+  if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
+  const g = c.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h); c._dirty = true;
+  const G = work._geo ? work._geo() : null;
+  if (castAnim && G && backdrop) {
+    const p = (t - castAnim.t0) / 520;
+    if (p >= 1) castAnim = null;
+    else {
+      // cover the cast-on row and its needle, then uncover it right to left: loops appear along the needle
+      const x0 = G.colL(-3), x1 = G.colL(chart.width + 3), y0 = G.rowT(1) - G.ch * 1.4, y1 = G.rowT(1) + G.ch * 1.9;
+      const edge = x1 - (x1 - x0) * Math.min(1, p * 1.1);
+      const sx = backdrop.width / w, sy = backdrop.height / h;
+      const cw = edge - x0;
+      if (cw > 0) {
+        g.drawImage(backdrop, x0 * sx, y0 * sy, cw * sx, (y1 - y0) * sy, x0, y0, cw, y1 - y0);
+        g.save(); g.beginPath(); g.rect(x0, y0, cw, y1 - y0); g.clip(); drawGhost(g); g.restore();
+      }
+      g.fillStyle = 'rgba(255,240,200,0.8)';
+      g.beginPath(); g.arc(edge, G.rowT(1) + G.ch * 0.2, G.cp * 0.18, 0, Math.PI * 2); g.fill();
+    }
+  }
+  for (let i = flyers.length - 1; i >= 0; i--) {
+    const f = flyers[i];
+    const p = (t - f.t0) / 200;
+    const tip = work._lastNeedle ? work._lastNeedle.tip : null;
+    if (p >= 1 || !tip) { flyers.splice(i, 1); continue; }
+    const q = 1 - Math.pow(1 - p, 2);
+    const x = f.x + (tip.x - f.x) * q, y = f.y + (tip.y - f.y) * q - Math.sin(q * Math.PI) * 30;
+    g.strokeStyle = f.color; g.globalAlpha = 1 - p * 0.5; g.lineWidth = 2.5;
+    g.beginPath(); g.ellipse(x, y, 5 * (1 - p * 0.5), 7 * (1 - p * 0.5), 0.4, 0, Math.PI * 2); g.stroke();
+    g.globalAlpha = 1;
+  }
+  if (sparkleRow && G) {
+    const p = (t - sparkleRow.t0) / 800;
+    if (p >= 1) sparkleRow = null;
+    else {
+      const R = chart.row(sparkleRow.r);
+      for (const col of R.cols) {
+        const ph = (p * 3 + col * 0.37) % 1;
+        const a = Math.sin(ph * Math.PI) * (1 - p);
+        const x = G.colC(col), y = G.rowT(sparkleRow.r) + G.ch * 0.3, s = G.cp * 0.22 * a + 0.5;
+        g.fillStyle = `rgba(255,246,210,${a})`;
+        g.beginPath(); g.moveTo(x, y - s * 2); g.lineTo(x + s * 0.5, y); g.lineTo(x, y + s * 2); g.lineTo(x - s * 0.5, y); g.closePath(); g.fill();
+        g.beginPath(); g.moveTo(x - s * 2, y); g.lineTo(x, y + s * 0.5); g.lineTo(x + s * 2, y); g.lineTo(x, y - s * 0.5); g.closePath(); g.fill();
+      }
+    }
+  }
+}
+export function castOnAnim() { castAnim = { t0: performance.now() }; }
+
 export function frame(t) {
   if (currentScreen() !== 'knit' || !piece) return;
+  drawFx(t);
   const c = dom.basketCanvas;
   if (!c.width) return;
   const g = c.getContext('2d');
@@ -348,6 +410,7 @@ export function knitOne({ animate = true } = {}) {
   if (res.rowEnd) {
     if (animate) {
       setTimeout(() => { audio.play('row'); audio.play('counter', { gain: 0.8 }); }, 130);
+      if (res.r % 10 === 0) sparkleRow = { r: res.r, t0: performance.now() + 120 };
       if (res.r === 1) tip('turn', 'The work turns. Now you knit back the other way.');
       if (res.r === 2) tip('yarn', 'Tap a yarn below to change color, any time, on any stitch.');
       afterCounts();
@@ -543,7 +606,7 @@ export function enter(patternId) {
   if (slotsUsed().length >= 2) tip('follow', 'Follow chart switches yarns for you. Pick any yarn to knit your own way.');
   toasts.anchor(dom.progress);
   toasts.hold(false);
-  if (piece.yarns.length === 0) audio.play('caston');
+  if (piece.yarns.length === 0) { audio.play('caston'); castOnAnim(); }
   S.saveNow();
 }
 export function leave() {

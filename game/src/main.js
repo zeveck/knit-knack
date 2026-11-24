@@ -197,3 +197,9 @@ window.__game = {
 // hooks for the other helpers' screens
 export { go, registerScreen, previewCard };
 boot();
+
+// offline play (not while testing locally, unless asked with ?sw=1)
+const local = ['localhost', '127.0.0.1'].includes(location.hostname);
+if ('serviceWorker' in navigator && (!local || new URLSearchParams(location.search).has('sw'))) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
