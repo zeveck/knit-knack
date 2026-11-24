@@ -26,6 +26,9 @@
 - Credit: Rich Conlan (from GAMEGEN_CREDIT)
 - ElevenLabs tier: creator (paid: no credit line)
 
+- GitHub preview image: to upload (none set)
+- Repo: zeveck/knit-knack (public), address https://knitknack.synapticnoise.com
+
 ## Available
 
 openai (imagegen2, anim8gen), gemini (nanogen), elevenlabs (audiogen), node, python3+Pillow, playwright-cli. Plugins up to date.
