@@ -10,6 +10,6 @@ node_modules
 design/screenshots/*
 !design/screenshots/pattern-sheet*.png
 !design/screenshots/doll-sheet-pip.png
-!design/screenshots/stitch-lab-swatches.png
-!design/screenshots/stitch-lab-cables.png
-!design/screenshots/stitch-lab-tap-frames.png
+!design/screenshots/stitch-lab-full.png
+!design/screenshots/stitch-lab-cable-vs-ref.png
+!design/screenshots/stitch-lab-vs-target.png
