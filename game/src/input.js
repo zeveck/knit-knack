@@ -60,6 +60,7 @@ export function onHold(el, { press, repeat, start, end }) {
   });
   for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) el.addEventListener(ev, (e) => { if (e.pointerId === active) stop(); });
   el.addEventListener('click', (e) => { if (e.detail === 0) { press && press(); } });
+  holders.add({ releaseAll: stop });
   return stop;
 }
 
@@ -82,3 +83,33 @@ export function initInput() {
     if (b) setTimeout(() => b.blur(), 0);
   }, true);
 }
+
+// ---------------------------------------------------------------- hold to knit (keys and pointers)
+// One per knitting surface. Every hold is released on keyup/pointerup, on window blur, when the page is
+// hidden, when the screen is left, and when Report a bug opens; the repeat skips while `canKnit()` is false.
+const holders = new Set();
+export function releaseHolds() { for (const h of holders) h.releaseAll(); }
+export function holdKnitter(knitFn, canKnit) {
+  let key = null, keyIv = 0;
+  const ptrs = new Map();
+  const tick = () => { if (canKnit() && !reportOpen()) knitFn(); };
+  const clearPtr = (id) => { const t = ptrs.get(id); if (t) { clearTimeout(t.to); clearInterval(t.iv); ptrs.delete(id); } };
+  const h = {
+    keyDown(code) { h.keyUp(); key = code; keyIv = setInterval(tick, 1000 / 6); },
+    keyUp(code) { if (code !== undefined && code !== key) return; key = null; clearInterval(keyIv); keyIv = 0; },
+    pointerDown(id, el) {
+      clearPtr(id);
+      if (el) { try { el.setPointerCapture(id); } catch { /* */ } }
+      const t = { to: 0, iv: 0 };
+      t.to = setTimeout(() => { if (ptrs.get(id) === t) t.iv = setInterval(tick, 1000 / 6); }, 300);
+      ptrs.set(id, t);
+    },
+    pointerUp(id) { clearPtr(id); },
+    releaseAll() { h.keyUp(); for (const id of [...ptrs.keys()]) clearPtr(id); },
+    active: () => !!key || ptrs.size > 0,
+  };
+  holders.add(h);
+  return h;
+}
+window.addEventListener('blur', () => releaseHolds());
+document.addEventListener('visibilitychange', () => { if (document.hidden) releaseHolds(); });

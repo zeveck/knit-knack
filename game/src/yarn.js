@@ -1,5 +1,6 @@
 // yarn.js — the palette, yarn types, names, recent yarns, custom colors, and the tinted yarn balls.
 import { YARN_TYPES, YARN_LABELS, yarnColorAt, hexToRgb } from './stitches.js';
+import { pageZoom } from './ui.js';
 
 export { YARN_TYPES, YARN_LABELS };
 
@@ -130,7 +131,7 @@ export function drawBall(g, yarn, x, y, size, { t = 0, rot = 0, dpr = 1 } = {}) 
 
 // A ball drawn into a small canvas element (yarn bar buttons, pickers). Redraws only when the yarn changes.
 export function paintBallInto(canvas, yarn, cssSize) {
-  const dpr = Math.min(3, window.devicePixelRatio || 1);
+  const dpr = Math.min(3, window.devicePixelRatio || 1) * pageZoom();
   const key = yarn ? yarnKey(yarn) + '|' + cssSize + '|' + dpr : '';
   if (canvas._ballKey === key) return;
   canvas._ballKey = key;

@@ -3,7 +3,7 @@
 // needles, the basket and holder with your ball, the nook with its decor, Purl with her things, the
 // dolls), then a grid of cards: owned ones equip on tap (a tick shows which; decor and Purl's things
 // toggle), locked ones show a silhouette and exactly what's left, unseen ones carry a "new" badge.
-import { el, ICON, go, registerScreen, currentScreen } from './ui.js';
+import { el, ICON, go, registerScreen, currentScreen, pageZoom } from './ui.js';
 import { setKeyHandler } from './input.js';
 import * as S from './state.js';
 import * as audio from './audio.js';
@@ -19,7 +19,7 @@ const TABS = [
 ];
 let root = null, tab = 'needles', menuFn = () => {}, work = null, workCanvas = null, prevScreen = null;
 export const setMenu = (fn) => { menuFn = fn; };
-const dpr = () => Math.min(3, window.devicePixelRatio || 1);
+const dpr = () => Math.min(3, window.devicePixelRatio || 1) * pageZoom();
 const itemsOf = (kind) => S.UNLOCK_RULES.filter((u) => u.kind === kind);
 const isNew = (u) => !u.rule.start && S.isUnlocked(u.id) && !S.get().bagSeen.includes(u.id);
 export const tabHasNew = (kind) => itemsOf(kind).some(isNew);

@@ -18,14 +18,19 @@ const here = () => ['dolls', 'dress'].includes(currentScreen());
 const dpr = () => Math.min(3, window.devicePixelRatio || 1);
 const unlocked = (d) => S.isUnlocked(`doll:${d}`);
 const ruleOf = (d) => S.ruleById(`doll:${d}`);
-function lockText(d) {
+// "to meet <name>" never breaks, so a name is never left alone on the last line
+function lockText(d) { return lockText0(d).replace(/ (to meet) (\S+)$/, '\u00a0$1\u00a0$2'); }
+function lockText0(d) {
   const r = ruleOf(d).rule;
   if (r.firstWearable) return 'Finish your first wearable (a wristwarmer or a headband) to meet Pip';
   if (r.pattern) return `Finish the ${S.findPattern(r.pattern)?.name || r.pattern} to meet ${DOLL_NAMES[d]}`;
   if (r.chapter) return `Finish chapter ${r.chapter} to meet ${DOLL_NAMES[d]}`;
   return `${S.remainingText(r)} to meet ${DOLL_NAMES[d]}`;
 }
-const perPage = () => (innerWidth >= 900 ? 7 : innerHeight < 500 ? 4 : 3);
+const perPage = () => (innerWidth >= 900 ? 7 : innerHeight < 500 ? 4 : innerWidth < 600 ? 2 : 3);
+// how far a doll (arms out) may span across its own shelf cell: a touch past it, never into the next doll
+const SPAN = 1.06;
+const visBox = (d, shelf) => { const b = dollBounds(d); return { visH: (b.y1 - b.y0) + (shelf ? 70 : 120), visW: (b.x1 - b.x0) + 40 }; };
 
 function header() {
   const back = el('button', { class: 'icon-btn', 'aria-label': mode === 'dress' ? 'Back to the shelf' : 'Back to the book', title: 'Back' }); back.innerHTML = ICON.back;
@@ -56,7 +61,7 @@ function renderShelf() {
   page = Math.max(0, Math.min(page, pages - 1));
   const list = DOLLS.slice(page * n, page * n + n);
   const shelf = el('div', { class: 'doll-shelf' });
-  const row = el('div', { class: 'shelf-row', style: { gridTemplateColumns: `repeat(${n}, 1fr)` } });
+  const row = el('div', { class: 'shelf-row' + (pages > 1 ? '' : ' one'), style: { gridTemplateColumns: `repeat(${n}, 1fr)` } });
   for (const d of list) {
     const ok = unlocked(d);
     const cv = el('canvas', { class: 'doll-cv' });
@@ -88,6 +93,15 @@ function swipe(elm, fn) {
 }
 async function drawShelf(row) {
   await loadDolls();
+  // when the dolls are limited by their width (phones), the row shrinks to their height so they stand
+  // mid-screen on the shelf, not low under a tall empty wall
+  const st0 = row.querySelector('.doll-stage');
+  if (st0 && !row.style.height) {
+    const cw = st0.clientWidth, sh = st0.clientHeight;
+    let need = 0;
+    for (const cell of row.querySelectorAll('.doll-cell')) { const v = visBox(cell.dataset.doll, true); need = Math.max(need, (cw * SPAN * v.visH) / v.visW); }
+    if (cw > 10 && need + 12 < sh) row.style.height = `${Math.round(row.clientHeight - (sh - need - 12))}px`;
+  }
   for (const cell of row.querySelectorAll('.doll-cell')) {
     const d = cell.dataset.doll; const cv = cell.querySelector('canvas'); const stage = cell.querySelector('.doll-stage');
     const w = stage.clientWidth, h = stage.clientHeight;
@@ -99,6 +113,7 @@ async function drawShelf(row) {
 function paintDoll(cv, d, w, h, { silhouette = false, anim: an = null, shelf = false } = {}) {
   const r = dpr();
   const wide = shelf ? 1.7 : 1;
+  const cellW = w;
   w = Math.round(w * wide);
   cv.width = Math.round(w * r); cv.height = Math.round(h * r);
   cv.style.width = w + 'px'; cv.style.height = h + 'px';
@@ -107,8 +122,8 @@ function paintDoll(cv, d, w, h, { silhouette = false, anim: an = null, shelf = f
   const b = dollBounds(d);
   const [fw, fh] = dollSize(d);
   // purl sits: smaller than the standing dolls on the shelf
-  const visH = (b.y1 - b.y0) + (shelf ? 70 : 120), visW = (b.x1 - b.x0) + 40;
-  let k = Math.min((h * r) / visH, (w * r) / visW);
+  const { visH, visW } = visBox(d, shelf);
+  let k = Math.min((h * r) / visH, ((shelf ? cellW * SPAN : w) * r) / visW);
   if (d === 'purl' && shelf) k *= 0.82;
   const c = silhouette ? dollSilhouette(d, k) : an ? composeDoll(d, outfitOf(d), k, { anim: an }) : dressedDoll(d, k);
   const x = (cv.width - fw * k) / 2, y = cv.height - b.y1 * k - 4 * r;

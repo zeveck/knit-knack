@@ -4,6 +4,7 @@
 .dolls-screen { display: flex; flex-direction: column; }
 .doll-shelf { flex: 1; position: relative; min-height: 0; display: flex; flex-direction: column; justify-content: center; padding: 6px 0 4px; }
 .shelf-row { display: grid; gap: 4px; padding: 0 46px; height: min(100%, 640px); align-items: stretch; }
+.shelf-row.one { padding: 0 calc(10px + var(--sar)) 0 calc(10px + var(--sal)); }
 .doll-cell { position: relative; border: 0; background: none; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 0; min-width: 0; }
 .doll-cell .doll-stage { flex: 1; width: 100%; min-height: 0; position: relative; }
 .doll-cell .doll-stage canvas { position: absolute; left: 0; bottom: 0; pointer-events: none; }
@@ -38,6 +39,8 @@
   .dressing .slot-btns { grid-template-columns: 1fr; width: 250px; align-content: center; }
   .dressing .slot-btns.two { grid-template-columns: 1fr; }
 }
+/* big screens: the dressing panel grows with the room */
+.dressing .slot-btns { zoom: var(--pz, 1); }
 @media (max-height: 500px) { .dressing .slot-btns { grid-template-columns: 1fr 1fr; width: 330px; } .slot-btn { min-height: 46px; } }
 .slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
 .slot-piece { position: relative; border: 0; border-radius: 14px; background: var(--cream); padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 130px; }

@@ -5,7 +5,8 @@
 import { Work } from './work.js';
 import { stripWording, wordingCursor, parseChart } from './chart.js';
 import { el, ICON, go, openSheet, closeSheet, openSheetName, registerScreen, currentScreen, fmt } from './ui.js';
-import { onRelease, onHold, markKnit, setKeyHandler } from './input.js';
+import { onRelease, onHold, markKnit, setKeyHandler, holdKnitter } from './input.js';
+import { toggleMute } from './knit.js';
 import * as S from './state.js';
 import * as audio from './audio.js';
 import * as toasts from './toasts.js';
@@ -19,7 +20,7 @@ import { setScarfSource } from './worn.js';
 
 let root = null, dom = {}, work = null, chart = null, layout = '', built = false;
 let lastTapT = -1e9, menuFn = () => {}, rafOn = false, backdrop = null, backdropKey = '';
-let heldKey = null, holdIv = 0, cardTimer = 0, ribbonTimer = 0, how = null;
+let holds = null, entering = 0, cardTimer = 0, ribbonTimer = 0, how = null;
 export const setMenu = (fn) => { menuFn = fn; };
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const dprOf = () => Math.min(3, window.devicePixelRatio || 1);
@@ -102,7 +103,7 @@ function build() {
   dom.menu.addEventListener('click', () => menuFn());
   dom.zoomIn.addEventListener('click', () => { work.zoomIn(); audio.play('ui', { gain: 0.5 }); });
   dom.zoomOut.addEventListener('click', () => { work.zoomOut(); audio.play('ui', { gain: 0.5 }); });
-  dom.mute.addEventListener('click', () => { window.__game.toggleMute(); refreshMute(); });
+  dom.mute.addEventListener('click', () => { toggleMute(); refreshMute(); });
   onRelease(dom.howBtn, () => openHow(), { guard: true });
   onHold(dom.rip, { press: () => ripOne(true), start: () => audio.ripLoopStart(), repeat: () => ripOne(false), end: () => audio.ripLoopStop() });
 
@@ -112,7 +113,10 @@ function build() {
     if (e.target.closest('button, input, a, .toast, .chip, .howlong, .scarf-pop .card')) return;
     e.preventDefault();
     knitOne();
+    if (S.get().settings.hold) holds.pointerDown(e.pointerId, root);
   });
+  const endHold = (e) => holds.pointerUp(e.pointerId);
+  for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) root.addEventListener(ev, endHold);
   root.addEventListener('wheel', (e) => {
     if (openSheetName() || how) return;
     e.preventDefault();
@@ -120,12 +124,16 @@ function build() {
     if (e.deltaY < 0) work.zoomIn(); else if (e.deltaY > 0) work.zoomOut();
   }, { passive: false });
   root.addEventListener('contextmenu', (e) => e.preventDefault());
-  document.addEventListener('keyup', (e) => { if (heldKey && e.code === heldKey) { heldKey = null; clearInterval(holdIv); } });
+  holds = holdKnitter(() => knitOne(), () => currentScreen() === 'scarf' && !openSheetName() && !how);
+  document.addEventListener('keyup', (e) => holds.keyUp(e.code));
   work = new Work(dom.canvas, {
     dpr: dprOf(), minFit: 8, maxFit: 28,
     fitBox: () => { const r = relRect(dom.workArea); const p = layout === 'port' ? 8 : 12; return { x: r.x + p, y: r.y + p, w: Math.max(40, r.w - p * 2), h: Math.max(40, r.h - p * 2) }; },
     ballPoint: () => ballPoint(),
     background: (g, w, h) => drawBackdrop(g, w, h),
+    // the scarf stays in its own area: on a phone it never runs down behind the length and its button
+    clipBox: () => relRect(dom.workArea),
+    padCols: () => (layout === 'port' ? 5 : 10),
   });
   window.addEventListener('resize', () => { if (currentScreen() === 'scarf') relayout(); if (how) how.resize = true; });
   built = true;
@@ -135,6 +143,7 @@ function pickLayout() { const w = innerWidth, h = innerHeight; if (h < 500 && w 
 function relayout() {
   const l = pickLayout();
   if (l !== layout) { layout = l; root.classList.remove('lay-port', 'lay-land', 'lay-desk'); root.classList.add(`lay-${l}`); }
+  root.classList.toggle('big-buttons', !!S.get().settings.big && l !== 'land');
   work.setMaxFit(layout === 'desk' ? 46 : 28);
   const r = dom.basketSlot.getBoundingClientRect(); const d = dprOf();
   dom.basketCanvas.width = Math.round(r.width * d); dom.basketCanvas.height = Math.round(r.height * d);
@@ -289,7 +298,7 @@ function setDigits(cm) {
 }
 
 function refreshBar() {
-  const size = layout === 'desk' ? 46 : 44;
+  const size = layout === 'desk' ? 46 : S.get().settings.big && layout !== 'land' ? 50 : 44;
   paintBallInto(dom.skein.querySelector('canvas'), store.current, size);
   dom.skein.title = `Scarf yarn: ${yarnName(store.current)} (1)`;
   const rec = S.get().recent;
@@ -409,7 +418,7 @@ function onKey(e) {
   if (k === ' ' || k === 'Enter' || k === 'k' || k === 'K') {
     if (e.repeat) return true;
     knitOne();
-    if (S.get().settings.hold) { heldKey = e.code; clearInterval(holdIv); holdIv = setInterval(() => { if (heldKey) knitOne(); else clearInterval(holdIv); }, 1000 / 6); }
+    if (S.get().settings.hold) holds.keyDown(e.code);
     return true;
   }
   if (k === 'Backspace' || k === 'u' || k === 'U') { if (!e.repeat) ripOne(true); return true; }
@@ -422,7 +431,7 @@ function onKey(e) {
   if (k === '+' || k === '=') { work.zoomIn(); return true; }
   if (k === '-' || k === '_') { work.zoomOut(); return true; }
   if (k === '0') { work.setZoom(0); return true; }
-  if (k === 'm' || k === 'M') { window.__game.toggleMute(); refreshMute(); return true; }
+  if (k === 'm' || k === 'M') { toggleMute(); refreshMute(); return true; }
   if (k === 'Escape' || k === 'p' || k === 'P') { menuFn(); return true; }
   return false;
 }
@@ -430,10 +439,12 @@ function onKey(e) {
 // ---------------------------------------------------------------- enter / leave
 async function enter() {
   if (!built) build();
+  const my = ++entering;
   root.hidden = false;
   layout = '';
   relayout();
   await init();
+  if (my !== entering || currentScreen() !== 'scarf') return; // left while the store was loading
   const e = S.get().equipped;
   work.setNeedles(e.needles); work.setMarkers(e.marker); work.setCounter(e.counter); audio.setNeedles(e.needles);
   loadWork();
@@ -447,10 +458,12 @@ async function enter() {
   if (!store.n) { audio.play('caston'); showChip('Cast on 12 stitches. Tap to knit!', store.current); }
 }
 function leave() {
-  setKeyHandler(null); clearInterval(holdIv); heldKey = null; audio.ripLoopStop(); toasts.anchor(null);
+  entering++;
+  setKeyHandler(null); if (holds) holds.releaseAll(); audio.ripLoopStop(); toasts.anchor(null);
   closeHow(true);
   store.saveNow(); S.saveNow();
 }
+export function applySettings() { if (built && currentScreen() === 'scarf') { relayout(); refreshMute(); } }
 registerScreen('scarf', { enter: () => { enter(); }, leave });
 
 // ---------------------------------------------------------------- the debug hook: rows through the same data path, no animation
@@ -535,12 +548,16 @@ function drawHow(t) {
   const d = dprOf();
   if (H.resize || H.cv.width !== Math.round(r.width * d)) { H.cv.width = Math.round(r.width * d); H.cv.height = Math.round(r.height * d); H.resize = false; H.dirty = true; }
   const W = r.width, Ht = r.height;
-  const ruler = 46;
+  // text grows with the view (about 11 px on a landscape phone, 16-17 px on a desktop); the ground line
+  // leaves room under it for the two label lines
+  const fs = clamp(Ht / 38, 11, 17);
+  const ruler = Math.round(Math.max(46, fs * 4.8));
+  const ground = Ht - Math.max(Ht * 0.1, fs * 2.7 + 10);
   const Wc = W - ruler - 10;
   // the shared scale: the taller of scarf and next goal into 80% of the height, and all three side by side
   // (real widths, 4% gaps) into 92% of the width
   const tall = Math.max(cm, next ? next.cm : cm, 1);
-  const hFit = (Ht * 0.8) / tall;
+  const hFit = (ground * 0.88) / tall;
   const sumW = SCARF_W_CM + widthOf(last) + widthOf(next);
   const wFit = (Wc * 0.92 - Wc * 0.08) / Math.max(1, sumW);
   const target = Math.min(hFit, wFit);
@@ -564,18 +581,17 @@ function drawHow(t) {
   const g = H.cv.getContext('2d');
   g.setTransform(d, 0, 0, d, 0, 0);
   const s = H.s;
-  const ground = Ht * 0.9;
   sky(g, W, Ht, ground, s);
   // positions: last | scarf | next, centred in the content area
   const gap = Wc * 0.04;
   const lw = widthOf(last) * s, sw = SCARF_W_CM * s, nw = widthOf(next) * s;
   const total = lw + sw + nw + (last ? gap : 0) + gap;
   let x = ruler + 6 + (Wc - total) / 2;
-  if (last) { drawThing(g, last, x, ground, s, cm, 'right'); x += lw + gap; }
+  if (last) { drawThing(g, last, x, ground, s, cm, 'right', fs); x += lw + gap; }
   const sx = x; x += sw + gap;
-  if (next) drawThing(g, next, x, ground, s, cm, 'left');
+  if (next) drawThing(g, next, x, ground, s, cm, 'left', fs);
   drawScarfUpright(g, sx, ground, s, cm, d);
-  drawRuler(g, ruler, ground, s, Ht);
+  drawRuler(g, ruler, ground, s, Ht, fs);
   H.box.querySelector('.how-len').textContent = fmtLen(cm);
 }
 function altColor(cm) {
@@ -627,7 +643,7 @@ function sky(g, W, H, ground, s) {
   g.fillStyle = gr; g.fillRect(0, ground, W, H - ground);
   g.fillStyle = 'rgba(255,240,210,0.35)'; g.fillRect(0, ground, W, 1.5);
 }
-function drawThing(g, m, x, ground, s, cm, align = 'center') {
+function drawThing(g, m, x, ground, s, cm, align = 'center', fs = 13) {
   const h = m.cm * s, w = widthOf(m) * s;
   if (m.img) {
     const im = cmpImg(m.img);
@@ -637,13 +653,13 @@ function drawThing(g, m, x, ground, s, cm, align = 'center') {
   } else silhouette(g, m.sil, x, ground, w, h);
   // its label under the ground line
   g.save();
-  g.font = '600 13px Fredoka, sans-serif'; g.textAlign = align; g.fillStyle = '#f6ecd9';
+  g.font = `600 ${fs}px Fredoka, sans-serif`; g.textAlign = align; g.fillStyle = '#f6ecd9';
   const passed = m.cm <= cm;
   const label = `${(m.short || m.name).replace(/, stood.*$/, '').replace(/ \(.*\)$/, '')} · ${fmtLen(m.cm)}`;
   const tx = align === 'right' ? x + w : align === 'left' ? x : x + w / 2;
-  g.fillText(label, tx, ground + 18);
-  g.font = '500 11px Fredoka, sans-serif'; g.fillStyle = passed ? '#c9e0b4' : '#f2d48a';
-  g.fillText(passed ? 'passed!' : 'next', tx, ground + 33);
+  g.fillText(label, tx, ground + fs * 1.35);
+  g.font = `500 ${Math.round(fs * 0.85)}px Fredoka, sans-serif`; g.fillStyle = passed ? '#c9e0b4' : '#f2d48a';
+  g.fillText(passed ? 'passed!' : 'next', tx, ground + fs * 2.45);
   g.restore();
 }
 function silhouette(g, kind, x, ground, w, h) {
@@ -660,17 +676,22 @@ function silhouette(g, kind, x, ground, w, h) {
   if (kind === 'space' || kind === 'iss') { g.setLineDash([6, 5]); g.strokeStyle = 'rgba(246,236,217,0.7)'; g.beginPath(); g.moveTo(0, top); g.lineTo(x + w * 3, top); g.stroke(); }
   g.restore();
 }
-function drawRuler(g, rw, ground, s, H) {
+function drawRuler(g, rw, ground, s, H, fs = 13) {
   g.save();
   g.fillStyle = 'rgba(246,230,190,0.92)'; g.fillRect(4, 0, rw - 12, ground);
-  g.strokeStyle = 'rgba(80,50,30,0.8)'; g.fillStyle = '#4a2c14'; g.font = '600 10px Fredoka, sans-serif'; g.textAlign = 'left';
+  const rf = Math.round(fs * 0.85);
+  g.strokeStyle = 'rgba(80,50,30,0.8)'; g.fillStyle = '#4a2c14'; g.font = `600 ${rf}px Fredoka, sans-serif`; g.textAlign = 'left';
   const steps = [1, 2, 5]; let step = 1;
-  outer: for (let e = 0; e < 12; e++) for (const k of steps) { step = k * Math.pow(10, e); if (step * s >= 46) break outer; }
+  outer: for (let e = 0; e < 12; e++) for (const k of steps) { step = k * Math.pow(10, e); if (step * s >= Math.max(46, rf * 4)) break outer; }
+  // one unit and one number of decimals for every mark (set by the step), so the marks read alike
+  const [div, unit] = step >= 100000 ? [100000, 'km'] : step >= 100 ? [100, 'm'] : [1, 'cm'];
+  const dec = Math.max(0, -Math.floor(Math.log10(step / div) + 1e-9));
+  const mark = (v) => `${(v / div).toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec })} ${unit}`;
   for (let v = 0, i = 0; ground - v * s > -2 && i < 400; v += step, i++) {
     const y = ground - v * s;
     g.lineWidth = 1; g.beginPath(); g.moveTo(rw - 8, y); g.lineTo(rw - 20, y); g.stroke();
     const half = ground - (v + step / 2) * s; g.beginPath(); g.moveTo(rw - 8, half); g.lineTo(rw - 14, half); g.stroke();
-    if (v > 0 && y > 10) g.fillText(fmtLen(v), 6, y + 3.5, rw - 22);
+    if (v > 0 && y > rf) g.fillText(mark(v), 6, y + rf * 0.35, rw - 22);
   }
   g.restore();
 }

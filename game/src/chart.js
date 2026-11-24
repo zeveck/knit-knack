@@ -302,13 +302,15 @@ export class Chart {
     if (rep && rep.width) {
       const [el, er] = edgePair(rep.edges);
       const lo = Math.min(...R.cols), hi = Math.max(...R.cols) + 1;
-      if (R.runs.length > 1 || (R.cols.length - el - er) % rep.width) return [];
+      // markers only where they help: repeats of 4+ stitches, at least two of them in the row
+      if (rep.width < 4 || R.runs.length > 1 || (R.cols.length - el - er) % rep.width) return [];
+      if ((R.cols.length - el - er) / rep.width < 2) return [];
       const out = [];
       for (let b = lo + el; b <= hi; b += rep.width) if (b > lo && b < hi) out.push(b);
       return out;
     }
     const w = rowWording(this, r);
-    if (!w.repeat || w.repeat.count < 2 || w.repeat.cells < 2) return [];
+    if (!w.repeat || w.repeat.count < 2 || w.repeat.cells < 4) return [];
     const ks = []; // boundaries in knitting order -> columns
     for (let j = 0; j <= w.repeat.count; j++) {
       const k = w.repeat.from + j * w.repeat.cells;

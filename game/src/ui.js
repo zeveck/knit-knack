@@ -17,6 +17,11 @@ export function el(tag, attrs = {}, ...kids) {
   for (const k of kids.flat()) if (k != null && k !== false) e.append(k.nodeType ? k : document.createTextNode(String(k)));
   return e;
 }
+// Big screens (e.g. 1920×1080): the book, cast-on and bag pages scale up to use the room (CSS zoom on
+// .page); canvases on them render at this extra scale so they stay sharp.
+export const pageZoom = () => (innerWidth >= 1500 ? Math.max(1, Math.min(1.45, innerWidth / 1300, innerHeight / 820)) : 1);
+const applyZoom = () => document.documentElement.style.setProperty('--pz', String(Math.round(pageZoom() * 100) / 100));
+applyZoom(); addEventListener('resize', applyZoom);
 export const fmt = (n) => Math.round(n).toLocaleString('en-US');
 
 const P = (d, extra = '') => `<svg viewBox="0 0 24 24" aria-hidden="true" ${extra}><path d="${d}"/></svg>`;

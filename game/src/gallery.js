@@ -2,6 +2,7 @@
 // and the piece close-up (rename, Knit again, Take down / Hang it). Doll Shelf is go('dolls').
 import { el, ICON, go, registerScreen, openSheet, closeSheet, fmt, currentScreen } from './ui.js';
 import { setKeyHandler } from './input.js';
+import { fmtLen } from './scarfFacts.js';
 import * as S from './state.js';
 import * as audio from './audio.js';
 import * as toasts from './toasts.js';
@@ -10,7 +11,8 @@ import { pieceRender, fitCanvas, cellFor } from './render.js';
 let root, tab = 'wall', page = 0, arriving = null, afterDisplay = false, lightsOut = false;
 let menuFn = () => {};
 export const setMenu = (fn) => { menuFn = fn; };
-const perPage = () => (innerWidth >= 900 ? { c: 4, r: 3 } : innerHeight < 500 ? { c: 4, r: 2 } : { c: 2, r: 3 });
+// a short landscape phone hangs one row of pieces, big enough to see, rather than two rows of tiny ones
+const perPage = () => (innerHeight < 500 && innerWidth > innerHeight ? { c: 5, r: 1 } : innerWidth >= 900 ? { c: 4, r: 3 } : { c: 2, r: 3 });
 const wornBy = (gid) => Object.values(S.get().outfits || {}).some((o) => Object.values(o || {}).includes(gid));
 
 function render() {
@@ -38,7 +40,7 @@ function render() {
   if (tab === 'wall') renderWall(); else renderBasket();
   const cm = s.scarf.cm || 0;
   const np = S.wall().length + S.basket().length;
-  root.append(el('div', { class: 'plaque', text: `${np} piece${np === 1 ? '' : 's'} · ${fmt(s.gallery.reduce((t, g) => t + g.yarns.length, 0))} stitches · scarf ${cm >= 100 ? (cm / 100).toFixed(2) + ' m' : Math.round(cm) + ' cm'}` }));
+  root.append(el('div', { class: 'plaque', text: `${np} piece${np === 1 ? '' : 's'} · ${fmt(s.gallery.reduce((t, g) => t + g.yarns.length, 0))} stitches · scarf ${fmtLen(cm)}` }));
 }
 
 function renderWall() {

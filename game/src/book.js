@@ -2,6 +2,8 @@
 import { el, ICON, go, registerScreen, fmt, notice, openSheet, closeSheet } from './ui.js';
 import { drawStack } from './scene.js';
 import { setKeyHandler } from './input.js';
+import { fmtLen } from './scarfFacts.js';
+import { toggleMute } from './knit.js';
 import * as S from './state.js';
 import * as audio from './audio.js';
 import * as toasts from './toasts.js';
@@ -56,7 +58,7 @@ function renderBook() {
   };
   const cm = s.scarf.cm || 0;
   btns.append(
-    big('scarf', 'Infinite Scarf', cm ? `${cm >= 100 ? (cm / 100).toFixed(2) + ' m' : Math.round(cm) + ' cm'} long` : 'It never ends', () => go('scarf'), false, last ? 'wide' : ''),
+    big('scarf', 'Infinite Scarf', cm ? `${fmtLen(cm)} long` : 'It never ends', () => go('scarf'), false, last ? 'wide' : ''),
     big('frame', 'Gallery', `${S.wall().length} on the wall`, () => go('gallery')),
     big('bag', 'Knitting Bag', 'Your tools', () => go('bag'), bagHasNew()),
   );
@@ -160,7 +162,7 @@ registerScreen('book', {
     book().scrollTop = 0;
     setKeyHandler((e) => {
       if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') { menuFn(); return true; }
-      if (e.key === 'm' || e.key === 'M') { window.__game && window.__game.toggleMute(); return true; }
+      if (e.key === 'm' || e.key === 'M') { toggleMute(); return true; }
       if (e.key === 'ArrowRight' && chapter < 7) { chapter++; audio.play('page'); renderBook(); return true; }
       if (e.key === 'ArrowLeft' && chapter > 1) { chapter--; audio.play('page'); renderBook(); return true; }
       return false;
@@ -254,7 +256,7 @@ registerScreen('caston', {
     castonEl().scrollTop = 0;
     setKeyHandler((e) => {
       if (e.key === 'Escape') { go('book', { chapter: p.chapter }); return true; }
-      if (e.key === 'm' || e.key === 'M') { window.__game && window.__game.toggleMute(); return true; }
+      if (e.key === 'm' || e.key === 'M') { toggleMute(); return true; }
       return false;
     });
     audio.music('nook');

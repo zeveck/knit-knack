@@ -357,8 +357,12 @@ function tube(g, path, t, P, T, W, opt = {}) {
   g.save();
   g.lineCap = opt.cap || 'round'; g.lineJoin = 'round';
   if (opt.shadow) {
-    g.save(); g.shadowColor = 'rgba(30,12,30,0.5)'; g.shadowBlur = Math.max(1, W * 0.1); g.shadowOffsetX = W * 0.03; g.shadowOffsetY = W * 0.06;
-    path(); g.strokeStyle = css(tc(P.dark)); g.lineWidth = t; g.stroke(); g.restore();
+    // shadow 2 = a cable's front strand: a deeper groove where it crosses, so it reads in mid-tones and fuzz
+    const deep = opt.shadow === 2;
+    g.save(); g.shadowColor = deep ? 'rgba(20,6,20,0.85)' : 'rgba(30,12,30,0.5)'; g.shadowBlur = Math.max(1, W * (deep ? 0.13 : 0.1)); g.shadowOffsetX = W * (deep ? 0.05 : 0.03); g.shadowOffsetY = W * (deep ? 0.09 : 0.06);
+    path(); g.strokeStyle = css(tc(P.dark)); g.lineWidth = t; g.stroke();
+    if (deep) { path(); g.strokeStyle = css(P.deep, 0.9); g.lineWidth = t * 1.25; g.stroke(); }
+    g.restore();
   }
   if (!opt.noOutline) { path(); g.strokeStyle = css(P.deep, Math.min(1, 0.22 + T.line * 0.3)); g.lineWidth = t * 1.06 + Math.max(0.5, W * 0.016); g.stroke(); }
   path(); g.strokeStyle = css(tc(mix(P.dark, P.mid, 0.4))); g.lineWidth = t; g.stroke();
@@ -470,13 +474,13 @@ function drawCablePiece(g, x, y, W, H, P, T, R, v, type, i) {
   // Back strands are darkened about 25%; front strands come last, with a soft drop shadow.
   const { front, shift } = cableRole(type, i);
   const lean = Math.sign(shift) * Math.min(Math.abs(shift) * W * 0.42 / H, 0.62); // shear along the travel, capped near 32 degrees
-  const tone = front ? 0 : 0.42;
+  const tone = front ? 0 : 0.58;
   for (const [vy, f] of [[y + H, 0.96], [y, 0.04]]) { // lower V near its source column, upper V near this one
     const cy = vy + H * 0.65;
     g.save();
     g.translate(shift * W * f, 0);
     g.transform(1, 0, lean, 1, -lean * cy, 0);
-    drawKnitV(g, x, vy, W, H, P, T, R, v + (f > 0.5 ? 1 : 0), { tone, shadow: front, thin: front ? 1.12 : 0.9, spread: front ? 1.04 : 0.92 });
+    drawKnitV(g, x, vy, W, H, P, T, R, v + (f > 0.5 ? 1 : 0), { tone, shadow: front ? 2 : false, thin: front ? 1.12 : 0.9, spread: front ? 1.04 : 0.92 });
     g.restore();
   }
 }
@@ -555,8 +559,11 @@ export function drawEffects(g, kind, x, y, W, yarn, seed, color) {
   const H = W * CELL_ASPECT;
   const P = palette(color || yarn.color, yarn.type);
   const R = rng(seed + 11);
-  const n = Math.round(10 + W * 0.3);
+  // cables keep their crossings readable: a lighter halo there
+  const cab = typeof kind === 'string' && kind.startsWith('cable:');
+  const n = Math.round((10 + W * 0.3) * (cab ? 0.35 : 1));
   g.save();
+  if (cab) g.globalAlpha = 0.6;
   g.lineCap = 'round';
   // a soft bloom
   const bl = g.createRadialGradient(x + W / 2, y + H * 0.7, 0, x + W / 2, y + H * 0.7, W * 0.75);

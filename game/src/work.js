@@ -211,7 +211,7 @@ class Fabric {
         const i = this.idx(r, c);
         if (!cells[c] || i < 0 || i >= this.src.done()) continue;
         const yarn = this.yarnOf(i);
-        if (yarn.type === 'mohair') { const [x, y] = this.xy(r, c); drawEffects(g, cells[c].s, x, y, W, yarn, hash(r, c, 9), yarnColorAt(yarn, i)); }
+        if (yarn.type === 'mohair') { const [x, y] = this.xy(r, c); const ab = ch.cell(r + 1, c); const cab = cells[c].cable || (ab && ab.cable && this.knit(r + 1, c)); drawEffects(g, cab ? 'cable:' : cells[c].s, x, y, W, yarn, hash(r, c, 9), yarnColorAt(yarn, i)); }
       }
     }
     for (const [r, c, i] of late) spr('b', this.yarnOf(i), i, r, c, 0);
@@ -360,7 +360,11 @@ export class Work {
     const rowEnd = this.chart.endless ? L.k === this.chart.row(L.r).map.length - 1 : this.done === this.chart.rowStart(L.r + 1);
     const t = now();
     if (animate) {
-      this.anim.tap = { t0: t, i, r: L.r, col: L.entry.col, before, stamped: false, rowEnd, yarn };
+      // unhurried taps get a longer, easier-to-follow stitch (~230 ms); drumming keeps the quick 120 ms one
+      const gap = t - (this._lastKnitT ?? -1e9);
+      this._lastKnitT = t;
+      const dur = gap > 250 ? 230 : 120;
+      this.anim.tap = { t0: t, i, r: L.r, col: L.entry.col, before, stamped: false, rowEnd, yarn, dur };
       this.anim.twitch = t;
       if (rowEnd) this.anim.turnQueued = true;
     } else this._stamp(i);
@@ -389,6 +393,20 @@ export class Work {
   zoomIn() { this.setZoom(this.zoomIndex + 1); }
   zoomOut() { this.setZoom(this.zoomIndex - 1); }
   setZoom(i) { this.zoomIndex = clamp(i, 0, this.zoomLevels.length - 1); this._layout(true); this._kick(); }
+  // the starting zoom: the smallest step whose stitches are at least minPx (the camera then follows the
+  // needle); step 0 always shows the whole piece. Big pieces get extra steps so they can reach it.
+  comfortZoom(minPx) {
+    if (!this.chart) return this.setZoom(0);
+    this.zoomIndex = 0; this._layout();
+    const fit = this.cp;
+    const levels = [1];
+    while (levels[levels.length - 1] < Math.max(3, (minPx / fit) * 1.5)) levels.push(Math.round(levels[levels.length - 1] * 1.5 * 1000) / 1000);
+    this.zoomLevels = levels;
+    let i = levels.findIndex((l) => fit * l >= minPx - 0.01);
+    if (i < 0) i = levels.length - 1;
+    this.cam.ok = false;
+    this.setZoom(i);
+  }
   resize() {
     const r = this.canvas.getBoundingClientRect ? this.canvas.getBoundingClientRect() : { width: this.canvas.width, height: this.canvas.height };
     this.vw = Math.max(50, r.width || this.canvas.clientWidth || 300);
@@ -405,7 +423,10 @@ export class Work {
     if (!ch) return;
     const box = this._box();
     const rows = ch.endless ? 14 : ch.height;
-    let fit = Math.min(box.w / (ch.width + 5), box.h / ((rows + 3.2) * CELL_ASPECT));
+    // side room in stitch widths for the needles (about 5 each side beside a panel, so a needle never
+    // reaches under it at the start of a row)
+    const pad = typeof this.opts.padCols === 'function' ? this.opts.padCols() : this.opts.padCols ?? 5;
+    let fit = Math.min(box.w / (ch.width + pad), box.h / ((rows + 3.2) * CELL_ASPECT));
     fit = clamp(fit, this.opts.minFit ?? 8, this.opts.maxFit ?? 28);
     this.cp = fit * this.zoomLevels[this.zoomIndex];
     const W = this._deviceCell();
@@ -438,9 +459,11 @@ export class Work {
     let x = ch.width / 2, y = (rowsShown + 1.8) / 2;
     if (zoomed) {
       x = ns.col + 0.5; y = ns.r - 0.2;
-      if (visC < ch.width + 4) x = clamp(x, visC / 2 - 2, ch.width - visC / 2 + 2); else x = ch.width / 2;
+      // room for the needles past the work's edges (about 4 stitch widths each side)
+      if (visC < ch.width + 8) x = clamp(x, visC / 2 - 4, ch.width - visC / 2 + 4); else x = ch.width / 2;
       const top = rowsShown + 2;
-      y = clamp(y, Math.min(visR / 2 - 1, top - visR / 2), Math.max(visR / 2 - 1, top - visR / 2 + 0.5));
+      // low rows sit about three-quarters down the view (room below for the needle and yarn), not on its edge
+      y = clamp(y, Math.min(visR * 0.3, top - visR / 2), Math.max(visR * 0.3, top - visR / 2 + 0.5));
       if (ch.endless) y = Math.max(ns.r + 2.2 - visR * 0.35, visR / 2 - 1.2);
     }
     return { x, y };
@@ -557,11 +580,10 @@ export class Work {
     if (!this.chart || !this.fabric.canvas) return false;
     let busy = false;
     const a = this.anim;
-    // tap timeline: 0-40 tip in, 40-80 wrap, 80-120 pull through and slide; pop until 200
-    const TAP = 120;
+    // tap timeline (fractions of a.tap.dur, 120-230 ms): 0-30% tip in, 30-60% wrap, 60-100% pull through and slide
     if (a.tap) {
-      const p = (t - a.tap.t0) / TAP;
-      if (p >= 0.6 && !a.tap.stamped) { this._stamp(a.tap.i); a.tap.stamped = true; a.pop = { t0: t, i: a.tap.i }; }
+      const p = (t - a.tap.t0) / a.tap.dur;
+      if (p >= 0.6 && !a.tap.stamped) { this._stamp(a.tap.i); a.tap.stamped = true; a.pop = { t0: t, i: a.tap.i, dur: a.tap.dur > 120 ? 190 : 130 }; }
       if (p >= 1) {
         if (a.tap.rowEnd) { a.turn = { t0: t, swapped: false }; a.turnQueued = false; }
         a.tap = null;
@@ -574,7 +596,7 @@ export class Work {
       if (p >= 1) a.turn = null;
       busy = true;
     }
-    if (a.pop && t - a.pop.t0 > 130) a.pop = null;
+    if (a.pop && t - a.pop.t0 > a.pop.dur) a.pop = null;
     if (a.pop) busy = true;
     if (t - a.twitch < 450 || t - a.counter < 350) busy = true;
     // camera
@@ -601,10 +623,16 @@ export class Work {
     g.save();
     if (sq !== 1) { g.translate(midX, 0); g.scale(sq, 1); g.translate(-midX, 0); }
     if (!f.sil || f.dirty) { f.sil = silhouette(f.canvas, 1 / 10); f.dirty = false; }
+    // beside a side panel the work (not the yarn to the ball) stays in its own area
+    const cb = this.opts.clipBox ? this.opts.clipBox() : null;
+    const clipOn = () => { g.save(); if (cb) { const m = g.getTransform(); g.setTransform(this.dpr, 0, 0, this.dpr, 0, 0); g.beginPath(); g.rect(cb.x, cb.y, cb.w, cb.h); g.clip(); g.setTransform(m); } };
+    clipOn();
     drawShadow(g, f.canvas, fx, fy, f.canvas.width * s, f.canvas.height * s, G.cp * 0.9, f.sil);
+    g.restore();
     // the working yarn hangs behind the work (held at the back), from the newest loop to the ball
     if (this._strand && !this.finished) drawStrand(g, this._strand, this.nextYarn, G.cp, Math.exp(-(t - a.twitch) / 120) * Math.sin((t - a.twitch) / 22) * G.cp * 0.35);
     else if (!this._strand && !this.finished) busy = true; // first frame: needles compute the strand route
+    clipOn();
     g.imageSmoothingEnabled = true;
     g.drawImage(f.canvas, fx, fy, f.canvas.width * s, f.canvas.height * s);
     if (this.lightsOut) this._drawLightsOut(g, G);
@@ -615,7 +643,7 @@ export class Work {
       const yarn = this.yarns[a.pop.i];
       if (cl && cl.s !== 'x' && cl.s !== 'o' && yarn) {
         const sp = getSprite(cl.s, yarn, f.W, hash(L.r, L.entry.col) & 3, yarnColorAt(yarn, a.pop.i));
-        const pp = clamp((t - a.pop.t0) / 130, 0, 1);
+        const pp = clamp((t - a.pop.t0) / a.pop.dur, 0, 1);
         const sc = 1.25 - 0.25 * ease(pp);
         const [x, y] = f.xy(L.r, L.entry.col);
         const cxp = fx + (x + f.W / 2) * s, cyp = fy + (y + f.H / 2) * s;
@@ -628,6 +656,7 @@ export class Work {
     }
     if (!this.finished) this._drawNeedles(g, G, t);
     g.restore();
+    g.restore();
     // twinkles for sparkle yarn
     if (this._drawTwinkles(g, G, t)) busy = true;
     lamp(g, W, H);
@@ -638,7 +667,7 @@ export class Work {
     const a = this.anim, ch = this.chart;
     // returns {ns, tip, phase, p, tap}
     if (a.tap) {
-      const p = clamp((t - a.tap.t0) / 120, 0, 1);
+      const p = clamp((t - a.tap.t0) / a.tap.dur, 0, 1);
       const before = a.tap.before;
       if (p < 0.6) return { ns: before, p, tap: a.tap };
       const after = a.tap.rowEnd ? endOfRow(ch, a.tap.r) : ch.needles(this.done);
@@ -681,11 +710,19 @@ export class Work {
     const far = { x: lay.farX, y: lay.yR };
     const ux0 = far.x - tip.x, uy0 = far.y - tip.y, ul = Math.hypot(ux0, uy0);
     const ux = ux0 / ul, uy = uy0 / ul;
-    const rEnd = { x: far.x + ux * 2.4 * G.cp, y: far.y + uy * 2.4 * G.cp };
+    // the needles' ends stay inside the work area (never reaching under a side panel): a shorter needle
+    const bx = this._box(), bL = bx.x + 0.15 * G.cp, bR = bx.x + bx.w - 0.15 * G.cp;
+    const keepIn = (A, E, minLen) => {
+      const ex = E.x > bR ? bR : E.x < bL ? bL : null;
+      if (ex === null || Math.abs(E.x - A.x) < 1e-3) return E;
+      const len = Math.hypot(E.x - A.x, E.y - A.y), k = Math.max(minLen / len, (ex - A.x) / (E.x - A.x));
+      return k >= 1 ? E : { x: A.x + (E.x - A.x) * k, y: A.y + (E.y - A.y) * k };
+    };
+    const rEnd = keepIn(tip, { x: far.x + ux * 2.4 * G.cp, y: far.y + uy * 2.4 * G.cp }, ul + 1.6 * G.cp);
     const rY = (x) => tip.y + ((x - tip.x) / ux) * uy;
     // left needle: horizontal through the old loops
     const lTip = { x: lay.lTipX, y: lay.yL - 0.05 * G.ch };
-    const lEnd = { x: lay.lFar + dir * 2.2 * G.cp, y: lay.yL + 0.02 * G.ch };
+    const lEnd = keepIn(lTip, { x: lay.lFar + dir * 2.2 * G.cp, y: lay.yL + 0.02 * G.ch }, Math.abs(lay.lFar - lTip.x) + 0.8 * G.cp);
     const yarnL = (c) => {
       if (ns.leftRow < 1) return this.castOnYarn;
       const i = this.fabric.idx(ns.leftRow, c);
@@ -726,7 +763,10 @@ export class Work {
     const leftSide = ball.x < midX;
     const edgeX = leftSide ? G.colL(Math.min(...wcols)) - 0.45 * G.cp : G.colL(Math.max(...wcols) + 1) + 0.45 * G.cp;
     const edgeY = G.rowT(ns.r) + 2.2 * G.ch;
-    this._strand = { from: sFrom, to: ball, edge: { x: edgeX, y: edgeY }, out: leftSide ? -1 : 1 };
+    // zoomed in on a big piece the work's side is off screen: the yarn drops straight down behind the work
+    // and comes out below it, heading for the ball, instead of a long detour to the far edge
+    if (edgeX < 0 || edgeX > this.vw) this._strand = { from: sFrom, to: ball, edge: { x: sFrom.x, y: Math.max(edgeY, G.rowT(1) + 1.6 * G.ch) }, out: ball.x < sFrom.x ? -1 : 1 };
+    else this._strand = { from: sFrom, to: ball, edge: { x: edgeX, y: edgeY }, out: leftSide ? -1 : 1 };
     if (wrap > 0) { // the strand comes up in front to make the wrap
       const P = palette(this.nextYarn.color, this.nextYarn.type);
       g.save(); g.lineCap = 'round';
@@ -892,10 +932,13 @@ export function drawNeedle(g, a, b, rad, st, cp, t = 0) {
     g.fillStyle = cross(st.body); g.fill();
     g.save(); body(); g.clip();
     if (st.rainbow) {
-      const rg = g.createLinearGradient(0, 0, len, 0);
-      const cyc = Math.max(1, len / (cp * 5)), n = Math.min(60, Math.ceil(cyc * 6));
-      for (let i = 0; i <= n; i++) rg.addColorStop(i / n, `hsla(${((i / n) * cyc * 360 + 200) % 360},80%,55%,0.65)`);
-      g.fillStyle = rg; g.globalCompositeOperation = 'multiply'; g.fillRect(0, -rad, len, rad * 2); g.globalCompositeOperation = 'source-over';
+      // anodised bands: six hues, one full cycle every ~2 stitch widths, then the round shading back on top
+      const HUES = ['#e2483d', '#f08a2c', '#efc93a', '#4cae5b', '#3f86d6', '#8a5bc9'];
+      const bw = Math.max(rad * 1.2, (cp * 2) / 6);
+      g.globalAlpha = 0.82;
+      for (let x = tipLen * 0.15, k = 0; x < len; x += bw, k++) { g.fillStyle = HUES[k % 6]; g.fillRect(x, -rad, bw + 0.6, rad * 2); }
+      g.globalAlpha = 1;
+      g.fillStyle = cross(['#000000', '#000000', '#ffffff'], 0.3); g.fillRect(0, -rad, len, rad * 2);
     }
     if (st.stripes) {
       g.fillStyle = st.stripes;

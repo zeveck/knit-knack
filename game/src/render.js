@@ -1,5 +1,6 @@
 // render.js — charts per pattern (cached) and finished-looking renders of pieces (renderSwatch), cached.
 import { parseChart } from './chart.js';
+import { pageZoom } from './ui.js';
 import { renderSwatch } from './work.js';
 import { normYarn } from './yarn.js';
 
@@ -66,7 +67,7 @@ export function silhouette(pattern, cellPx) {
 
 // fit a render into a box (CSS px) and return a canvas element styled to that size
 export function fitCanvas(src, maxW, maxH) {
-  const dpr = Math.min(3, window.devicePixelRatio || 1);
+  const dpr = Math.min(3, window.devicePixelRatio || 1) * pageZoom();
   const k = Math.min((maxW * dpr) / src.width, (maxH * dpr) / src.height, 1.6);
   const c = document.createElement('canvas');
   c.width = Math.max(1, Math.round(src.width * k)); c.height = Math.max(1, Math.round(src.height * k));
@@ -80,7 +81,7 @@ export function fitCanvas(src, maxW, maxH) {
 // cell size (device px) so a chart fits a box of CSS px
 export function cellFor(pattern, maxW, maxH, lo = 3, hi = 24) {
   const chart = chartOf(pattern);
-  const dpr = Math.min(3, window.devicePixelRatio || 1);
+  const dpr = Math.min(3, window.devicePixelRatio || 1) * pageZoom();
   const c = Math.min((maxW * dpr) / (chart.width + 2), (maxH * dpr) / ((chart.height + 3) * 0.72));
   return Math.max(lo, Math.min(hi * dpr, Math.floor(c)));
 }

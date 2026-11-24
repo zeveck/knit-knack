@@ -1,6 +1,6 @@
 // main.js — boot, the screen router wiring, the always-on frame logger, the debug hook (window.__game).
 import { go, registerScreen, currentScreen, openSheetName, initSheets, closeSheet, notice } from './ui.js';
-import { initInput, setKeyHandler } from './input.js';
+import { initInput, setKeyHandler, releaseHolds } from './input.js';
 import * as S from './state.js';
 import * as audio from './audio.js';
 import * as toasts from './toasts.js';
@@ -69,7 +69,7 @@ function applySettings() {
 setMenuHooks({
   toggleMute,
   onReset: () => { S.resetSave(); features.resetScarf().finally(() => location.reload()); },
-  onSettings: () => { applySettings(); if (currentScreen() === 'knit') knit.enter(S.get().lastPiece); },
+  onSettings: () => { applySettings(); knit.applySettings(); features.applySettings(); },
 });
 knit.setMenu(openMenu); book.setMenu(openMenu); gallery.setMenu(openMenu);
 features.init({ menu: openMenu });
@@ -93,7 +93,9 @@ async function boot() {
   // painted fibre tiles into the stitch sprites
   Promise.all(['assets/tex/tex-fibre.png', 'assets/tex/tex-fibre-fuzzy.png'].map((src) => new Promise((res) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = src; })))
     .then(([a, b]) => { if (a) setFibreTexture(a, b); });
-  loadSceneRest().then(() => loadYarnImages()).then(() => loadExtras()).then(() => audio.prefetch());
+  // the rest loads behind the title; offline caching starts only after that, so the first launch never
+  // waits on it (the service worker keeps the music out of its install, see sw.js)
+  loadSceneRest().then(() => loadYarnImages()).then(() => loadExtras()).catch(() => {}).then(() => { audio.prefetch(); registerSW(); });
   // a save from before Pip etc: queue nothing yet; checked as play goes on
   S.get().seenPatterns.length || S.get().seenPatterns.push(...S.BOOK.slice(0, S.patternsUnlocked()).map((p) => p.id));
   go('title');
@@ -135,7 +137,7 @@ async function boot() {
     state: () => reportState(),
     pause: () => {},
     grab: () => new Promise((r) => { const c = document.querySelector('[data-screen]:not([hidden]) canvas'); if (c && c.toBlob) c.toBlob(r, 'image/png'); else r(null); }),
-    releaseAll: () => {},
+    releaseAll: () => releaseHolds(),
   });
 }
 
@@ -203,7 +205,9 @@ export { go, registerScreen, previewCard };
 boot();
 
 // offline play (not while testing locally, unless asked with ?sw=1)
-const local = ['localhost', '127.0.0.1'].includes(location.hostname);
-if ('serviceWorker' in navigator && (!local || new URLSearchParams(location.search).has('sw'))) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+function registerSW() {
+  const local = ['localhost', '127.0.0.1'].includes(location.hostname);
+  if ('serviceWorker' in navigator && (!local || new URLSearchParams(location.search).has('sw'))) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
 }

@@ -18,5 +18,6 @@ export function init({ menu }) {
   previewCard.state = (c) => ({ ...st(c), doll: card.lastDoll });
 }
 export const dress = (dollId, gid) => dolls.dress(dollId, gid, { quiet: false });
+export const applySettings = () => scarf.applySettings();
 export const resetScarf = () => scarf.resetAll();
 export const scarfAddRows = (n, yarn, pattern) => scarf.addRows(n, yarn, pattern);

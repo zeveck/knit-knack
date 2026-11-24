@@ -3,7 +3,7 @@
 import { Work } from './work.js';
 import { stripWording, wordingCursor, drapeOf } from './chart.js';
 import { el, $, ICON, go, openSheet, closeSheet, openSheetName, registerScreen, currentScreen, fmt } from './ui.js';
-import { onRelease, onHold, markKnit, setKeyHandler } from './input.js';
+import { onRelease, onHold, markKnit, setKeyHandler, holdKnitter } from './input.js';
 import * as S from './state.js';
 import * as audio from './audio.js';
 import * as toasts from './toasts.js';
@@ -20,7 +20,7 @@ let lastTapT = -1e9, ballRot = 0;
 let backdrop = null, backdropKey = '';
 let stripKey = '';
 let chipTimer = 0, undoSnap = null;
-let heldKey = null, holdIv = 0, pointerHolds = new Map();
+let holds = null;
 let menuFn = () => {};
 export const setMenu = (fn) => { menuFn = fn; };
 
@@ -99,10 +99,10 @@ function build() {
     e.preventDefault();
     const r = knitOne();
     if (r) { const b = root.getBoundingClientRect(); flyers.push({ x: e.clientX - b.left, y: e.clientY - b.top, t0: performance.now(), color: (piece && piece.yarns[r.index] || currentYarn()).color }); }
-    if (S.get().settings.hold) startPointerHold(e.pointerId);
+    if (S.get().settings.hold) holds.pointerDown(e.pointerId, root);
   });
-  const endHold = (e) => { const t = pointerHolds.get(e.pointerId); if (t) { clearTimeout(t.to); clearInterval(t.iv); pointerHolds.delete(e.pointerId); } };
-  root.addEventListener('pointerup', endHold); root.addEventListener('pointercancel', endHold);
+  const endHold = (e) => holds.pointerUp(e.pointerId);
+  for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) root.addEventListener(ev, endHold);
   root.addEventListener('wheel', (e) => {
     if (openSheetName()) return;
     e.preventDefault();
@@ -112,22 +112,21 @@ function build() {
     if (e.deltaY < 0) work.zoomIn(); else if (e.deltaY > 0) work.zoomOut();
   }, { passive: false });
   root.addEventListener('contextmenu', (e) => e.preventDefault());
-  document.addEventListener('keyup', (e) => { if (heldKey && e.code === heldKey) { heldKey = null; clearInterval(holdIv); } });
+  holds = holdKnitter(() => knitOne(), () => currentScreen() === 'knit' && !openSheetName() && !!piece && !finishing);
+  document.addEventListener('keyup', (e) => holds.keyUp(e.code));
 
   work = new Work(dom.canvas, {
     dpr: Math.min(3, window.devicePixelRatio || 1),
     minFit: 8, maxFit: 28,
     fitBox: () => fitBox(),
+    clipBox: () => (layout === 'desk' || layout === 'land' ? relRect(dom.workArea) : null),
+    padCols: () => (layout === 'port' ? 5 : 10),
     ballPoint: () => ballPoint(),
     background: (g, w, h) => drawBackdrop(g, w, h),
   });
   window.addEventListener('resize', () => { if (currentScreen() === 'knit') relayout(); });
 }
 
-function startPointerHold(id) {
-  const to = setTimeout(() => { const t = pointerHolds.get(id); if (t) t.iv = setInterval(() => knitOne(), 1000 / 6); }, 300);
-  pointerHolds.set(id, { to, iv: 0 });
-}
 
 // ---------------------------------------------------------------- layout
 function pickLayout() {
@@ -161,7 +160,7 @@ function fitBox() {
   const p = layout === 'port' ? 8 : 12;
   const box = { x: r.x + p, y: r.y + p, w: Math.max(40, r.w - p * 2), h: Math.max(40, r.h - p * 2) };
   // on a phone held upright a wide, short piece sits low, just above the basket band, not adrift mid-screen
-  if (layout === 'port' && chart && !chart.endless) {
+  if (layout === 'port' && chart && !chart.endless && !(work && work.zoomIndex > 0)) {
     const cp = Math.max(8, Math.min(28, box.w / (chart.width + 5), box.h / ((chart.height + 3.2) * 0.72)));
     const need = (chart.height + 3.2) * 0.72 * cp;
     if (need < box.h) { box.y += box.h - need; box.h = need; }
@@ -202,7 +201,11 @@ function drawBackdrop(g, w, h) {
     backdrop = c;
   }
   g.drawImage(backdrop, 0, 0, w, h);
+  const cb = layout === 'desk' || layout === 'land' ? relRect(dom.workArea) : null;
+  g.save();
+  if (cb) { g.beginPath(); g.rect(cb.x, cb.y, cb.w, cb.h); g.clip(); }
   drawGhost(g);
+  g.restore();
 }
 // a faint ghost of the finished shape behind the work, so you can see what you're making
 let ghostSegs = null, ghostChart = null;
@@ -498,6 +501,7 @@ function ripOne(single) {
 
 function finishPiece() {
   finishing = true;
+  if (holds) holds.releaseAll();
   toasts.hold(true);
   work.finish();
   const g = S.finishPiece(piece, pattern);
@@ -557,16 +561,29 @@ function hud() {
   }
   if (piece.follow) refreshNext();
 }
-// a long row shrinks to fit its strip (down to 15 px); if it still doesn't fit (one line in landscape),
-// it slides so the current stitch is always in view
+// a long row first grows to three lines, then shrinks (never below 16 px); if it still doesn't fit it
+// scrolls, never cut, so the current stitch is always in view. Landscape: one line that slides sideways.
 function fitWords() {
   const w = dom.words;
-  w.style.fontSize = ''; w.scrollLeft = 0;
+  w.style.fontSize = ''; w.style.webkitLineClamp = ''; w.style.display = ''; w.style.overflowY = ''; w.style.maxHeight = '';
+  w.scrollLeft = 0; w.scrollTop = 0;
   const over = () => w.scrollHeight > w.clientHeight + 1 || w.scrollWidth > w.clientWidth + 1;
   let px = parseFloat(getComputedStyle(w).fontSize);
-  while (over() && px > 15) { px -= 1; w.style.fontSize = `${px}px`; }
+  const land = layout === 'land';
+  if (!land && over()) w.style.webkitLineClamp = '3';
+  const floor = land ? 15 : 16;
+  while (over() && px > floor) { px -= 1; w.style.fontSize = `${px}px`; }
   const cur = w.querySelector('.cur');
-  if (cur && w.scrollWidth > w.clientWidth + 1) w.scrollLeft = Math.max(0, cur.offsetLeft - w.clientWidth * 0.35);
+  if (land) {
+    if (cur && w.scrollWidth > w.clientWidth + 1) w.scrollLeft = Math.max(0, cur.offsetLeft - w.clientWidth * 0.35);
+    return;
+  }
+  if (over()) {
+    // still too long at three lines: show it all as a scrolling box, three lines tall
+    const lh = parseFloat(getComputedStyle(w).lineHeight) || px * 1.1;
+    w.style.webkitLineClamp = 'unset'; w.style.display = 'block'; w.style.overflowY = 'auto'; w.style.maxHeight = `${Math.ceil(lh * 3) + 2}px`;
+    if (cur) w.scrollTop = Math.max(0, cur.getBoundingClientRect().top - w.getBoundingClientRect().top - lh);
+  }
 }
 let lastNextSlot = null;
 function refreshNext() {
@@ -620,7 +637,7 @@ function onKey(e) {
   if (k === ' ' || k === 'Enter' || k === 'k' || k === 'K') {
     if (e.repeat) return true;
     knitOne();
-    if (st.hold) { heldKey = code; clearInterval(holdIv); holdIv = setInterval(() => { if (heldKey) knitOne(); else clearInterval(holdIv); }, 1000 / 6); }
+    if (st.hold) holds.keyDown(code);
     return true;
   }
   if (k === 'Backspace' || k === 'u' || k === 'U') {
@@ -669,7 +686,8 @@ export function enter(patternId) {
   equipWork();
   const castOn = piece.castOn ? normYarn(piece.castOn) : piece.slots.A;
   work.load(chart, { yarns: piece.yarns, done: piece.yarns.length, castOnYarn: castOn, nextYarn: currentYarn() });
-  work.setZoom(0);
+  // start close enough to see each stitch being made (the − button or 0 shows the whole piece)
+  work.comfortZoom(layout === 'desk' ? 22 : 24);
   previewCard.load(chart, pattern, piece);
   previewCard.attach(dom.pvCanvas);
   if (!S.get().recent.length) for (const y of Object.values(piece.slots).reverse()) S.pushRecent(y);
@@ -684,13 +702,15 @@ export function enter(patternId) {
 }
 export function leave() {
   setKeyHandler(null);
-  clearInterval(holdIv); heldKey = null;
+  if (holds) holds.releaseAll();
   audio.ripLoopStop();
   toasts.anchor(null);
   previewCard.detach(dom.pvCanvas);
   if (piece) { piece.updated = Date.now(); S.saveNow(); }
 }
 
+// a Settings change while knitting: lay out again (Big buttons), no fresh cast-on
+export function applySettings() { if (root && piece && currentScreen() === 'knit') { layout = ''; relayout(); refreshBar(); refreshMute(); } }
 export function onEquipChange() { if (work) { equipWork(); backdropKey = ''; work._kick && work._kick(); } }
 
 export function knitState() {

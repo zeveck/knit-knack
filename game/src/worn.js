@@ -623,16 +623,18 @@ export function composeDoll(dollId, outfit, k, opts = {}) {
   if (opts.silhouette) {
     // the doll stays a soft shadow, the piece shows in full color: redraw over the silhouette's own polys only
   }
-  for (const lb of labels) drawLabel(g, lb, k);
+  for (const lb of labels) drawLabel(g, lb, k, dollBounds(dollId).x0 * k);
   return c;
 }
-function drawLabel(g, lb, k) {
-  const fs = Math.max(10, 22 * k);
+function drawLabel(g, lb, k, minX = 0) {
+  // at least 12 CSS px, and wholly above the ground line (the shelf board overlaps the canvas's bottom)
+  const d = typeof devicePixelRatio === 'number' ? Math.min(3, devicePixelRatio || 1) : 1;
+  const fs = Math.max(12 * d, 22 * k);
   g.save();
   g.font = `600 ${fs}px Fredoka, sans-serif`;
   const tw = g.measureText(lb.text).width;
   const pw = tw + fs * 0.9, ph = fs * 1.5;
-  const x = clamp(lb.x - tw, fs * 0.5, g.canvas.width - pw), y = lb.y;
+  const x = clamp(lb.x - tw, Math.max(fs * 0.5, minX + fs * 0.45), g.canvas.width - pw), y = clamp(lb.y - ph * 0.5, ph * 0.75, g.canvas.height - ph * 0.25 - 14 * d);
   g.fillStyle = 'rgba(34,22,46,0.82)';
   g.beginPath(); g.roundRect ? g.roundRect(x - fs * 0.45, y - ph * 0.75, pw, ph, ph / 2) : g.rect(x - fs * 0.45, y - ph * 0.75, pw, ph); g.fill();
   g.fillStyle = '#f6ecd9'; g.textBaseline = 'middle';
