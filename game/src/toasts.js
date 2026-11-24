@@ -1,0 +1,44 @@
+// toasts.js — unlock toasts, one at a time, 4 s each, with "Use it". Each shows exactly once
+// (state.takeToast() adds it to seenUnlocks as it shows).
+import { el, ICON } from './ui.js';
+import * as S from './state.js';
+import * as audio from './audio.js';
+import { onRelease } from './input.js';
+
+let showing = null, held = false;
+const host = () => document.getElementById('toasts');
+const listeners = [];
+export const onUse = (fn) => listeners.push(fn);
+// hold toasts back (the Finished celebration); release pumps the queue
+export function hold(on) { held = !!on; if (!held) pump(); }
+// position over an element (the progress line), or null for top centre
+export function anchor(elm) {
+  const h = host();
+  if (!elm) { h.classList.remove('over'); return; }
+  const r = elm.getBoundingClientRect();
+  h.style.setProperty('--tl', r.left + 'px'); h.style.setProperty('--tt', (r.top + r.height / 2 - 22) + 'px'); h.style.setProperty('--tw', r.width + 'px');
+  h.classList.add('over');
+}
+export function pump() {
+  if (held || showing) return;
+  const u = S.takeToast();
+  if (!u) return;
+  const use = el('button', { text: 'Use it' });
+  const iconSpan = el('span', { class: 'icw', html: ICON.star });
+  const t = el('div', { class: 'toast', role: 'status' }, iconSpan, el('span', { class: 't', text: S.toastTitle(u) }));
+  const usable = ['needles', 'marker', 'counter', 'holder', 'decor', 'purl', 'doll'].includes(u.kind);
+  if (usable) t.append(use);
+  onRelease(use, () => { S.useUnlock(u); audio.play('ui'); listeners.forEach((f) => f(u)); close(); });
+  t.addEventListener('pointerdown', (e) => e.stopPropagation());
+  host().append(t);
+  showing = { t, u, timer: setTimeout(close, 4000) };
+  audio.play('unlock');
+}
+function close() {
+  if (!showing) return;
+  const { t, timer } = showing; showing = null;
+  clearTimeout(timer);
+  t.classList.add('out');
+  setTimeout(() => { t.remove(); pump(); }, 300);
+}
+export const queueState = () => ({ showing: showing ? showing.u.id : null, queued: S.pendingToasts().slice(), held });
