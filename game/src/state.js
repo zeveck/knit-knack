@@ -327,10 +327,13 @@ export function finishPiece(piece, pattern) {
 }
 export const galleryById = (id) => get().gallery.find((g) => g.id === id) || null;
 export const wall = () => get().gallery.filter((g) => g.hung).sort((a, b) => (b.hungAt || b.finished) - (a.hungAt || a.finished));
-export const basket = () => get().gallery.filter((g) => !g.hung).sort((a, b) => b.finished - a.finished);
-export function hang(id) { const g = galleryById(id); if (g) { g.hung = true; g.pending = false; g.hungAt = Date.now(); saveNow(); } return g; }
-export function takeDown(id) { const g = galleryById(id); if (g) { g.hung = false; g.pending = false; saveNow(); } return g; }
-export function toBasket(id) { const g = galleryById(id); if (g) { g.hung = false; g.pending = false; saveNow(); } return g; }
+export const basket = () => get().gallery.filter((g) => !g.hung && !g.shelf).sort((a, b) => b.finished - a.finished);
+// Knitted Friends sitting on the Doll Shelf (the toy row), oldest first
+export const shelf = () => get().gallery.filter((g) => g.shelf && !g.hung).sort((a, b) => (a.shelfAt || a.finished) - (b.shelfAt || b.finished));
+export function hang(id) { const g = galleryById(id); if (g) { g.hung = true; g.shelf = false; g.pending = false; g.hungAt = Date.now(); saveNow(); } return g; }
+export function takeDown(id) { const g = galleryById(id); if (g) { g.hung = false; g.shelf = false; g.pending = false; saveNow(); } return g; }
+export function toBasket(id) { const g = galleryById(id); if (g) { g.hung = false; g.shelf = false; g.pending = false; saveNow(); } return g; }
+export function toShelf(id) { const g = galleryById(id); if (g) { g.hung = false; g.shelf = true; g.pending = false; g.shelfAt = Date.now(); saveNow(); } return g; }
 
 // ---------------------------------------------------------------- recent and custom yarns
 export function pushRecent(y) {

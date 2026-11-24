@@ -3,6 +3,7 @@ import { parseChart } from './chart.js';
 import { pageZoom } from './ui.js';
 import { renderSwatch } from './work.js';
 import { normYarn } from './yarn.js';
+import { isToy, toyEyes, plushify } from './plush.js';
 
 const charts = new Map();
 export function chartOf(pattern) {
@@ -49,6 +50,22 @@ export function pieceRender(g, pattern, cellPx) {
   return remember(k, c);
 }
 
+// A Knitted Friend, finished: seamed, stuffed into a plush, eyes embroidered as French knots.
+// Anything else: the piece as knit.
+export function objectRender(g, pattern, cellPx) {
+  if (!isToy(pattern)) return pieceRender(g, pattern, cellPx);
+  const k = `t|${g.id}|${cellPx}`;
+  if (cache.has(k)) return cache.get(k);
+  const flat = pieceRender(g, pattern, cellPx);
+  const chart = chartOf(pattern);
+  // renderSwatch's geometry: margin round(W * 0.6), the cast-on row 0.4 rows below it
+  const W = Math.round(cellPx), H = Math.round(W * 0.72), m = Math.round(W * 0.6);
+  const eyes = toyEyes(pattern, chart, g.slots).map((e) => ({ x: m + e.c * W + W / 2, y: m + 0.4 * H + (chart.height - e.r) * H + H * 0.55, color: e.color }));
+  let c;
+  try { c = plushify(flat, { cell: W, eyes }).canvas; } catch (e) { console.warn('plush', g.id, e); c = flat; }
+  return remember(k, c);
+}
+
 // A soft silhouette of a chart's shape (locked cards)
 export function silhouette(pattern, cellPx) {
   const k = `s|${pattern.id}|${cellPx}`;
@@ -63,6 +80,28 @@ export function silhouette(pattern, cellPx) {
     g.beginPath(); g.ellipse(2 + col * W + W / 2, 2 + (chart.height - r) * H + H / 2, W * 0.62, H * 0.75, 0, 0, Math.PI * 2); g.fill();
   }
   return remember(k, c);
+}
+
+// the same render cropped to what is drawn (no empty margin above a piece hanging from its peg)
+const trimCache = new WeakMap();
+export function trimmed(src) {
+  let c = trimCache.get(src);
+  if (c) return c;
+  c = src;
+  try {
+    const w = src.width, h = src.height;
+    const d = src.getContext('2d').getImageData(0, 0, w, h).data;
+    let x0 = w, y0 = h, x1 = -1, y1 = -1;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 24) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    if (x1 >= x0 && y1 >= y0) {
+      // keep a little room below for the drop shadow
+      const pad = Math.round(Math.min(w, h) * 0.02);
+      c = document.createElement('canvas'); c.width = x1 - x0 + 1 + pad; c.height = y1 - y0 + 1 + pad;
+      c.getContext('2d').drawImage(src, -x0, -y0);
+    }
+  } catch { c = src; }
+  trimCache.set(src, c);
+  return c;
 }
 
 // fit a render into a box (CSS px) and return a canvas element styled to that size

@@ -130,6 +130,7 @@ function build() {
     dpr: dprOf(), minFit: 8, maxFit: 28,
     fitBox: () => { const r = relRect(dom.workArea); const p = layout === 'port' ? 8 : 12; return { x: r.x + p, y: r.y + p, w: Math.max(40, r.w - p * 2), h: Math.max(40, r.h - p * 2) }; },
     ballPoint: () => ballPoint(),
+    avoidBox: () => relRect(dom.len),
     background: (g, w, h) => drawBackdrop(g, w, h),
     // the scarf stays in its own area: on a phone it never runs down behind the length and its button
     clipBox: () => relRect(dom.workArea),

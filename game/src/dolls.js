@@ -8,11 +8,11 @@ import { setKeyHandler, onTap } from './input.js';
 import * as S from './state.js';
 import * as audio from './audio.js';
 import * as toasts from './toasts.js';
-import { pieceRender, fitCanvas, cellFor } from './render.js';
+import { pieceRender, objectRender, fitCanvas, cellFor, trimmed } from './render.js';
 import { loadDolls, dressedDoll, composeDoll, outfitOf, dollSilhouette, dollBounds, dollSize, DOLLS, DOLL_NAMES, DOLL_ABOUT, SLOTS, SLOT_NAMES, slotsOf, itemSlot, dollFor } from './worn.js';
 import { store as scarfStore } from './scarfStore.js';
 
-let root = null, mode = 'shelf', page = 0, doll = 'pip', fromFinished = null, anim = null, menuFn = () => {};
+let root = null, mode = 'shelf', page = 0, doll = 'pip', fromFinished = null, anim = null, menuFn = () => {}, arrivingToy = null;
 export const setMenu = (fn) => { menuFn = fn; };
 const here = () => ['dolls', 'dress'].includes(currentScreen());
 const dpr = () => Math.min(3, window.devicePixelRatio || 1);
@@ -74,6 +74,20 @@ function renderShelf() {
     row.append(cell);
   }
   shelf.append(row);
+  // the Knitted Friends, stuffed and seamed, sit on their own shelf below the dolls
+  const toys = S.shelf();
+  if (toys.length) {
+    shelf.classList.add('with-toys');
+    const tr = el('div', { class: 'toy-row' });
+    for (const g of toys) {
+      const b = el('button', { class: 'toy-cell' + (arrivingToy === g.id ? ' arrive' : ''), 'aria-label': g.name, title: g.name, 'data-gid': g.id }, el('div', { class: 'toy-stage' }));
+      b.addEventListener('click', () => { audio.play('dress', { gain: 0.6 }); b.classList.remove('hop', 'arrive'); void b.offsetWidth; b.classList.add('hop'); });
+      tr.append(b);
+    }
+    shelf.append(el('div', { class: 'toy-shelf' }, tr, el('div', { class: 'toy-board' })));
+    if (arrivingToy) { const id = arrivingToy; requestAnimationFrame(() => { const c = tr.querySelector(`[data-gid="${id}"]`); if (c) c.scrollIntoView({ block: 'nearest', inline: 'center' }); }); }
+    arrivingToy = null;
+  }
   if (pages > 1) {
     const l = el('button', { class: 'icon-btn wall-arrow l', 'aria-label': 'Previous shelf' }); l.innerHTML = ICON.left;
     const r = el('button', { class: 'icon-btn wall-arrow r', 'aria-label': 'Next shelf' }); r.innerHTML = ICON.right;
@@ -101,6 +115,12 @@ async function drawShelf(row) {
     let need = 0;
     for (const cell of row.querySelectorAll('.doll-cell')) { const v = visBox(cell.dataset.doll, true); need = Math.max(need, (cw * SPAN * v.visH) / v.visW); }
     if (cw > 10 && need + 12 < sh) row.style.height = `${Math.round(row.clientHeight - (sh - need - 12))}px`;
+  }
+  for (const cell of (row.parentElement || row).querySelectorAll('.toy-cell')) {
+    const g = S.galleryById(cell.dataset.gid); const p = g && S.patternById(g.pattern); const st = cell.querySelector('.toy-stage');
+    if (!p || !st) continue;
+    const w = st.clientWidth, h = st.clientHeight;
+    if (w > 10 && h > 10) st.replaceChildren(fitCanvas(trimmed(objectRender(g, p, cellFor(p, w, h, 3, 12))), w, h));
   }
   for (const cell of row.querySelectorAll('.doll-cell')) {
     const d = cell.dataset.doll; const cv = cell.querySelector('canvas'); const stage = cell.querySelector('.doll-stage');
@@ -273,6 +293,9 @@ function enter(arg, prev) {
     if (prev === 'finished') fromFinished = arg;
     render();
     loadDolls().then(() => dress(doll, arg));
+  } else if (arg && arg.shelf) {
+    mode = 'shelf'; arrivingToy = arg.shelf; page = 0; render();
+    setTimeout(() => audio.play('peg', { gain: 0.7 }), 500);
   } else if (arg && (arg.doll || typeof arg === 'string')) {
     doll = arg.doll || arg; mode = 'dress'; render();
   } else { mode = 'shelf'; render(); }

@@ -10,6 +10,7 @@ import { composeDoll, dollFor, dollSize, drawParts, loadDolls, dollsReady } from
 import { renderSwatch } from './work.js';
 import { image as sceneImage } from './scene.js';
 import * as S from './state.js';
+import { plushify, toyEyes } from './plush.js';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const IMG = {};
@@ -39,16 +40,17 @@ function liveBake(info, W) {
   if (live.bake && live.pid === piece.id && now - live.t < 250) { clearTimeout(live.timer); live.timer = setTimeout(() => window.__game && window.__game.previewCard.invalidate(), 260); return live.bake; }
   const total = chart.total;
   const ghost = piece.slots.A || { color: '#efe4cf', type: 'wool' };
+  // stitches still to come: the real stitches in the slot yarns the chart asks for, faint (a ghost of the piece)
+  const slotYarn = (i) => { const L = chart.locate(i); return (L && piece.slots[L.entry.slot]) || ghost; };
   const M = Math.round(W * 1.2);
   let res;
-  try { res = renderSwatch(chart, { yarnAt: (i) => piece.yarns[i] || ghost, cellPx: W, castOnYarn: piece.castOn || ghost, background: null, shadow: false, margin: M, bindOff: n >= total }); } catch { return flatBake(info); }
+  try { res = renderSwatch(chart, { yarnAt: (i) => piece.yarns[i] || slotYarn(i), cellPx: W, castOnYarn: piece.castOn || ghost, background: null, shadow: false, margin: M, bindOff: n >= total }); } catch { return flatBake(info); }
   const c = res.canvas, H = res.H, x0 = M, y0 = M + 0.4 * H, gw = chart.width * W, gh = chart.height * H;
   const out = document.createElement('canvas'); out.width = c.width; out.height = c.height;
   const g = out.getContext('2d');
-  // ghosts under, real stitches over, with stitches still to come erased from the real layer
-  g.imageSmoothingEnabled = false;
-  g.drawImage(info.flat, x0, y0, gw, gh);
   if (n < total) {
+    g.globalAlpha = n ? 0.3 : 0.42; g.drawImage(c, 0, 0); g.globalAlpha = 1;
+    // the faint ghost, then the real stitches over it, with stitches still to come erased from the real layer
     const q = c.getContext('2d');
     const L = chart.locate(n);
     const rowTop = (r) => y0 + (chart.height - r) * H;
@@ -68,6 +70,12 @@ const SLOT_CROP = {
 };
 const PURL_CROP = { head: [70, 0, 442, 330], neck: [70, 90, 442, 420] };
 
+// the finished object for the Finished screen: the same scenes, info.finish (0..1) plays the piece
+// turning into the thing (the mug drops onto its coaster, the cloth settles on the table, the toy puffs
+// up into a plush, the wearable slides onto its doll)
+export function drawObject(g, info) { renderCard(g, { ...info, large: true, progress: 1 }); }
+export function objectReady() { loadProps(); return dollsReady() && !!IMG.wood; }
+
 export function renderCard(g, info) {
   loadProps();
   const { pattern, w, h, dpr, large } = info;
@@ -77,12 +85,6 @@ export function renderCard(g, info) {
   rrect(g, 0, 0, w, h, rr); g.clip();
   if (pattern.wear) wearable(g, info);
   else scene(g, info);
-  g.restore();
-  // frame: a stitched border
-  g.save();
-  g.strokeStyle = 'rgba(246,236,217,0.55)'; g.lineWidth = Math.max(1, dpr * (large ? 1.6 : 1)); g.setLineDash([4 * dpr, 3 * dpr]);
-  const pad = Math.round(w * 0.035);
-  rrect(g, pad, pad, w - pad * 2, h - pad * 2, rr * 0.7); g.stroke();
   g.restore();
 }
 
@@ -100,10 +102,12 @@ function wearable(g, info) {
   const crop = large ? [10, 20, 502, 750] : (doll === 'purl' ? PURL_CROP : SLOT_CROP)[slot] || [0, 0, 512, 768];
   const [cx0, cy0, cx1, cy1] = doll === 'purl' && large ? [40, 0, 472, 510] : crop;
   const k = Math.min(w / (cx1 - cx0), h / (cy1 - cy0)) * 0.96;
-  const W = clamp(Math.round(k * 7), 4, 14);
-  const bake = large || w >= 380 ? liveBake(info, W) : flatBake(info);
+  // the real stitch renderer, at a cell size where motifs survive, drawn down into the card
+  const W = clamp(Math.round(k * 7), 6, 14);
+  const bake = large || w >= 200 ? liveBake(info, W) : flatBake(info);
   const item = { preview: { bake, chart: info.chart, pattern, slots: info.piece.slots } };
-  const c = composeDoll(doll, { [slot]: item }, k, { silhouette: !hasPip, maxStrips: large ? 999 : 40 });
+  const an = info.finish != null && info.finish < 1 ? { slot, p: info.finish } : undefined;
+  const c = composeDoll(doll, { [slot]: item }, k, { silhouette: !hasPip, maxStrips: large ? 999 : 40, anim: an });
   const ox = (w - (cx1 - cx0) * k) / 2 - cx0 * k, oy = (h - (cy1 - cy0) * k) / 2 - cy0 * k;
   // floor shadow
   const [fw, fh] = dollSize(doll);
@@ -164,12 +168,39 @@ function tabletop(g, w, h, yTop) {
   g.fillStyle = 'rgba(255,236,200,0.25)'; g.fillRect(0, yTop, w, Math.max(1, h * 0.006));
   const lamp = g.createRadialGradient(w * 0.25, h * 0.1, 0, w * 0.4, h * 0.4, w); lamp.addColorStop(0, 'rgba(255,220,150,0.22)'); lamp.addColorStop(1, 'rgba(255,220,150,0)'); g.fillStyle = lamp; g.fillRect(0, 0, w, h);
 }
+const plushCache = new WeakMap();
+function plushBake(bake, pattern, chart, slots) {
+  let p = plushCache.get(bake);
+  if (p) return p;
+  const eyes = toyEyes(pattern, chart, slots).map((e) => ({ x: bake.x0 + e.c * bake.W + bake.W / 2, y: bake.y0 + (bake.rows - e.r) * bake.H + bake.H * 0.55, color: e.color }));
+  const r = plushify(bake.canvas, { cell: bake.W, eyes });
+  p = { ...bake, canvas: r.canvas, x0: bake.x0 + r.pad, y0: bake.y0 + r.pad };
+  plushCache.set(bake, p);
+  return p;
+}
+const silCache = new WeakMap();
+function silhouetteOf(bake) {
+  let s = silCache.get(bake);
+  if (s) return s;
+  const c = document.createElement('canvas'); c.width = bake.canvas.width; c.height = bake.canvas.height;
+  const q = c.getContext('2d');
+  q.drawImage(bake.canvas, 0, 0);
+  q.globalCompositeOperation = 'source-in'; q.fillStyle = 'rgb(30,10,24)'; q.fillRect(0, 0, c.width, c.height);
+  s = { ...bake, canvas: c };
+  silCache.set(bake, s);
+  return s;
+}
 function flatOnTable(g, bake, cx, cy, maxW, tilt = 0.5) {
   const aspect = bake.gh / bake.gw;
   let pw = maxW, ph = pw * aspect * tilt;
   const top = pw * 0.82; // far edge narrower (perspective)
   const q = [[cx - top / 2, cy - ph / 2], [cx + top / 2, cy - ph / 2], [cx + pw / 2, cy + ph / 2], [cx - pw / 2, cy + ph / 2]];
-  g.save(); g.fillStyle = 'rgba(30,10,20,0.3)'; g.beginPath(); g.ellipse(cx + pw * 0.03, cy + ph * 0.08, pw * 0.52, ph * 0.56, 0, 0, Math.PI * 2); g.fill(); g.restore();
+  // its shadow is its own silhouette (stitches still to come cast next to none)
+  const sil = silhouetteOf(bake);
+  const off = Math.max(1.5, pw * 0.012);
+  g.save(); g.globalAlpha = 0.32;
+  for (const [dx, dy] of [[off, off * 1.6], [off * 2, off * 3]]) drawQuad(g, sil, q.map(([x, y]) => [x + dx, y + dy]));
+  g.restore();
   drawQuad(g, bake, q);
   return { pw, ph };
 }
@@ -178,12 +209,20 @@ function scene(g, info) {
   const { w, h, large, pattern } = info;
   const kind = sceneOf(pattern);
   const cols = info.chart.width;
-  const W = clamp(Math.round((w * 0.6) / cols), 4, 14);
-  const bake = large || w >= 380 ? liveBake(info, W) : flatBake(info);
+  // the real stitch renderer at a cell size where motifs (garter ridges, eyelets, lace) survive, drawn
+  // down into the card; the piece is the star, the prop is context
+  const W = clamp(Math.round(Math.max(8, (w * 0.8) / cols)), 6, 16);
+  const bake = large || w >= 200 ? liveBake(info, W) : flatBake(info);
   if (kind === 'coaster') {
-    tabletop(g, w, h, h * 0.42);
-    flatOnTable(g, bake, w * 0.5, h * 0.74, w * 0.66, 0.42);
-    if (IMG.mug) fitImg(g, IMG.mug, w * 0.3, h * 0.14, w * 0.36, h * 0.6);
+    tabletop(g, w, h, 0);
+    // the mug waits at the back; the coaster, big, in front
+    flatOnTable(g, bake, w * 0.47, h * 0.62, w * 0.8, 0.62);
+    // the mug waits at the back (at the finish it drops onto the new coaster)
+    const f = info.finish;
+    if (IMG.mug && f != null) {
+      const e = f < 0.55 ? 0 : Math.min(1, (f - 0.55) / 0.45), d = 1 - Math.pow(1 - e, 3);
+      g.save(); g.globalAlpha = e > 0 ? 1 : 0; fitImg(g, IMG.mug, w * 0.29, h * 0.12 - (1 - d) * h * 0.5, w * 0.36, h * 0.5); g.restore();
+    } else if (IMG.mug) fitImg(g, IMG.mug, w * 0.56, h * 0.02, w * 0.4, h * 0.42);
   } else if (kind === 'cozy') {
     tabletop(g, w, h, h * 0.62);
     if (IMG.mug) {
@@ -263,12 +302,26 @@ function scene(g, info) {
   } else if (kind === 'toy') {
     woodWall(g, w, h, 0.4);
     const sy = h * 0.8;
-    drawUpright(g, bake, w * 0.5, sy + h * 0.02, w * 0.62, h * 0.62);
+    if (info.progress >= 1) {
+      // finished: seamed, stuffed and sitting on the shelf, a plush (at the finish it puffs up)
+      const pb = plushBake(bake, pattern, info.chart, info.piece.slots);
+      const f = info.finish != null ? info.finish : 1;
+      const puff = f < 1 ? 1 + 0.14 * Math.sin(Math.min(1, f * 1.4) * Math.PI) : 1;
+      g.save();
+      if (f < 1) { g.globalAlpha = Math.min(1, f * 2.2); g.translate(w * 0.5, sy); g.scale(puff, 2 - puff); g.translate(-w * 0.5, -sy); }
+      const r = drawUpright(g, pb, w * 0.5, sy + h * 0.02, w * 0.66, h * 0.64);
+      g.restore();
+      g.save(); g.fillStyle = 'rgba(30,12,20,0.3)'; g.beginPath(); g.ellipse(w * 0.5, sy + h * 0.025, r.w * 0.42, h * 0.018, 0, 0, Math.PI * 2); g.fill(); g.restore();
+    } else drawUpright(g, bake, w * 0.5, sy + h * 0.02, w * 0.62, h * 0.62);
     if (IMG.shelf) g.drawImage(IMG.shelf, -w * 0.06, sy - h * 0.02, w * 1.12, h * 0.24);
     else { g.fillStyle = '#8a5a34'; g.fillRect(0, sy, w, h * 0.06); }
   } else {
-    tabletop(g, w, h, h * 0.3);
-    flatOnTable(g, bake, w * 0.5, h * 0.66, w * 0.74, 0.55);
+    // a dishcloth, washcloth or doily: laid flat on the table, filling the card
+    tabletop(g, w, h, 0);
+    const ar = bake.gh / bake.gw;
+    // at the finish it floats down and settles flat on the table
+    const f = info.finish != null ? 1 - Math.pow(1 - info.finish, 3) : 1;
+    flatOnTable(g, bake, w * 0.5, h * 0.52 - (1 - f) * h * 0.05, Math.min(w * 0.86, (h * 0.84) / (ar * 0.8)) * (1.12 - 0.12 * f), 0.8 + 0.2 * (1 - f));
   }
 }
 function firBranch(g, w, h) {

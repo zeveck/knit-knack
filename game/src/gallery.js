@@ -6,7 +6,8 @@ import { fmtLen } from './scarfFacts.js';
 import * as S from './state.js';
 import * as audio from './audio.js';
 import * as toasts from './toasts.js';
-import { pieceRender, fitCanvas, cellFor } from './render.js';
+import { objectRender, fitCanvas, cellFor, trimmed } from './render.js';
+import { isToy } from './plush.js';
 
 let root, tab = 'wall', page = 0, arriving = null, afterDisplay = false, lightsOut = false;
 let menuFn = () => {};
@@ -100,7 +101,7 @@ function renderWall() {
       const box = peg.querySelector('.hang');
       const w = box.clientWidth - 6, h = box.clientHeight - 4;
       if (w < 10 || h < 10) continue;
-      box.replaceChildren(fitCanvas(pieceRender(g, p, cellFor(p, w, h, 3, 14)), w, h));
+      box.replaceChildren(fitCanvas(trimmed(objectRender(g, p, cellFor(p, w, h, 3, 14))), w, h));
     }
     if (arriving) { setTimeout(() => audio.play('peg'), 700); arriving = null; }
   });
@@ -121,7 +122,7 @@ function renderBasket() {
   requestAnimationFrame(() => {
     for (const pv of box.querySelectorAll('[data-gid]')) {
       const g = S.galleryById(pv.dataset.gid); const p = g && S.patternById(g.pattern);
-      if (p) pv.replaceChildren(fitCanvas(pieceRender(g, p, cellFor(p, 130, 110, 3, 8)), 130, 110));
+      if (p) pv.replaceChildren(fitCanvas(objectRender(g, p, cellFor(p, 130, 110, 3, 8)), 130, 110));
     }
   });
 }
@@ -138,15 +139,16 @@ function detail(id) {
   const acts = el('div', { class: 'acts' });
   const again = el('button', { class: 'btn primary', text: 'Knit again' });
   again.addEventListener('click', () => { closeSheet(); if (S.getPiece(p.id)) go('knit', p.id); else go('caston', p.id); });
-  const move = el('button', { class: 'btn', text: g.hung ? 'Take down' : 'Hang it' });
+  const move = el('button', { class: 'btn', text: g.hung ? 'Take down' : g.shelf ? 'Hang it instead' : 'Hang it' });
   move.addEventListener('click', () => { if (g.hung) { S.takeDown(g.id); audio.play('card'); } else { S.hang(g.id); audio.play('peg'); } closeSheet(); render(); });
   acts.append(again, move);
   if (p.wear) { const d = el('button', { class: 'btn sage', text: 'Put it on a doll' }); d.addEventListener('click', () => { closeSheet(); go('dolls', g.id); }); acts.append(d); }
+  if (isToy(p)) { const d = el('button', { class: 'btn sage', text: g.shelf ? 'See it on the shelf' : 'Sit it on the shelf' }); d.addEventListener('click', () => { closeSheet(); S.toShelf(g.id); audio.play('dress'); go('dolls', { shelf: g.id }); }); acts.append(d); }
   const used = new Set(g.yarns.map((y) => y.color + y.type)).size;
   const when = new Date(g.finished).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }).replace(/ /g, '\u00a0');
   openSheet('piece', el('div', { class: 'detail' }, big, el('div', { class: 'rename' }, input, save),
     el('div', { class: 'facts', text: `${p.name} · ${fmt(g.yarns.length)} stitches · ${used} yarn${used > 1 ? 's' : ''} · finished ${when}${wornBy(g.id) ? ' · worn by a doll' : ''}` }), acts), { title: g.name });
-  requestAnimationFrame(() => { const w = Math.min(big.clientWidth - 20, 520), h = Math.min(innerHeight * 0.45, 460); big.replaceChildren(fitCanvas(pieceRender(g, p, cellFor(p, w, h, 4, 24)), w, h)); });
+  requestAnimationFrame(() => { const w = Math.min(big.clientWidth - 20, 520), h = Math.min(innerHeight * 0.45, 460); big.replaceChildren(fitCanvas(objectRender(g, p, cellFor(p, w, h, 4, 24)), w, h)); });
 }
 
 function knitAnother() {

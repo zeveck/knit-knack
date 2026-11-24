@@ -341,6 +341,7 @@ export class Work {
     this.fabric = new Fabric(chart, { done: () => this.done, yarn: (i) => this.yarns[i] || this.nextYarn, castOnYarn: this.castOnYarn, finished: () => this.finished, liveRow: () => this._needleRow().r });
     this.anim = { tap: null, turn: null, pop: null, twitch: 0, counter: 0 };
     this.cam.ok = false;
+    this._strand = null; this._lastNeedle = null; // no strand left over from the last piece
     this._layout(true);
     this._kick();
   }
@@ -396,17 +397,32 @@ export class Work {
   zoomIn() { this.setZoom(this.zoomIndex + 1); }
   zoomOut() { this.setZoom(this.zoomIndex - 1); }
   setZoom(i) { this.zoomIndex = clamp(i, 0, this.zoomLevels.length - 1); this._layout(true); this._kick(); }
-  // the starting zoom: the smallest step whose stitches are at least minPx (the camera then follows the
-  // needle); step 0 always shows the whole piece. Big pieces get extra steps so they can reach it.
-  comfortZoom(minPx) {
+  // the starting zoom: the largest step at which the piece's whole width (cast-on and widest row, with
+  // room for the needle tips) fits the work area, up to about maxFit; a piece too wide for that starts at
+  // the first step whose stitches are at least minPx, the camera following the needle. Step 0 always
+  // shows the whole piece. prefer: a zoom the player chose for this piece before (nearest step wins).
+  comfortZoom(minPx, prefer) {
     if (!this.chart) return this.setZoom(0);
-    this.zoomIndex = 0; this._layout();
-    const fit = this.cp;
+    this.zoomLevels = [1]; this.zoomIndex = 0; this._layout();
+    const fit = this.cp, box = this._box(), ch = this.chart;
+    const r3 = (v) => Math.round(v * 1000) / 1000;
     const levels = [1];
-    while (levels[levels.length - 1] < Math.max(3, (minPx / fit) * 1.5)) levels.push(Math.round(levels[levels.length - 1] * 1.5 * 1000) / 1000);
-    this.zoomLevels = levels;
-    let i = levels.findIndex((l) => fit * l >= minPx - 0.01);
-    if (i < 0) i = levels.length - 1;
+    while (levels[levels.length - 1] < Math.max(3, (minPx / fit) * 1.5)) levels.push(r3(levels[levels.length - 1] * 1.5));
+    const wl = box.w / ((ch.width + 4) * fit); // the zoom at which the width just fits
+    const cap = Math.max(minPx, (this.opts.maxFit ?? 28) * 1.25) / fit;
+    const want = Math.min(wl, cap);
+    let L = levels;
+    if (want > 1.04 && want < levels[levels.length - 1] && !levels.some((l) => l <= want && l >= want * 0.94)) {
+      L = levels.filter((l) => l < want || l > want * 1.1); // no near-duplicate step just above it
+      L.push(r3(want)); L.sort((x, y) => x - y);
+    }
+    this.zoomLevels = L;
+    let i = 0;
+    if (prefer > 0) L.forEach((l, j) => { if (Math.abs(Math.log(l / prefer)) < Math.abs(Math.log(L[i] / prefer))) i = j; });
+    else {
+      L.forEach((l, j) => { if (l <= want + 1e-3) i = j; });
+      if (fit * L[i] < minPx - 0.01) { i = L.findIndex((l) => fit * l >= minPx - 0.01); if (i < 0) i = L.length - 1; }
+    }
     this.cam.ok = false;
     this.setZoom(i);
   }
@@ -436,22 +452,33 @@ export class Work {
     if (force || !this.fabric.canvas || W !== this.fabric.W || this._windowStale()) this._rewindow(W);
   }
   _deviceCell() {
-    // backing scale capped: 4096 px a side, 8 MP
+    // backing scale capped: 4096 px a side, 8 MP, measured on the exact window _rewindow will make
     let W = Math.round(this.cp * this.dpr);
-    const vis = this._visibleCells(W);
-    const est = (w) => { const h = w * CELL_ASPECT; return [(vis.cols + 2.4) * w, (vis.rows + 2.6) * h]; };
-    for (let k = 0; k < 40; k++) {
+    const win = this._windowSpan(), f = this.fabric;
+    const cols = win.c1 - win.c0, rows = win.rTop - win.r0 + 1;
+    const est = (w) => {
+      const h = Math.round(w * CELL_ASPECT);
+      return [cols * w + Math.ceil(w * 1.2) * 2, rows * h + Math.ceil(h * 1.0) + Math.ceil(h * 1.6) + Math.ceil(f.dUp * h) * 2 + Math.ceil(f.dDown * h) * 2];
+    };
+    for (let k = 0; k < 80; k++) {
       const [a, b] = est(W);
       if (a <= 4096 && b <= 4096 && a * b <= 8e6) break;
       W = Math.max(4, Math.floor(W * 0.95));
     }
     return W;
   }
-  _visibleCells() {
+  // the fabric window for the current camera target: cols [c0, c1), rows [r0, rTop]
+  _windowSpan() {
     const ch = this.chart;
-    const cols = Math.min(ch.width, Math.ceil(this.vw / this.cp) + 9);
-    const rows = Math.min(ch.endless ? 1e9 : ch.height, Math.ceil(this.vh / (this.cp * CELL_ASPECT)) + 10);
-    return { cols, rows };
+    const t = this._camTarget();
+    const box = this._box();
+    const halfC = box.w / this.cp / 2 + 1, halfR = box.h / (this.cp * CELL_ASPECT) / 2 + 1;
+    const c0 = Math.max(0, Math.floor(t.x - halfC) - 4), c1 = Math.min(ch.width, Math.ceil(t.x + halfC) + 4);
+    const needR = this._needleRow().r;
+    // rows above the needle hold nothing yet: the window stops a little above the view or the needle
+    const top = Math.max(needR + 3, Math.ceil(t.y + halfR) + 2);
+    const r0 = Math.max(1, Math.min(needR, Math.floor(t.y - halfR)) - 8);
+    return { c0, c1, r0, rTop: ch.endless ? top : Math.min(top, ch.height) };
   }
   _camTarget() {
     const ch = this.chart, box = this._box();
@@ -463,7 +490,9 @@ export class Work {
     if (zoomed) {
       x = ns.col + 0.5; y = ns.r - 0.2;
       // room for the needles past the work's edges (about 4 stitch widths each side)
-      if (visC < ch.width + 8) x = clamp(x, visC / 2 - 4, ch.width - visC / 2 + 4); else x = ch.width / 2;
+      // (a view about as wide as the piece stays centred on it, so the whole width shows)
+      const m = 4 * clamp((ch.width + 1 - visC) / 4, 0, 1);
+      if (visC < ch.width + 1) x = clamp(x, visC / 2 - m, ch.width - visC / 2 + m); else x = ch.width / 2;
       const top = rowsShown + 2;
       // low rows sit about three-quarters down the view (room below for the needle and yarn), not on its edge
       y = clamp(y, Math.min(visR * 0.3, top - visR / 2), Math.max(visR * 0.3, top - visR / 2 + 0.5));
@@ -489,15 +518,8 @@ export class Work {
     return c0 < f.c0 || c1 > f.c1 || (rLo < f.r0 && f.r0 > 1) || Math.min(rHi, needR + 1) > f.rTop;
   }
   _rewindow(W) {
-    const ch = this.chart, f = this.fabric;
-    const t = this._camTarget();
-    const box = this._box();
-    const halfC = box.w / this.cp / 2 + 1, halfR = box.h / (this.cp * CELL_ASPECT) / 2 + 1;
-    const c0 = Math.max(0, Math.floor(t.x - halfC) - 4), c1 = Math.min(ch.width, Math.ceil(t.x + halfC) + 4);
-    const needR = this._needleRow().r;
-    const top = ch.endless ? Math.max(needR + 3, Math.ceil(t.y + halfR)) : ch.height;
-    const r0 = Math.max(1, Math.min(needR, Math.floor(t.y - halfR)) - 8);
-    f.setWindow(c0, c1, r0, Math.min(top, ch.endless ? Infinity : ch.height), W);
+    const f = this.fabric, w = this._windowSpan();
+    f.setWindow(w.c0, w.c1, w.r0, w.rTop, W);
     f.sil = null;
   }
   _stamp(i) {
@@ -633,8 +655,8 @@ export class Work {
     drawShadow(g, f.canvas, fx, fy, f.canvas.width * s, f.canvas.height * s, G.cp * 0.9, f.sil);
     g.restore();
     // the working yarn hangs behind the work (held at the back), from the newest loop to the ball
-    if (this._strand && !this.finished) drawStrand(g, this._strand, this.nextYarn, G.cp, Math.exp(-(t - a.twitch) / 120) * Math.sin((t - a.twitch) / 22) * G.cp * 0.35);
-    else if (!this._strand && !this.finished) busy = true; // first frame: needles compute the strand route
+    const drawnStrand = this._strand;
+    if (drawnStrand && !this.finished) drawStrand(g, drawnStrand, this.nextYarn, G.cp, Math.exp(-(t - a.twitch) / 120) * Math.sin((t - a.twitch) / 22) * G.cp * 0.35);
     clipOn();
     g.imageSmoothingEnabled = true;
     g.drawImage(f.canvas, fx, fy, f.canvas.width * s, f.canvas.height * s);
@@ -657,7 +679,11 @@ export class Work {
         g.restore();
       }
     }
-    if (!this.finished) this._drawNeedles(g, G, t);
+    if (!this.finished) {
+      this._drawNeedles(g, G, t);
+      // the needles route the strand; if it moved since it was drawn this frame, draw again next frame
+      if (!this.finished && strandKey(this._strand) !== strandKey(drawnStrand)) busy = true;
+    }
     g.restore();
     g.restore();
     // twinkles for sparkle yarn
@@ -760,16 +786,10 @@ export class Work {
     // the working yarn leaves the needle at the stitch just made (or the wrap on the tip), drops behind
     // the work and comes out at the side nearest the ball
     const sFrom = wrap > 0 ? { x: tip.x - dir * 0.1 * G.cp, y: tip.y + rad } : { x: strandFrom.x + dir * 0.12 * G.cp, y: strandFrom.yN + rad };
-    const Rw = this.chart.row(ns.r);
-    const wcols = Rw.cols.length ? Rw.cols : [0];
-    const midX = G.colL(this.chart.width / 2);
-    const leftSide = ball.x < midX;
-    const edgeX = leftSide ? G.colL(Math.min(...wcols)) - 0.45 * G.cp : G.colL(Math.max(...wcols) + 1) + 0.45 * G.cp;
-    const edgeY = G.rowT(ns.r) + 2.2 * G.ch;
-    // zoomed in on a big piece the work's side is off screen: the yarn drops straight down behind the work
-    // and comes out below it, heading for the ball, instead of a long detour to the far edge
-    if (edgeX < 0 || edgeX > this.vw) this._strand = { from: sFrom, to: ball, edge: { x: sFrom.x, y: Math.max(edgeY, G.rowT(1) + 1.6 * G.ch) }, out: ball.x < sFrom.x ? -1 : 1 };
-    else this._strand = { from: sFrom, to: ball, edge: { x: edgeX, y: edgeY }, out: leftSide ? -1 : 1 };
+    // the strand hangs from there, drops behind the work and sags to the ball: on screen, smooth, and round
+    // (never across) the preview card
+    const avoid = this.opts.avoidBox ? this.opts.avoidBox() : null;
+    this._strand = { from: sFrom, to: ball, pts: strandRoute(sFrom, ball, avoid, this.vw, this.vh, G) };
     if (wrap > 0) { // the strand comes up in front to make the wrap
       const P = palette(this.nextYarn.color, this.nextYarn.type);
       g.save(); g.lineCap = 'round';
@@ -867,6 +887,7 @@ export class Work {
   }
 }
 
+const strandKey = (S) => (S ? S.pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') : '');
 function onRight(b, ns) { return ns.right.includes(b - 1) && ns.right.includes(b); }
 function endOfRow(ch, r) {
   const R = ch.row(r);
@@ -1039,21 +1060,64 @@ function drawWrap(g, tip, u, rad, cp, yarn, amt, dir) {
   g.restore();
 }
 
+// the strand's route: waypoints from the needle to the ball (CSS px), drawn as one smooth curve
+function strandRoute(a, b, box, vw, vh, G) {
+  const cx = (x) => clamp(x, 3, vw - 3), cy = (y) => clamp(y, 3, vh - 3);
+  const d = (p, q) => Math.hypot(q.x - p.x, q.y - p.y);
+  const m = Math.max(10, G.cp * 0.45);
+  const R = box && box.w > 0 ? { x0: box.x - m, y0: box.y - m, x1: box.x + box.w + m, y1: box.y + box.h + m } : null;
+  const inR = (p) => R && p.x > R.x0 && p.x < R.x1 && p.y > R.y0 && p.y < R.y1;
+  // straight down behind the work first (a couple of rows), stopping above the card
+  const drop = { x: cx(a.x), y: cy(a.y + 2.4 * G.ch) };
+  if (inR(drop)) drop.y = Math.max(a.y + 0.6 * G.ch, R.y0);
+  const pts = [{ x: a.x, y: a.y }, drop];
+  if (R && hits(drop, b, R)) {
+    // round the card by its nearest clear corner
+    let best = null, bl = Infinity;
+    for (const [x, y] of [[R.x0, R.y0], [R.x1, R.y0], [R.x0, R.y1], [R.x1, R.y1]]) {
+      const c = { x: cx(x), y: cy(y) };
+      if (hits(drop, c, R) || hits(c, b, R)) continue;
+      const l = d(drop, c) + d(c, b);
+      if (l < bl) { bl = l; best = c; }
+    }
+    if (best) pts.push(best);
+  }
+  // a gentle sag on the last stretch to the ball
+  const last = pts[pts.length - 1], len = d(last, b);
+  if (len > G.cp * 2) {
+    const s = { x: (last.x + b.x) / 2, y: cy((last.y + b.y) / 2 + Math.min(len * 0.12, 36)) };
+    if (!inR(s)) pts.push(s);
+  }
+  pts.push({ x: b.x, y: b.y });
+  return pts;
+}
+// does segment p-q cross the inside of rect R (shrunk 1 px, so a route along its corner is clear)?
+function hits(p, q, R) {
+  const x0 = R.x0 + 1, x1 = R.x1 - 1, y0 = R.y0 + 1, y1 = R.y1 - 1;
+  let t0 = 0, t1 = 1;
+  const dx = q.x - p.x, dy = q.y - p.y;
+  for (const [pp, qq] of [[-dx, p.x - x0], [dx, x1 - p.x], [-dy, p.y - y0], [dy, y1 - p.y]]) {
+    if (pp === 0) { if (qq < 0) return false; continue; }
+    const r = qq / pp;
+    if (pp < 0) { if (r > t1) return false; if (r > t0) t0 = r; } else { if (r < t0) return false; if (r < t1) t1 = r; }
+  }
+  return t0 < t1;
+}
 function drawStrand(g, S, yarn, cp, twitch) {
   const P = palette(yarn.color, yarn.type);
   const lw = Math.max(1.4, cp * 0.13);
-  const a = S.from, b = S.to, e = S.edge || { x: (a.x + b.x) / 2, y: a.y + cp }, o = S.out || -1;
-  const dist = Math.hypot(b.x - e.x, b.y - e.y);
+  const pts = S.pts.map((p, i) => (i === 1 ? { x: p.x + twitch, y: p.y } : p));
+  // a Catmull-Rom spline through the waypoints (as cubic Béziers): no corners
   const path = (k) => {
     g.beginPath();
-    g.moveTo(a.x + k, a.y + k);
-    // down behind the stitch just made, then across behind the work to its side edge
-    g.bezierCurveTo(a.x + k + twitch * 0.3, a.y + (e.y - a.y) * 0.9 + k, e.x - o * cp * 0.8 + k, e.y + k, e.x + k + twitch, e.y + k);
-    // then off to the ball, sagging a little
-    g.bezierCurveTo(e.x + o * Math.min(dist * 0.35, cp * 3) + k + twitch, e.y + dist * 0.15 + k, b.x + k, b.y - dist * 0.3 + k, b.x + k, b.y + k);
+    g.moveTo(pts[0].x + k, pts[0].y + k);
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
+      g.bezierCurveTo(p1.x + (p2.x - p0.x) / 6 + k, p1.y + (p2.y - p0.y) / 6 + k, p2.x - (p3.x - p1.x) / 6 + k, p2.y - (p3.y - p1.y) / 6 + k, p2.x + k, p2.y + k);
+    }
   };
   g.save();
-  g.lineCap = 'round';
+  g.lineCap = 'round'; g.lineJoin = 'round';
   for (const [c, w, k] of [[rgba(P.deep, 0.8), lw * 1.35, 0], [rgba(P.base), lw, 0], [rgba(P.hi, 0.45), lw * 0.3, -lw * 0.2]]) {
     g.strokeStyle = c; g.lineWidth = w; path(k); g.stroke();
   }

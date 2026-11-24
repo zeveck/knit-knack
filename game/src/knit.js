@@ -79,8 +79,8 @@ function build() {
 
   // buttons
   dom.menu.addEventListener('click', () => menuFn());
-  dom.zoomIn.addEventListener('click', () => { work.zoomIn(); audio.play('ui', { gain: 0.5 }); });
-  dom.zoomOut.addEventListener('click', () => { work.zoomOut(); audio.play('ui', { gain: 0.5 }); });
+  dom.zoomIn.addEventListener('click', () => { zoomBy(1); audio.play('ui', { gain: 0.5 }); });
+  dom.zoomOut.addEventListener('click', () => { zoomBy(-1); audio.play('ui', { gain: 0.5 }); });
   dom.mute.addEventListener('click', () => toggleMute());
   dom.q.addEventListener('click', () => openGlossary(chart, pattern));
   onRelease(dom.pvBtn, () => previewCard.open());
@@ -109,7 +109,7 @@ function build() {
     const now = performance.now();
     if (now - (root._wz || 0) < 180) return;
     root._wz = now;
-    if (e.deltaY < 0) work.zoomIn(); else if (e.deltaY > 0) work.zoomOut();
+    if (e.deltaY < 0) zoomBy(1); else if (e.deltaY > 0) zoomBy(-1);
   }, { passive: false });
   root.addEventListener('contextmenu', (e) => e.preventDefault());
   holds = holdKnitter(() => knitOne(), () => currentScreen() === 'knit' && !openSheetName() && !!piece && !finishing);
@@ -120,6 +120,7 @@ function build() {
     minFit: 8, maxFit: 28,
     fitBox: () => fitBox(),
     clipBox: () => (layout === 'desk' || layout === 'land' ? relRect(dom.workArea) : null),
+    avoidBox: () => relRect(dom.pvBtn),
     padCols: () => (layout === 'port' ? 5 : 10),
     ballPoint: () => ballPoint(),
     background: (g, w, h) => drawBackdrop(g, w, h),
@@ -127,6 +128,13 @@ function build() {
   window.addEventListener('resize', () => { if (currentScreen() === 'knit') relayout(); });
 }
 
+
+// the player's zoom, remembered per piece (and per layout: a phone step is not a desktop step)
+function zoomBy(d) {
+  if (!work) return;
+  work.setZoom(work.zoomIndex + d);
+  if (piece) { piece.zoom = { ...(piece.zoom && typeof piece.zoom === 'object' ? piece.zoom : {}), [layout]: work.zoomLevels[work.zoomIndex] }; S.saveSoon(); }
+}
 
 // ---------------------------------------------------------------- layout
 function pickLayout() {
@@ -652,9 +660,9 @@ function onKey(e) {
   if (k >= '5' && k <= '9') { useRecent(+k - 5); return true; }
   if (k === 'y' || k === 'Y') { pickBasket(); return true; }
   if (k === 'c' || k === 'C') { followChart(); return true; }
-  if (k === '+' || k === '=') { work.zoomIn(); return true; }
-  if (k === '-' || k === '_') { work.zoomOut(); return true; }
-  if (k === '0') { work.setZoom(0); return true; }
+  if (k === '+' || k === '=') { zoomBy(1); return true; }
+  if (k === '-' || k === '_') { zoomBy(-1); return true; }
+  if (k === '0') { zoomBy(-99); return true; }
   if (k === 'v' || k === 'V') { previewCard.open(); return true; }
   if (k === 'g' || k === 'G') { openGlossary(chart, pattern); return true; }
   if (k === 'm' || k === 'M') { toggleMute(); return true; }
@@ -688,8 +696,10 @@ export function enter(patternId) {
   equipWork();
   const castOn = piece.castOn ? normYarn(piece.castOn) : piece.slots.A;
   work.load(chart, { yarns: piece.yarns, done: piece.yarns.length, castOnYarn: castOn, nextYarn: currentYarn() });
-  // start close enough to see each stitch being made (the − button or 0 shows the whole piece)
-  work.comfortZoom(layout === 'desk' ? 22 : 24);
+  // start with the whole width in view, stitches big enough to watch (the − button or 0 shows the whole
+  // piece); a zoom the player picked for this piece before wins
+  const z = piece.zoom && typeof piece.zoom === 'object' ? piece.zoom[layout] : null;
+  work.comfortZoom(layout === 'desk' ? 18 : 16, z);
   previewCard.load(chart, pattern, piece);
   previewCard.attach(dom.pvCanvas);
   if (!S.get().recent.length) for (const y of Object.values(piece.slots).reverse()) S.pushRecent(y);

@@ -6,12 +6,17 @@ import { onTap, setKeyHandler } from './input.js';
 import * as S from './state.js';
 import * as audio from './audio.js';
 import * as toasts from './toasts.js';
-import { pieceRender, cellFor } from './render.js';
+import { pieceRender, cellFor, chartOf } from './render.js';
+import { drawObject, objectReady } from './cardRenderer.js';
+import { isToy } from './plush.js';
 import { drawNook, drawStack, image } from './scene.js';
 import { yarnName, yarnKey } from './yarn.js';
 
 let root, canvas, g, ui, t0 = 0, gal = null, pat = null, art = null, confetti = [], steam = [], cheerDone = false;
 let btns;
+// the swatch turning into the thing: starts at T_OBJ ms, takes OBJ_MS
+const T_OBJ = 1350, OBJ_MS = 900;
+let obj = null; // {canvas, done, key}
 
 function build() {
   root = document.querySelector('[data-screen="finished"]');
@@ -54,6 +59,11 @@ function enter(id) {
   const display = el('button', { class: 'btn primary big', text: 'Display it' });
   onTap(display, (e) => { if (e.detail && !calm()) return; audio.play('ui'); go('gallery', { display: gal.id }); });
   btns.append(display);
+  if (isToy(pat)) {
+    const sit = el('button', { class: 'btn big sage', text: 'Sit it on the shelf' });
+    onTap(sit, (e) => { if (e.detail && !calm()) return; audio.play('dress'); S.toShelf(gal.id); go('dolls', { shelf: gal.id }); });
+    btns.append(sit);
+  }
   if (pat.wear) {
     const doll = el('button', { class: 'btn big sage', text: 'Put it on a doll' });
     onTap(doll, (e) => { if (e.detail && !calm()) return; audio.play('ui'); S.hang(gal.id); go('dolls', gal.id); });
@@ -64,6 +74,7 @@ function enter(id) {
   btns.append(later);
   ui.append(btns);
   setTimeout(() => btns.classList.add('show'), 1500);
+  obj = { canvas: document.createElement('canvas'), done: false, key: '' };
   // art: the piece as knit, big
   const w = innerWidth, h = innerHeight;
   art = pieceRender(gal, pat, cellFor(pat, w * 0.8, h * 0.5, 4, 26));
@@ -81,8 +92,9 @@ function enter(id) {
   setTimeout(() => audio.play('purr'), 1700);
   // the tips, once each: the first finish explains Display it; the first wearable introduces Pip
   const tips = [];
-  if (!S.get().tips.includes('display')) { S.get().tips.push('display'); tips.push('Display it hangs it in your gallery.'); }
-  if (pat.wear && !S.get().tips.includes('doll')) { S.get().tips.push('doll'); tips.push('Put it on a doll: meet Pip!'); }
+  if (!S.get().tips.includes('display')) { S.get().tips.push('display'); tips.push('"Display it" hangs it on your gallery wall.'); }
+  if (pat.wear && !S.get().tips.includes('doll')) { S.get().tips.push('doll'); tips.push('Put it on a doll to meet Pip!'); }
+  if (isToy(pat) && !S.get().tips.includes('toyshelf')) { S.get().tips.push('toyshelf'); tips.push('Toys can sit on the Doll Shelf, beside the dolls.'); }
   if (tips.length) { S.saveSoon(); setTimeout(() => { if (currentScreen() === 'finished' && gal && gal.id === id) ui.append(el('div', { class: 'facts tipline', text: tips.join(' ') })); }, 1600); }
   // knit keys still drumming from the last stitch never pick for you: a key acts only after a pause
   let lastKey = performance.now();
@@ -127,17 +139,40 @@ export function frame(t) {
     const gl = g.createRadialGradient(cx, cy, 0, cx, cy, Math.max(aw, ah) * 0.8);
     gl.addColorStop(0, 'rgba(255,214,140,0.35)'); gl.addColorStop(1, 'rgba(255,214,140,0)');
     g.fillStyle = gl; g.fillRect(0, 0, w, h);
-    g.drawImage(art, cx - aw / 2, cy - ah / 2, aw, ah);
-    // finishing touch
-    const touch = touchOf(pat);
-    const ta = Math.min(1, Math.max(0, (el_ - 700) / 300));
-    if (touch && ta > 0) {
-      g.save(); g.globalAlpha = ta;
-      const col = gal.slots && gal.slots.A ? gal.slots.A.color : '#9e2a3a';
-      if (touch === 'pompom') tinted(g, 'fin-pompom', col, cx - aw * 0.12, cy - ah / 2 - aw * 0.2, aw * 0.24);
-      else if (touch === 'tassel') tinted(g, 'fin-tassel', col, cx - aw * 0.25, cy - ah / 2 - aw * 0.45, aw * 0.5);
-      else if (touch === 'eyes') { const s = aw * 0.09; tinted(g, 'fin-button-2hole', '#2a1f2a', cx - aw * 0.16 - s / 2, cy - ah * 0.12, s); tinted(g, 'fin-button-2hole', '#2a1f2a', cx + aw * 0.16 - s / 2, cy - ah * 0.12, s); }
-      else if (touch === 'buttons') { const s = aw * 0.08; for (let i = 0; i < 4; i++) tinted(g, 'fin-button-4hole', '#d9a441', cx - s / 2, cy - ah * 0.3 + i * ah * 0.18, s); }
+    // the swatch turns into the thing: its scene card grows out of it (the preview card's prop scenes)
+    const q = clamp01((el_ - T_OBJ) / OBJ_MS);
+    const side = Math.min(maxW, maxH, 560);
+    const ready = objectReady();
+    const qa = ready ? q : 0;
+    if (qa < 1) {
+      g.save(); g.globalAlpha = 1 - ease(clamp01(qa * 1.6));
+      const s2 = 1 - 0.15 * ease(qa);
+      g.drawImage(art, cx - (aw * s2) / 2, cy - (ah * s2) / 2, aw * s2, ah * s2);
+      // finishing touch (on the flat piece; the scenes add their own)
+      const touch = touchOf(pat);
+      const ta = Math.min(1, Math.max(0, (el_ - 700) / 300));
+      if (touch && ta > 0) {
+        g.globalAlpha *= ta;
+        const col = gal.slots && gal.slots.A ? gal.slots.A.color : '#9e2a3a';
+        if (touch === 'pompom') tinted(g, 'fin-pompom', col, cx - aw * 0.12, cy - ah / 2 - aw * 0.2, aw * 0.24);
+        else if (touch === 'tassel') tinted(g, 'fin-tassel', col, cx - aw * 0.25, cy - ah / 2 - aw * 0.45, aw * 0.5);
+        else if (touch === 'buttons') { const s = aw * 0.08; for (let i = 0; i < 4; i++) tinted(g, 'fin-button-4hole', '#d9a441', cx - s / 2, cy - ah * 0.3 + i * ah * 0.18, s); }
+      }
+      g.restore();
+    }
+    if (qa > 0) {
+      const e = ease(qa);
+      // from the piece's own box to the card's
+      const cw0 = Math.max(aw, ah) * 0.9, cs = cw0 + (side - cw0) * e;
+      paintObject(Math.round(side * dprArt), qa);
+      g.save();
+      g.globalAlpha = clamp01(qa * 2.5);
+      g.shadowColor = 'rgba(20,8,20,0.5)'; g.shadowBlur = 18; g.shadowOffsetY = 6;
+      const r = 14 + 4 * e;
+      g.beginPath(); roundRect(g, cx - cs / 2, cy - cs / 2, cs, cs, r); g.fillStyle = '#3a2438'; g.fill();
+      g.shadowColor = 'transparent';
+      g.clip();
+      g.drawImage(obj.canvas, cx - cs / 2, cy - cs / 2, cs, cs);
       g.restore();
     }
     // steam (blocking): soft puffs rising
@@ -169,6 +204,21 @@ export function frame(t) {
   if (fi >= 0 && fi < 8) frameNo = [0, 1, 2, 1, 2, 3, 3, 3][fi];
   drawStack(g, b, { t, purl: frameNo, mirror: true, things: e.purl, holder: e.holder, yarn: gal.yarns[gal.yarns.length - 1], dpr });
   if (fi >= 8 && !cheerDone) { cheerDone = true; }
+}
+const clamp01 = (v) => Math.max(0, Math.min(1, v));
+const ease = (t) => 1 - Math.pow(1 - clamp01(t), 3);
+function roundRect(g, x, y, w, h, r) { g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+// the object scene (device px square), redrawn while it plays, then kept
+function paintObject(px, q) {
+  const c = obj.canvas;
+  const key = `${px}|${q >= 1 ? 'done' : ''}`;
+  if (obj.key === key && q >= 1) return;
+  obj.key = key;
+  if (c.width !== px) { c.width = px; c.height = px; }
+  const cg = c.getContext('2d');
+  cg.setTransform(1, 0, 0, 1, 0, 0); cg.clearRect(0, 0, px, px);
+  const piece = { id: gal.id, yarns: gal.yarns, slots: gal.slots || {}, castOn: gal.castOn, updated: gal.finished };
+  try { drawObject(cg, { pattern: pat, chart: chartOf(pat), piece, w: px, h: px, dpr: Math.min(3, window.devicePixelRatio || 1), flat: null, finish: q, state: S.get() }); } catch (e) { console.warn('finish object', e); }
 }
 const tintCache = new Map();
 function tinted(g, key, color, x, y, size) {

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Knit Knack — plush check</title>
+<style>
+  body { margin: 0; padding: 12px; background: #6b4a66; color: #f3e9dc; font: 12px system-ui, sans-serif; }
+  .row { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }
+  figure { margin: 0; text-align: center; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<div class="row" id="out"></div>
+<script type="module">
+// tools/plush-check.html?cell=10 : every Knitted Friend as knit (left) and finished into a plush (right)
+import { PATTERNS, PALETTE } from '../game/src/patterns.js';
+import { chartOf, slotYarnAt, suggestedSlots, pieceRender, objectRender } from '../game/src/render.js';
+const CELL = +(new URLSearchParams(location.search).get('cell') || 10);
+const out = document.getElementById('out');
+for (const p of PATTERNS.filter((x) => x.chapter === 6)) {
+  const slots = Object.fromEntries(Object.entries(p.slots).map(([k, y]) => [k, { color: PALETTE[y.color] || y.color, type: y.type, label: y.label }]));
+  const ch = chartOf(p), at = slotYarnAt(ch, slots);
+  const g = { id: 'chk-' + p.id, yarns: Array.from({ length: ch.total }, (_, i) => at(i)), slots, castOn: slots.A };
+  const fig = document.createElement('figure');
+  fig.append(pieceRender(g, p, CELL), objectRender(g, p, CELL), Object.assign(document.createElement('figcaption'), { textContent: p.name }));
+  fig.firstChild.style.display = 'inline-block'; fig.children[1].style.display = 'inline-block';
+  out.append(fig);
+}
+document.body.dataset.ready = '1';
+</script>
+</body>
+</html>
