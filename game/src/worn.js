@@ -248,14 +248,20 @@ function planFit(slot, fit, A, T, ci, opts = {}) {
     ];
   }
   if (slot === 'shoulders') {
+    // a shawlette worn as one: snug round the neck at its top edge, falling over the shoulders and flaring
+    // over the upper arms, its middle dipping to a soft point at the front
     const { x0, x1, y } = A.shoulders; const sw = x1 - x0; const cx = (x0 + x1) / 2;
-    const Ws = sw * (T.shawlW ?? 1.42);
-    const sa = Ws / cols;
-    const Hs = rows * 0.72 * sa * 0.85;
+    const nk = A.neck || { box: [cx - sw * 0.16, y - 26, cx + sw * 0.16, y - 2], y: y - 14 };
+    const halfBot = (sw * (T.shawlW ?? 1.42)) / 2;
+    const halfTop = Math.max((nk.box[2] - nk.box[0]) * 0.72, sw * 0.34);
+    const sa = (halfBot * 2) / cols;
+    const Hs = rows * 0.72 * sa * 1.1;
+    const yTop = nk.y + (nk.box[3] - nk.y) * 0.5;
     const F = (u, v) => {
       const t = 2 * u - 1, w = 1 - v;
-      const dip = Hs * 0.62 * (1 - t * t);
-      return [cx + (Ws / 2) * wrap(t, 1.0) * (1 - 0.12 * w), y - Hs * 0.12 + w * Hs + dip * (0.3 + 0.7 * w) + t * t * Hs * 0.32];
+      const flare = halfTop + (halfBot - halfTop) * (1 - Math.pow(Math.max(0, 1 - w), 1.6));
+      const top = yTop + t * t * (y - yTop + Hs * 0.1);
+      return [cx + t * flare, top + w * Hs * (0.85 + 0.15 * t * t) + w * Hs * 0.32 * (1 - t * t)];
     };
     return [{ F, u0: eu0, u1: eu1, v0: ev0, v1: ev1, nu: strips(Math.min(cols + 1, 16)), nv: strips(rows + 2), shade: 'drape' }];
   }

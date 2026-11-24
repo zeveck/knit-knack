@@ -108,6 +108,7 @@ function build() {
   onHold(dom.rip, { press: () => ripOne(true), start: () => audio.ripLoopStart(), repeat: () => ripOne(false), end: () => audio.ripLoopStop() });
 
   root.addEventListener('pointerdown', (e) => {
+    if (e.button > 0) return; // only the main button (or a touch, a pen) knits
     if (window.gameReport && window.gameReport.isOpen()) return;
     if (currentScreen() !== 'scarf' || openSheetName() || how) return;
     if (e.target.closest('button, input, a, .toast, .chip, .howlong, .scarf-pop .card')) return;
@@ -761,7 +762,7 @@ function howCards(cm, last, next) {
   if (last) out.push(el('div', { class: 'hcard passed' }, pic(last), el('div', {}, el('h3', { text: `Taller than ${last.name}` }), el('p', { text: last.fact }))));
   if (next) {
     const sv = next.img ? pic(next) : silCanvas(next);
-    out.push(el('div', { class: 'hcard next' }, sv, el('div', {}, el('h3', { text: `Next: ${goalText(next)}` }), el('small', { text: `${fmtLen(Math.max(1, next.cm - cm))} to go` }), el('p', { text: next.fact }))));
+    out.push(el('div', { class: 'hcard next' }, sv, el('div', {}, el('h3', { text: `Next: ${goalText(next)}` }), el('small', { text: `${fmtLen(Math.max(1, Math.ceil(next.cm - cm)))} to go` }), el('p', { text: next.fact }))));
   }
   const slots = factSlots(cm + 1).map((c, j) => ({ c, j })).filter((x) => x.c <= cm);
   const facts = slots.filter((x) => x.j < FACTS.length), stats = slots.filter((x) => x.j >= FACTS.length);
@@ -774,7 +775,7 @@ function howCards(cm, last, next) {
     for (const x of stats.slice(-8).reverse()) out.push(el('div', { class: 'hcard stat' }, el('span', { class: 'at', text: fmtLen(x.c) }), el('p', { text: statText(x.j - FACTS.length) })));
   }
   out.push(el('h3', { class: 'hsec', text: 'Someday…' }));
-  for (const m of SOMEDAY) out.push(el('div', { class: 'hcard someday' + (m.cm <= cm ? ' passed' : '') }, silCanvas(m), el('div', {}, el('h3', { text: `${goalText(m)[0].toUpperCase()}${goalText(m).slice(1)}` }), el('small', { text: m.cm <= cm ? 'Done!' : `${fmtLen(m.cm - cm)} to go` }), el('p', { text: m.fact }))));
+  for (const m of SOMEDAY) out.push(el('div', { class: 'hcard someday' + (m.cm <= cm ? ' passed' : '') }, silCanvas(m), el('div', {}, el('h3', { text: `${goalText(m)[0].toUpperCase()}${goalText(m).slice(1)}` }), el('small', { text: m.cm <= cm ? 'Done!' : `${fmtLen(Math.max(1, Math.ceil(m.cm - cm)))} to go` }), el('p', { text: m.fact }))));
   box.replaceChildren(...out);
 }
 function silCanvas(m) {

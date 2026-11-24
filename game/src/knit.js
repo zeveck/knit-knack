@@ -93,6 +93,7 @@ function build() {
 
   // every pointerdown that isn't on a button knits, right away; every pointer counts
   root.addEventListener('pointerdown', (e) => {
+    if (e.button > 0) return; // only the main button (or a touch, a pen) knits
     if (window.gameReport && window.gameReport.isOpen()) return;
     if (currentScreen() !== 'knit' || openSheetName()) return;
     if (e.target.closest('button, input, a, .toast, .chip')) return;
@@ -486,6 +487,7 @@ export function knitOne({ animate = true } = {}) {
       setTimeout(() => { audio.play('row'); audio.play('counter', { gain: 0.8 }); }, 130);
       if (res.r % 10 === 0) sparkleRow = { r: res.r, t0: performance.now() + 120 };
       if (res.r === 1) tip('turn', 'The work turns. Now you knit back the other way.');
+      if (res.r === 3 && !S.get().tips.includes('purl-hello')) tip('purl-hello', "That's Purl in the basket. She loves yarn.");
       if (res.r === 2) tip('yarn', `Tap a yarn ${layout === 'port' ? 'below' : 'on the right'} to change color, any time, on any stitch.`);
       if (res.finished) S.checkUnlocks(); else afterCounts(); // unlock toasts wait for the celebration
     }
@@ -547,8 +549,16 @@ function hud() {
   const i = currentIndex();
   const done = i >= chart.total;
   const L = chart.locate(Math.min(i, chart.total - 1));
-  dom.progLine.innerHTML = '';
-  dom.progLine.append(el('b', { text: pattern.name }), ` · Row ${L.r} of ${chart.height} · ${fmt(i)} / ${fmt(chart.total)} stitches`);
+  // the progress line, shortened rather than cut off on a narrow screen
+  const forms = [
+    ` · Row ${L.r} of ${chart.height} · ${fmt(i)} / ${fmt(chart.total)} stitches`,
+    ` · Row ${L.r}/${chart.height} · ${fmt(i)}/${fmt(chart.total)} sts`,
+    ` · Row ${L.r}/${chart.height} · ${Math.floor((100 * i) / chart.total)}%`,
+  ];
+  for (const f of forms) {
+    dom.progLine.replaceChildren(el('b', { text: pattern.name }), f);
+    if (dom.progLine.scrollWidth <= dom.progLine.clientWidth + 1) break;
+  }
   dom.progBar.style.width = `${(100 * i) / chart.total}%`;
   // wording strip (rebuilt only when its row or cursor changes)
   const w = stripWording(chart, L.r, L.k);

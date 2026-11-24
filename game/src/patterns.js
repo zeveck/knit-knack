@@ -38,12 +38,63 @@ const odd = (r) => r % 2 === 1;
 const garterRows = (p, a, b) => p.texture('garter', { rows: [a, b] });
 const ko = (s) => rsCells(s);                                  // an RS row written in knitting order -> chart cells
 
+// one friendly line per pattern (the book card and Cast On); the technical detail is in Read the pattern
+const BLURB = {
+"garter-dishcloth": "A squishy cranberry dishcloth, all bumpy garter ridges.",
+"stockinette-coaster": "A smooth sage coaster with a neat little border.",
+"seed-bookmark": "A pebbly honey bookmark with a tassel to mark your page.",
+"ribbed-wristwarmer": "Stretchy plum wristwarmers with two cream stripes.",
+"striped-headband": "A ribbed headband in cheerful cranberry, cream and honey stripes.",
+"basketweave-mug-cozy": "A woven-looking oatmeal cozy to keep your tea warm.",
+"rolled-brim-beanie": "A soft sage beanie with a cream brim that rolls up.",
+"moss-ear-warmer": "A textured plum band to keep your ears toasty.",
+"bobble-hat": "A cranberry hat with a cream stripe and a fluffy pom-pom.",
+"broken-rib-cowl": "A rusty-orange cowl with soft ridges and cream stripes.",
+"fingerless-mitts": "Mustard mitts with charcoal cuffs that leave your fingers free.",
+"cozy-sock": "A sky-blue sock with a cream heel, toe and cuff.",
+"chunky-mitten": "A thick teal mitten with a cream cuff and a cozy thumb.",
+"fair-isle-coaster": "A cream coaster with a little cranberry Fair Isle pattern.",
+"checkerboard-washcloth": "A sage and cream checkerboard washcloth.",
+"heart-pillow": "A cream pillow with a big cranberry heart.",
+"star-ornament": "A golden star to hang on the tree.",
+"strawberry-pouch": "A strawberry-red pouch with honey seeds and a leafy drawstring.",
+"snowflake-mitten": "A navy mitten with a cream snowflake on the back.",
+"argyle-sock": "A navy sock with honey and cranberry argyle diamonds.",
+"cable-headband": "A cream headband with a twisting rope cable.",
+"aran-mug-cozy": "An oatmeal mug cozy with cables on a pebbly background.",
+"honeycomb-cowl": "A mint cowl covered in a honeycomb of little cables.",
+"bobble-cushion": "A cream cushion dotted with honey bobbles.",
+"fisherman-beanie": "A classic oatmeal fisherman beanie with a cable up the front.",
+"braided-scarf-panel": "A cranberry scarf panel with a three-strand braid.",
+"eyelet-dishcloth": "A mint dishcloth sprinkled with tiny eyelet holes.",
+"vine-lace-bookmark": "A lilac lace bookmark with a winding vine and a tassel.",
+"lace-doily": "A white lace doily with openwork diamonds.",
+"feather-fan-shawlette": "A wavy plum shawlette with a rose stripe.",
+"lace-sock": "A rose sock with a lacy rib and plum heel and toe.",
+"chevron-baby-blanket": "A zig-zag baby blanket in mint, cream and sky.",
+"little-bunny": "A cream bunny with pink ears and a little pink nose.",
+"cat-toy": "A grey kitty with green eyes and a white chest.",
+"whale": "A denim-blue whale with a sky-blue belly.",
+"frog": "A bumpy green frog with a big cranberry grin.",
+"penguin": "A charcoal penguin with a white front and orange feet.",
+"octopus": "A coral octopus with eight wiggly legs.",
+"fox": "A rust-red fox with a white chest and a bushy tail.",
+"teddy-bear": "A brown teddy with a tan tummy and round ears.",
+"tea-cosy": "A striped cranberry and cream tea cosy with a pom-pom.",
+"holiday-stocking": "A red holiday stocking with a green and white band.",
+"dog-sweater": "A denim-blue sweater with honey stripes for a small dog.",
+"patchwork-blanket": "A patchwork blanket of textured cream, sage and honey squares.",
+"yoke-sweater": "A cozy cream sweater with a cranberry diamond yoke.",
+"cabled-cardigan": "A honey cardigan with cables up the front and brown buttons.",
+"heirloom-afghan": "A big cream afghan with Fair Isle, bobbles and cables: everything you know."
+};
+
 const P = [];
 const add = (meta, piece) => {
   if (piece.ragged && piece.ragged.length) throw new Error(`${meta.id}: art rows ${piece.ragged.map(([r, n]) => `${r} (${n} wide)`).join(', ')} are not ${piece.W} wide`);
   const d = piece.def();
   P.push({
-    id: meta.id, name: meta.name, chapter: meta.chapter, technique: meta.technique, source: meta.source,
+    id: meta.id, name: meta.name, chapter: meta.chapter, technique: meta.technique, source: meta.source, blurb: BLURB[meta.id] || meta.technique,
     repeat: meta.repeat, wear: meta.wear || null, finishing: meta.finishing, slots: meta.slots, touch: meta.touch || null,
     shape: d.shape, stitch: d.stitch, color: d.color, cables: d.cables, parts: meta.parts || null,
     partLabels: meta.partLabels || null, notes: meta.notes || null, drape: meta.drape || null,
@@ -848,7 +899,7 @@ add({ id: 'dog-sweater', name: 'Dog Sweater', chapter: 7, technique: 'Leg holes'
   p.texture(at((r, c) => (c === 1 || c === 38 ? 'k' : 'p')), { rows: [27, 42], where: (r, c) => c <= 2 || c >= 37 }); // cuffs: p1, k1, p1
   p.colors(motif(YOKE), { rows: [31, 39], origin: [31, 0], where: (r, c) => c > 2 && c < 37 });
   add({ id: 'yoke-sweater', name: 'Yoke Sweater', chapter: 7, technique: 'Dolman sleeves and a yoke',
-    source: 'Stranded yoke band (8-st, 9-row star band) on a dolman front: 2×2 rib hem, sleeves grown over 6 rows (cast on at the row starts and M1 at the row ends, an underarm at about 30 degrees), 1×1 rib cuff columns, shoulders worked separately round the neck',
+    source: 'Stranded yoke band (8-st, 9-row diamond band) on a dolman front: 2×2 rib hem, sleeves grown over 6 rows (cast on at the row starts and M1 at the row ends, an underarm at about 30 degrees), 1×1 rib cuff columns, shoulders worked separately round the neck',
     repeat: { width: 8, edges: 0, rows: 9, at: 31 }, wear: { slot: 'body', fit: 'body' }, parts: 'shoulder', partLabels: ['Left shoulder', 'Right shoulder'],
     notes: ['Left and right are as worn: the left shoulder is on the right of the chart.', 'Strand the yoke band, carrying the yarn not in use loosely behind; on the cuff columns work in A only.'],
     finishing: 'Finishing: make a back the same (or plain in A). Place right sides together and seam the shoulders and the tops of the sleeves, leaving the neck open, then seam the underarms and the sides, leaving the hem and the cuffs open. Turn out, weave in the ends and block.',

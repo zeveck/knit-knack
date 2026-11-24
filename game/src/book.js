@@ -122,7 +122,7 @@ function card(p, i, unlockedN) {
   const meta = el('div', { class: 'meta' }, `${fmt(chart.total)} stitches`, times ? el('span', { class: 'done-tag', text: times > 1 ? `knit ${times}×` : 'knit' }) : null, p.wear ? el('span', { class: 'icw', title: 'Wearable', html: ICON.doll }) : null);
   const read = el('button', { class: 'read', text: 'Read the pattern' });
   read.addEventListener('click', (e) => { e.stopPropagation(); audio.play('card'); openPattern({ chart, pattern: p, slots: piece ? piece.slots : suggestedSlots(p), currentRow: piece ? chart.locate(Math.min(piece.yarns.length, chart.total - 1)).r : 0 }); });
-  const btn = el('button', { class: 'card-open', style: { all: 'unset', display: 'flex', flexDirection: 'column', gap: '6px', cursor: 'pointer' }, 'aria-label': `${p.name}${piece ? ', in progress' : ''}` }, pv, el('h3', { text: p.name }), el('div', { class: 'tech', text: p.technique || p.source || '' }), meta);
+  const btn = el('button', { class: 'card-open', style: { all: 'unset', display: 'flex', flexDirection: 'column', gap: '6px', cursor: 'pointer' }, 'aria-label': `${p.name}${piece ? ', in progress' : ''}` }, pv, el('h3', { text: p.name }), el('div', { class: 'tech', text: p.blurb || p.technique || '' }), meta);
   btn.addEventListener('click', () => { audio.play('ui'); if (piece) go('knit', p.id); else go('caston', p.id); });
   c.append(btn);
   if (piece) { c.classList.add('started'); c.append(el('div', { class: 'prog' }, el('i', { style: { width: `${(100 * piece.yarns.length) / chart.total}%` } }))); }
@@ -216,7 +216,8 @@ function renderCastOn(p) {
   page.append(header('Cast on', () => go('book', { chapter: p.chapter })));
   const pv = el('div', { class: 'caston-pv' });
   const info = el('div', { class: 'caston-info' });
-  info.append(el('h2', { text: p.name, style: { color: 'var(--plum)', fontSize: '28px' } }), el('div', { class: 'src', text: p.source || p.technique || '' }),
+  info.append(el('h2', { text: p.name, style: { color: 'var(--plum)', fontSize: '28px' } }), el('div', { class: 'src', text: p.blurb || p.technique || '' }),
+    p.technique ? el('div', { class: 'facts', text: `New here: ${p.technique.charAt(0).toLowerCase()}${p.technique.slice(1)}` }) : null,
     el('div', { class: 'facts', text: `${chart.width} sts × ${chart.height} rows · ${fmt(chart.total)} stitches${p.wear ? ' · wearable' : ''}` }));
   const used = [...chart.slotsUsed].sort();
   const names = { A: 'Main color', B: 'Contrast', C: 'Third color', D: 'Fourth color' };

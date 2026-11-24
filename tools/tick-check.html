@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Knit Knack tick check</title>
+<style>
+  body { font: 14px/1.4 system-ui, sans-serif; margin: 1.5em; background: #faf6ef; color: #3a2e26; }
+  pre { background: #fff; padding: 1em; border: 1px solid #e3d8c8; white-space: pre-wrap; }
+  .pass { color: #2e7d32; font-weight: bold; } .fail { color: #c62828; font-weight: bold; }
+</style>
+</head>
+<body>
+<h1>Tick check</h1>
+<p>Decodes a tick clip with Web Audio, slices it by onset detection (the same slicer the game's
+<code>audio.js</code> uses), and checks the acceptance rule from the design:
+<b>6 or more clicks at least 150 ms apart, each falling below -40 dB (relative to its own peak)
+within 120 ms (wood) or 200 ms (metal, glass)</b>.</p>
+<p>Query: <code>?family=wood|metal|glass&amp;src=URL[,URL...]</code>. Default src is
+<code>../game/assets/audio/sfx/sfx-ticks[-metal|-glass].mp3</code>.
+It must be served over http (for example <code>python3 -m http.server</code> from the <code>knit-knack</code> folder).
+From script: <code>await tickCheck(url, family)</code> and <code>await analyzeClip(url)</code> return JSON.</p>
+<pre id="out">working...</pre>
+<script>
+'use strict';
+
+// Family limits, shared with audio.js.
+const FAMILIES = {
+  wood:  { decayMs: 120, sliceMs: 120, fadeMs: 5 },
+  metal: { decayMs: 200, sliceMs: 220, fadeMs: 30 },
+  glass: { decayMs: 200, sliceMs: 220, fadeMs: 30 },
+};
+const MIN_GAP_MS = 150;
+const DECAY_DB = -40;
+
+let ctx = null;
+function audioCtx() {
+  if (!ctx) ctx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, 44100, 44100);
+  return ctx;
+}
+async function decode(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(url + ': HTTP ' + res.status);
+  const buf = await res.arrayBuffer();
+  return await audioCtx().decodeAudioData(buf);
+}
+function mono(ab) {
+  const n = ab.length, out = new Float32Array(n);
+  for (let c = 0; c < ab.numberOfChannels; c++) {
+    const d = ab.getChannelData(c);
+    for (let i = 0; i < n; i++) out[i] += d[i] / ab.numberOfChannels;
+  }
+  return out;
+}
+const db = (x) => 20 * Math.log10(Math.max(x, 1e-9));
+
+// Peak envelope in 1 ms frames.
+function envelope(x, sr, frameMs = 1) {
+  const hop = Math.max(1, Math.round(sr * frameMs / 1000));
+  const n = Math.floor(x.length / hop), env = new Float32Array(n);
+  for (let f = 0; f < n; f++) {
+    let p = 0;
+    for (let i = f * hop, e = i + hop; i < e; i++) { const a = Math.abs(x[i]); if (a > p) p = a; }
+    env[f] = p;
+  }
+  return env;
+}
+
+// The slicer: finds onsets, returns [{onsetMs, peakDb, decayMs, startSample, endSample}].
+// Onset: the envelope crosses (clip peak - 26 dB, but not below -50 dBFS) after having been
+// at least 12 dB under that line for 15 ms (re-arm). Decay: time from onset until the envelope
+// falls below click peak - 40 dB and stays there for 10 ms.
+function findClicks(x, sr, family) {
+  const fam = FAMILIES[family] || FAMILIES.wood;
+  const env = envelope(x, sr, 1);
+  let gp = 0; for (const v of env) if (v > gp) gp = v;
+  const onLin = Math.max(gp * Math.pow(10, -26 / 20), Math.pow(10, -50 / 20));
+  const offLin = onLin * Math.pow(10, -12 / 20);
+  const clicks = [];
+  let armed = true, quiet = 15;
+  for (let f = 0; f < env.length; f++) {
+    if (env[f] < offLin) quiet++; else if (env[f] < onLin) { /* hysteresis band */ } else quiet = 0;
+    if (!armed && quiet >= 15) armed = true;
+    if (armed && env[f] >= onLin) {
+      armed = false; quiet = 0;
+      // Walk back to the first frame of the attack (above offLin).
+      let s = f; while (s > 0 && env[s - 1] >= offLin && f - s < 5) s--;
+      // Peak in the next 30 ms.
+      let pk = 0, pf = f;
+      for (let g = f; g < Math.min(env.length, f + 30); g++) if (env[g] > pk) { pk = env[g]; pf = g; }
+      const lim = pk * Math.pow(10, DECAY_DB / 20);
+      let decay = null;
+      for (let g = pf; g < env.length; g++) {
+        if (env[g] < lim) {
+          let ok = true;
+          for (let h = g; h < Math.min(env.length, g + 10); h++) if (env[h] >= lim) { ok = false; break; }
+          if (ok) { decay = g - s; break; }
+        }
+      }
+      clicks.push({ onsetMs: s, peakDb: +db(pk).toFixed(1), decayMs: decay, });
+    }
+  }
+  // Slice bounds.
+  for (let i = 0; i < clicks.length; i++) {
+    const c = clicks[i], next = clicks[i + 1];
+    const startMs = Math.max(0, c.onsetMs - 2);
+    let endMs = c.onsetMs + fam.sliceMs;
+    if (next) endMs = Math.min(endMs, next.onsetMs - 5);
+    c.startSample = Math.round(startMs * sr / 1000);
+    c.endSample = Math.min(x.length, Math.round(endMs * sr / 1000));
+  }
+  return { clicks, globalPeakDb: +db(gp).toFixed(1), onDb: +db(onLin).toFixed(1) };
+}
+
+// Cut slices into AudioBuffers with a 5 ms fade-in and the family's fade-out (what audio.js does).
+function sliceBuffers(ab, clicks, family, ac) {
+  const fam = FAMILIES[family] || FAMILIES.wood, sr = ab.sampleRate;
+  return clicks.map((c) => {
+    const len = c.endSample - c.startSample;
+    const out = ac.createBuffer(ab.numberOfChannels, len, sr);
+    const fi = Math.round(0.005 * sr), fo = Math.min(len, Math.round(fam.fadeMs / 1000 * sr));
+    for (let ch = 0; ch < ab.numberOfChannels; ch++) {
+      const src = ab.getChannelData(ch).subarray(c.startSample, c.endSample), d = out.getChannelData(ch);
+      for (let i = 0; i < len; i++) {
+        let g = 1;
+        if (i < fi) g = i / fi;
+        if (i > len - fo) g = Math.min(g, (len - i) / fo);
+        d[i] = src[i] * g;
+      }
+    }
+    return out;
+  });
+}
+
+async function tickCheck(url, family = 'wood') {
+  const fam = FAMILIES[family] || FAMILIES.wood;
+  const ab = await decode(url);
+  const x = mono(ab);
+  const { clicks, globalPeakDb, onDb } = findClicks(x, ab.sampleRate, family);
+  // Spaced clicks: keep clicks at least MIN_GAP_MS after the previous kept one.
+  let last = -1e9; const spaced = [];
+  for (const c of clicks) if (c.onsetMs - last >= MIN_GAP_MS) { spaced.push(c); last = c.onsetMs; }
+  const good = spaced.filter((c) => c.decayMs !== null && c.decayMs <= fam.decayMs);
+  const allDecayOk = spaced.every((c) => c.decayMs !== null && c.decayMs <= fam.decayMs);
+  return {
+    url, family, durationS: +ab.duration.toFixed(3), globalPeakDb, onsetThresholdDb: onDb,
+    onsetsFound: clicks.length, spacedOnsets: spaced.length, goodClicks: good.length,
+    decayLimitMs: fam.decayMs,
+    pass: spaced.length >= 6 && allDecayOk,
+    passIfDroppingBadClicks: good.length >= 6,
+    clicks: clicks.map(({ onsetMs, peakDb, decayMs }) => ({ onsetMs, peakDb, decayMs })),
+  };
+}
+
+// General clip analysis (any sound or music file).
+async function analyzeClip(url) {
+  const ab = await decode(url);
+  const sr = ab.sampleRate, n = ab.length;
+  let peak = 0, sumsq = 0, clipped = 0;
+  for (let c = 0; c < ab.numberOfChannels; c++) {
+    const d = ab.getChannelData(c);
+    for (let i = 0; i < n; i++) { const a = Math.abs(d[i]); if (a > peak) peak = a; sumsq += d[i] * d[i]; if (a >= 0.999) clipped++; }
+  }
+  const x = mono(ab);
+  const rms = Math.sqrt(sumsq / (n * ab.numberOfChannels));
+  const thr = Math.pow(10, -50 / 20);
+  let lead = 0; while (lead < n && Math.abs(x[lead]) < thr) lead++;
+  let tail = n - 1; while (tail > 0 && Math.abs(x[tail]) < thr) tail--;
+  const winRms = (a, b) => { let s = 0; a = Math.max(0, a); b = Math.min(n, b); for (let i = a; i < b; i++) s += x[i] * x[i]; return Math.sqrt(s / Math.max(1, b - a)); };
+  const zcr = (a, b) => { let z = 0; for (let i = a + 1; i < b; i++) if ((x[i] >= 0) !== (x[i - 1] >= 0)) z++; return z / Math.max(1, (b - a)) * sr; };
+  // Envelope: RMS dB in segments (10 per clip for short sounds, 1 s for long ones).
+  const seg = ab.duration > 20 ? sr * 5 : Math.max(1, Math.floor(n / 10));
+  const env = [];
+  for (let a = 0; a < n; a += seg) env.push(+db(winRms(a, a + seg)).toFixed(1));
+  const ms50 = Math.round(sr * 0.05), s2 = Math.round(sr * 2);
+  return {
+    url, durationS: +ab.duration.toFixed(3), sampleRate: sr, channels: ab.numberOfChannels,
+    peakDb: +db(peak).toFixed(2), rmsDb: +db(rms).toFixed(1), clippedSamples: clipped,
+    leadSilenceMs: Math.round(lead / sr * 1000), tailSilenceMs: Math.round((n - 1 - tail) / sr * 1000),
+    zeroCrossHz: Math.round(zcr(0, n)),
+    envelopeDb: env, envelopeStepS: +(seg / sr).toFixed(2),
+    loop: {
+      firstSampleVsLast: +Math.abs(x[0] - x[n - 1]).toFixed(4),
+      head50msDb: +db(winRms(0, ms50)).toFixed(1), tail50msDb: +db(winRms(n - ms50, n)).toFixed(1),
+      head2sDb: +db(winRms(0, s2)).toFixed(1), tail2sDb: +db(winRms(n - s2, n)).toFixed(1),
+    },
+  };
+}
+
+window.FAMILIES = FAMILIES; window.findClicks = findClicks; window.sliceBuffers = sliceBuffers;
+window.tickCheck = tickCheck; window.analyzeClip = analyzeClip;
+
+(async () => {
+  const q = new URLSearchParams(location.search);
+  const family = q.get('family') || 'wood';
+  const def = '../game/assets/audio/sfx/sfx-ticks' + (family === 'wood' ? '' : '-' + family) + '.mp3';
+  const srcs = (q.get('src') || def).split(',');
+  const out = document.getElementById('out');
+  const results = [];
+  for (const s of srcs) {
+    try { results.push(await tickCheck(s, family)); } catch (e) { results.push({ url: s, error: String(e) }); }
+  }
+  window.tickResults = results;
+  out.innerHTML = results.map((r) => r.error ? `<span class="fail">ERROR</span> ${r.url}: ${r.error}` :
+    `<span class="${r.pass ? 'pass' : 'fail'}">${r.pass ? 'PASS' : 'FAIL'}</span> ${r.url} (${r.family})\n` +
+    `spaced onsets ${r.spacedOnsets}, good clicks ${r.goodClicks}, decay limit ${r.decayLimitMs} ms\n` +
+    r.clicks.map((c) => `  onset ${c.onsetMs} ms  peak ${c.peakDb} dB  decay ${c.decayMs ?? 'never'} ms`).join('\n')).join('\n\n');
+  document.title = 'tick check done';
+})();
+</script>
+</body>
+</html>

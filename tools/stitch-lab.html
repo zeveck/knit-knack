@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Knit Knack — stitch lab</title>
+<style>
+  :root { --bg: #3b2738; --panel: #4d3349; --ink: #f6ead8; --muted: #cbb6c4; --accent: #e7b75a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.4 system-ui, sans-serif; }
+  header { padding: 12px 16px; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+  h1 { margin: 0; font-size: 20px; }
+  h2 { margin: 18px 16px 8px; font-size: 16px; color: var(--accent); }
+  section { padding: 0 8px 12px; }
+  .live { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 10px; padding: 0 8px; }
+  @media (max-width: 760px) { .live { grid-template-columns: 1fr; } }
+  #view { width: 100%; height: 520px; display: block; border-radius: 10px; touch-action: none; cursor: pointer; }
+  @media (max-width: 760px) { #view { height: 430px; } }
+  .panel { background: var(--panel); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .sw { width: 30px; height: 30px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.25); cursor: pointer; }
+  .sw.on { border-color: #fff; box-shadow: 0 0 0 2px var(--accent); }
+  button, select { background: #6a4a64; color: var(--ink); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 6px 10px; font: inherit; cursor: pointer; }
+  button.on { background: var(--accent); color: #3b2738; }
+  .strip { grid-column: 1 / -1; background: #f3e6cf; color: #3b2738; border-radius: 10px; padding: 8px 12px; font: 18px/1.4 'Caveat', 'Comic Sans MS', cursive, system-ui; min-height: 44px; }
+  .strip .lbl { font-weight: 700; margin-right: 6px; }
+  .strip .tok { padding: 0 1px; border-radius: 4px; }
+  .strip .tok.rep { background: rgba(231,183,90,0.35); }
+  .strip .tok.cur { text-decoration: underline; text-decoration-thickness: 3px; text-decoration-color: #b8324a; text-underline-offset: 4px; }
+  .strip .cnt { float: right; font: 13px system-ui; color: #7a5a6a; margin-top: 4px; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 14px; padding: 0 8px; align-items: flex-start; }
+  figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  figcaption { color: var(--muted); font-size: 12px; text-align: center; }
+  .ref { max-width: 420px; width: 100%; border-radius: 8px; }
+  table.grid { border-collapse: collapse; margin: 0 8px; }
+  table.grid td, table.grid th { padding: 3px; text-align: center; vertical-align: middle; }
+  table.grid th { color: var(--muted); font-weight: 600; font-size: 12px; }
+  .scroll { overflow-x: auto; }
+  canvas.tile, canvas.sw2 { display: block; }
+  .small { color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Knit Knack · stitch lab</h1>
+  <span class="small">Space knits · Backspace rips · click the work to knit</span>
+</header>
+
+<h2>(c) Knit it</h2>
+<div class="live">
+  <canvas id="view" aria-label="knitting"></canvas>
+  <div class="panel">
+    <div class="row"><button id="knit">Knit</button><button id="rip">Rip back</button><button id="zo">−</button><button id="zi">+</button><button id="lights">Lights out</button></div>
+    <div><div class="small">Yarn color</div><div class="row" id="colors"></div></div>
+    <div><div class="small">Yarn type</div><div class="row" id="types"></div></div>
+    <div><div class="small">Needles</div><select id="needles"></select></div>
+    <div class="row"><span class="small">Markers</span><select id="markers"></select><span class="small">Counter</span><select id="counter"></select></div>
+    <div class="small" id="info"></div>
+  </div>
+  <div class="strip" id="strip"></div>
+</div>
+
+<h2>(b) Swatches, 12×12 <select id="swType"><option value="">each swatch's own yarn</option></select></h2>
+<div class="swatches" id="swatches"></div>
+<div class="swatches" style="margin-top:10px">
+  <figure><img class="ref" src="../design/mockups/knit-look.jpg" alt="look target"><figcaption>look target (painted)</figcaption></figure>
+</div>
+
+<h2>(a) Every stitch × every yarn × 3 zooms <select id="aColor"></select></h2>
+<div id="grid"></div>
+
+<script type="module">
+import { parseChart, fill, rowWording, wordingCursor } from '../game/src/chart.js';
+import { YARN_TYPES, YARN_LABELS, cacheStats, setFibreTexture } from '../game/src/stitches.js';
+import { Work, renderSwatch, NEEDLE_STYLES, MARKER_STYLES, COUNTER_STYLES } from '../game/src/work.js';
+
+const DPR = window.devicePixelRatio || 1;
+const COLORS = { cream: '#efe4cf', cranberry: '#9e2a3a', sage: '#8fa77f', honey: '#d9a441', plum: '#5b3a5e', navy: '#1f2a4d', sky: '#8db8d8', rose: '#e8a0a8', charcoal: '#3a3a3e', rust: '#b5532b', mint: '#b8dcc4', lilac: '#b9a3d0' };
+const $ = (id) => document.getElementById(id);
+
+// ------------------------------------------------ (c) live
+const live = {
+  stitch: [
+    'kkkpkkkkpkkk', 'kkkpxxxxpkkk', 'kkkpkkkkpkkk', 'kkkpkkkkpkkk', 'kkkpkkkkpkkk', 'kkkpkkkkpkkk',
+    'kkkpkkkkpkkk', 'kkkpxxxxpkkk', 'kkkpkkkkpkkk', 'kkkpkkkkpkkk',
+    'kkppkkppkkpp', 'kkppkkppkkpp', 'kkppkkppkkpp', 'kkppkkppkkpp',
+  ],
+  color: [
+    'AAAAAAAAAAAA', 'AAAAAAAAAAAA', 'AAAAAAAAAAAA', 'AAAAAAAAAAAA', 'BBBBBBBBBBBB', 'BBBBBBBBBBBB',
+    'AAAAAAAAAAAA', 'AAAAAAAAAAAA', 'AAAAAAAAAAAA', 'AAAAAAAAAAAA',
+    'AAAAAAAAAAAA', 'AAAAAAAAAAAA', 'AAAAAAAAAAAA', 'AAAAAAAAAAAA',
+  ],
+  cables: [{ row: 7, col: 4, type: 'C4F' }, { row: 13, col: 4, type: 'C4F' }],
+  slots: { A: 'main', B: 'contrast' },
+};
+const chart = parseChart(live);
+if (chart.errors.length) console.warn('live chart:', chart.errors);
+let yarnA = { color: COLORS.cream, type: 'wool' };
+const yarnB = () => ({ color: COLORS.cranberry, type: yarnA.type });
+const yarnFor = (i) => { const L = chart.locate(i); return L && L.entry.slot === 'B' ? yarnB() : yarnA; };
+
+const view = $('view');
+const work = new Work(view, {
+  minFit: 12, maxFit: 40,
+  fitBox: (w, h) => ({ x: w * 0.1, y: h * 0.04, w: w * 0.8, h: h * 0.9 }),
+  ballPoint: (w, h) => ({ x: w * 0.03, y: h * 0.98 }),
+});
+work.load(chart, { castOnYarn: yarnA, nextYarn: yarnA });
+
+function refresh() {
+  const st = work.state();
+  if (st.done < chart.total) work.setNextYarn(yarnFor(st.done));
+  const L = chart.locate(Math.min(st.done, chart.total - 1));
+  const w = rowWording(chart, L.r);
+  const cur = st.done < chart.total ? wordingCursor(w, L.k) : { token: -1 };
+  const strip = $('strip');
+  strip.innerHTML = '';
+  const lbl = document.createElement('span'); lbl.className = 'lbl'; lbl.textContent = w.label + ':'; strip.append(lbl);
+  if (/^with /.test(w.text)) strip.append(w.text.match(/^with \w, /)[0]);
+  w.tokens.forEach((t, j) => {
+    if (j) strip.append(t.glue || ', ');
+    const s = document.createElement('span');
+    s.className = 'tok' + (t.rep ? ' rep' : '') + (j === cur.token ? ' cur' : '');
+    s.textContent = t.text; strip.append(s);
+  });
+  if (cur.reps) { const c = document.createElement('span'); c.className = 'cnt'; c.textContent = `rep ${cur.rep} of ${cur.reps} · st ${cur.st} of ${cur.of}`; strip.append(c); }
+  $('info').textContent = `Row ${L.r} of ${chart.height} · ${st.done} / ${chart.total} sts · cell ${st.cellPx.toFixed(1)} px · fabric ${st.fabricCanvas.w}×${st.fabricCanvas.h} · cache ${cacheStats().size}`;
+}
+const knit = () => { const st = work.state(); if (st.done >= chart.total) return null; const r = work.knit(yarnFor(st.done)); refresh(); return r; };
+const rip = () => { const r = work.rip(); refresh(); return r; };
+
+view.addEventListener('pointerdown', (e) => { e.preventDefault(); knit(); });
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'SELECT') return;
+  if (e.code === 'Space' || e.key === 'Enter' || e.key === 'k') { e.preventDefault(); if (!e.repeat) knit(); }
+  else if (e.key === 'Backspace' || e.key === 'u') { e.preventDefault(); rip(); }
+  else if (e.key === '+' || e.key === '=') work.zoomIn(); else if (e.key === '-') work.zoomOut();
+}, true);
+$('knit').onclick = (e) => { e.currentTarget.blur(); knit(); };
+$('rip').onclick = (e) => { e.currentTarget.blur(); rip(); };
+$('zi').onclick = (e) => { e.currentTarget.blur(); work.zoomIn(); refresh(); };
+$('zo').onclick = (e) => { e.currentTarget.blur(); work.zoomOut(); refresh(); };
+$('lights').onclick = (e) => { e.currentTarget.classList.toggle('on'); work.setLightsOut(e.currentTarget.classList.contains('on')); e.currentTarget.blur(); };
+for (const [name, hex] of Object.entries(COLORS)) {
+  const b = document.createElement('button'); b.className = 'sw' + (hex === yarnA.color ? ' on' : ''); b.style.background = hex; b.title = name;
+  b.onclick = () => { setYarn(hex, yarnA.type); b.blur(); };
+  $('colors').append(b);
+}
+for (const t of YARN_TYPES) {
+  const b = document.createElement('button'); b.textContent = YARN_LABELS[t]; b.dataset.t = t; if (t === yarnA.type) b.className = 'on';
+  b.onclick = () => { setYarn(yarnA.color, t); b.blur(); };
+  $('types').append(b);
+}
+const fillSel = (sel, table, val) => { for (const [k, v] of Object.entries(table)) { const o = new Option(v.name, k); if (k === val) o.selected = true; sel.append(o); } };
+fillSel($('needles'), NEEDLE_STYLES, 'bamboo'); fillSel($('markers'), MARKER_STYLES, 'ring'); fillSel($('counter'), COUNTER_STYLES, 'brass');
+$('needles').onchange = (e) => work.setNeedles(e.target.value);
+$('markers').onchange = (e) => work.setMarkers(e.target.value);
+$('counter').onchange = (e) => work.setCounter(e.target.value);
+function setYarn(color, type = yarnA.type) {
+  yarnA = { color, type };
+  [...$('colors').children].forEach((b) => b.classList.toggle('on', b.style.background && b.title === Object.keys(COLORS).find((k) => COLORS[k] === color)));
+  [...$('types').children].forEach((b) => b.classList.toggle('on', b.dataset.t === type));
+  refresh();
+}
+function setNeedles(s) { $('needles').value = s; work.setNeedles(s); }
+addEventListener('resize', () => work.resize());
+refresh();
+
+window.__lab = {
+  knit: (n = 1) => { let r; for (let i = 0; i < n; i++) r = knit(); return r; },
+  knitFast: (n = 1) => { for (let i = 0; i < n; i++) { const st = work.state(); if (st.done >= chart.total) break; work.knit(yarnFor(st.done), { animate: false }); } refresh(); return work.state(); },
+  rip: (n = 1) => { let r; for (let i = 0; i < n; i++) r = rip(); return r; },
+  setYarn, setNeedles,
+  setMarkers: (s) => work.setMarkers(s), setCounter: (s) => work.setCounter(s),
+  zoom: (i) => { work.setZoom(i); refresh(); },
+  state: () => ({ ...work.state(), yarn: yarnA, wording: $('strip').textContent, cache: cacheStats() }),
+  work, chart,
+};
+
+// ------------------------------------------------ (b) swatches
+const S = 12;
+const band = (rows) => { const out = []; for (let r = S; r >= 1; r--) out.push(rows[r] || 'AAAAAAAAAAAA'); return out; };
+const fiColor = band({ 3: 'BBBBBBBBBBBB', 4: 'AABAAAAABAAA', 5: 'ABABAAABABAA', 6: 'BAAABABAAABA', 7: 'ABABAAABABAA', 8: 'AABAAAAABAAA', 9: 'BBBBBBBBBBBB' });
+const lace = fill(S, S, 'stockinette').map((l, i) => { const r = S - i; return r === 3 || r === 11 ? 'ko<kko<kko<k' : r === 7 ? 'kkko<kko<kkk' : l; });
+const bob = fill(S, S, 'reverse').map((l, i) => { const r = S - i; return r === 3 || r === 11 ? 'ppbppppbpppp'.slice(0, 12) : r === 7 ? 'ppppbppppbpp' : l; });
+const cab = fill(S, S, (r, c) => (c < 2 || c > 9 ? 'k' : c < 4 || c > 7 ? 'p' : 'k')).map((l, i) => { const r = S - i; return r === 5 || r === 11 ? 'kkppxxxxppkk' : l; });
+const SW = [
+  ['Stockinette', { stitch: fill(S, S, 'stockinette') }, COLORS.cream, 'wool'],
+  ['Garter', { stitch: fill(S, S, 'garter') }, COLORS.cranberry, 'wool'],
+  ['1×1 rib', { stitch: fill(S, S, 'rib1') }, COLORS.navy, 'cotton'],
+  ['2×2 rib', { stitch: fill(S, S, 'rib2') }, COLORS.sage, 'wool'],
+  ['Seed', { stitch: fill(S, S, 'seed') }, COLORS.honey, 'cotton'],
+  ['C4F rope cable', { stitch: cab, cables: [{ row: 5, col: 4, type: 'C4F' }, { row: 11, col: 4, type: 'C4F' }] }, COLORS.cream, 'chunky'],
+  ['Eyelet lace', { stitch: lace }, COLORS.rose, 'cotton'],
+  ['Bobbles', { stitch: bob }, COLORS.honey, 'wool'],
+  ['Fair Isle band', { stitch: fill(S, S, 'stockinette'), color: fiColor, slots: { A: 1, B: 1 } }, COLORS.cream, 'wool', COLORS.cranberry],
+  ['Mohair stockinette', { stitch: fill(S, S, 'stockinette') }, COLORS.lilac, 'mohair'],
+  ['Velvet garter', { stitch: fill(S, S, 'garter') }, COLORS.plum, 'velvet'],
+  ['Self-striping', { stitch: fill(S, S, 'stockinette') }, COLORS.sky, 'stripe'],
+];
+for (const t of YARN_TYPES) $('swType').append(new Option(YARN_LABELS[t], t));
+function drawSwatches() {
+  const box = $('swatches'); box.innerHTML = '';
+  const over = $('swType').value;
+  const cell = innerWidth < 600 ? 22 : 26;
+  for (const [name, def, color, type, colorB] of SW) {
+    const ch = parseChart(def);
+    if (ch.errors.length) console.warn(name, ch.errors.slice(0, 3));
+    const ty = over || type;
+    const yarnAt = (i) => { const L = ch.locate(i); return L && L.entry.slot === 'B' ? { color: colorB, type: ty } : { color, type: ty }; };
+    const { canvas } = renderSwatch(ch, { yarnAt, cellPx: cell * DPR, background: null, castOnYarn: { color, type: ty } });
+    canvas.className = 'sw2';
+    canvas.style.width = canvas.width / DPR + 'px'; canvas.style.height = canvas.height / DPR + 'px';
+    const fig = document.createElement('figure'); fig.append(canvas);
+    const cap = document.createElement('figcaption'); cap.textContent = `${name} · ${YARN_LABELS[ty]}`; fig.append(cap);
+    fig.style.background = 'linear-gradient(160deg,#9a7088,#6b4a66)'; fig.style.borderRadius = '8px'; fig.style.padding = '4px';
+    box.append(fig);
+  }
+}
+$('swType').onchange = drawSwatches;
+
+// ------------------------------------------------ (a) every stitch x yarn x zoom
+const TYPES = [['k', 'knit'], ['p', 'purl'], ['o', 'yarn over'], ['<', 'k2tog'], ['>', 'ssk'], ['m', 'make 1'], ['castOn', 'cast-on edge'], ['bindOff', 'bind-off'], ['b', 'bobble'],
+  ['C2F', 'C2F'], ['C2B', 'C2B'], ['C4F', 'C4F'], ['C4B', 'C4B'], ['C6F', 'C6F'], ['C6B', 'C6B']];
+for (const [k, v] of Object.entries(COLORS)) $('aColor').append(new Option(k, v));
+function tileChart(t) {
+  if (/^C\d/.test(t)) {
+    const n = +t[1], w = n + 2;
+    const plain = 'p' + 'k'.repeat(n) + 'p';
+    return { stitch: [plain, 'p' + 'x'.repeat(n) + 'p', plain, plain], cables: [{ row: 3, col: 1, type: t }] };
+  }
+  if (t === 'castOn' || t === 'bindOff') return { stitch: ['kkk', 'kkk'] };
+  return { stitch: ['kkk', `k${t}k`, 'kkk', 'kkk'] };
+}
+function drawGrid() {
+  const g = $('grid'); g.innerHTML = '';
+  const color = $('aColor').value || COLORS.cream;
+  for (const z of [12, 24, 48]) {
+    const h = document.createElement('div'); h.className = 'small'; h.style.margin = '8px 8px 2px'; h.textContent = `${z} px cells`; g.append(h);
+    const wrap = document.createElement('div'); wrap.className = 'scroll';
+    const tb = document.createElement('table'); tb.className = 'grid';
+    const hr = tb.insertRow(); hr.append(document.createElement('th'));
+    for (const y of YARN_TYPES) { const th = document.createElement('th'); th.textContent = YARN_LABELS[y]; hr.append(th); }
+    for (const [t, label] of TYPES) {
+      const tr = tb.insertRow();
+      const th = document.createElement('th'); th.textContent = label; tr.append(th);
+      const ch = parseChart(tileChart(t));
+      for (const y of YARN_TYPES) {
+        const yarn = { color, type: y };
+        const { canvas } = renderSwatch(ch, { yarnAt: () => yarn, cellPx: z * DPR, background: '#7d5772', bindOff: t === 'bindOff', margin: Math.round(z * DPR * 0.4) });
+        canvas.className = 'tile';
+        canvas.style.width = canvas.width / DPR + 'px'; canvas.style.height = canvas.height / DPR + 'px';
+        tr.insertCell().append(canvas);
+      }
+    }
+    wrap.append(tb); g.append(wrap);
+  }
+}
+$('aColor').onchange = drawGrid;
+// the painted fibre tiles, when present (procedural fibre until then)
+const loadImg = (src) => new Promise((ok) => { const im = new Image(); im.onload = () => ok(im); im.onerror = () => ok(null); im.src = src; });
+const [tex, texFuzzy] = await Promise.all([loadImg('../game/assets/tex/tex-fibre.png'), loadImg('../game/assets/tex/tex-fibre-fuzzy.png')]);
+if (tex) setFibreTexture(tex, texFuzzy);
+window.__lab.texture = !!tex;
+work.fabric.stampAll(); work.draw();
+drawSwatches();
+drawGrid();
+</script>
+</body>
+</html>

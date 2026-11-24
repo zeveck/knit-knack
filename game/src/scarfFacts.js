@@ -2,6 +2,9 @@
 // knitting facts that arrive in between, and the schedule that places them. Every fact is worded with
 // "about"; heights are the milestone lengths the design sets.
 
+// years since a year, worked out today (so a fact never goes stale)
+const yearsAgo = (y) => new Date().getFullYear() - y;
+
 // cm: the length at which the scarf becomes taller than it (also the thing's drawn height)
 export const MILESTONES = [
   { cm: 10, name: 'a mug', img: 'cmp-01-mug', fact: 'A typical mug is about 10 cm tall and holds about 300 ml of tea.' },
@@ -13,7 +16,7 @@ export const MILESTONES = [
   { cm: 110, name: 'an emperor penguin', img: 'cmp-07-emperor-penguin', fact: 'Emperor penguins, the tallest penguins, stand about 1.1 m tall and can dive more than about 500 m deep.' },
   { cm: 180, name: 'a grown-up', img: 'cmp-08-grown-up', fact: 'A tall grown-up stands about 1.8 m. Most grown-ups are about 1.5 to 1.9 m tall.' },
   { cm: 200, name: 'a front door', img: 'cmp-09-front-door', fact: 'A front door is usually about 2 m tall and about 90 cm wide.' },
-  { cm: 300, name: 'a basketball hoop', img: 'cmp-10-basketball-hoop', fact: 'A basketball hoop\'s rim is 10 feet off the floor: about 3.05 m.', unlock: 'Glow yarn' },
+  { cm: 300, name: 'a basketball hoop', img: 'cmp-10-basketball-hoop', fact: 'A basketball hoop\'s rim is 10 feet off the floor: about 3 m.', unlock: 'Glow yarn' },
   { cm: 440, name: 'a double-decker bus', short: 'a bus', img: 'cmp-11-double-decker-bus', fact: 'A London double-decker bus is about 4.4 m tall.' },
   { cm: 550, name: 'a giraffe', img: 'cmp-12-giraffe', fact: 'Giraffes are the tallest animals: a big male is about 5.5 m tall, and his neck alone is about 1.8 m long.' },
   { cm: 750, name: 'a two-storey house', img: 'cmp-13-house', fact: 'A two-storey house is about 7 to 8 m tall to the top of its roof.' },
@@ -45,7 +48,7 @@ export const FACTS = [
   'Every row of this scarf adds about 1 cm, so each metre is 100 rows and 1,200 stitches.',
   'Garter stitch makes a ridge every 2 rows, so a garter scarf like this one has about one ridge for every 2 cm.',
   'A purl stitch is just a knit stitch seen from the back. In garter stitch, about half the stitches you see on the front are purl bumps.',
-  'The stocking frame, a knitting machine, was invented by William Lee in England in 1589, about 435 years ago.',
+  `The stocking frame, a knitting machine, was invented by William Lee in England in 1589, about ${yearsAgo(1589)} years ago.`,
   'Queen Elizabeth I was given her first pair of knitted silk stockings in about 1561, and is said never to have worn cloth stockings again.',
   'Stocking stitch (stockinette) is named after stockings, which were knit by hand in Europe from about the 1500s.',
   'Fair Isle knitting is named after Fair Isle, a tiny Shetland island about 5 km long.',
@@ -77,7 +80,7 @@ export const FACTS = [
   'Old British needle sizes counted down: an old UK size 8 is about 4 mm, and a bigger number meant a thinner needle.',
   'Hazel Tindall from Shetland once knit 262 stitches in 3 minutes: about 1.5 stitches a second.',
   'About a hundred years ago, during World War I, millions of people knit socks and scarves for soldiers.',
-  'World Wide Knit in Public Day began in 2005, about 20 years ago, and is held every June.',
+  `World Wide Knit in Public Day began in 2005, about ${yearsAgo(2005)} years ago, and is held every June.`,
   'Felting shrinks wool with heat, water and rubbing; a felted piece can shrink by about a third.',
   'A grown-up\'s sweater in medium yarn takes about 30,000 stitches or more.',
 ];

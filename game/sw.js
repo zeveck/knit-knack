@@ -24,9 +24,21 @@ self.addEventListener('activate', event => {
   event.waitUntil(caches.keys()
     .then(keys => Promise.all(keys.filter(k => k.startsWith(PREFIX) && k !== CACHE).map(k => caches.delete(k))))
     .then(() => self.clients.claim())
-    // the music, one track at a time, after everything else (not awaited: never holds anything up)
-    .then(() => { caches.open(CACHE).then(cache => FILES.filter(isMusic).reduce((p, f) => p.then(() => whole(cache, new URL(f, self.registration.scope).href).catch(() => null)), Promise.resolve())); }));
+    // the music after everything else: started here but not awaited (never holds the activation up)
+    .then(() => { warmMusic(); }));
 });
+
+// the music, one track at a time, skipping what is cached already. Run on activation and again on each
+// navigation, under waitUntil, so a warm-up the browser cut short finishes on a later launch.
+let warming = null;
+function warmMusic() {
+  if (warming) return warming;
+  warming = caches.open(CACHE)
+    .then(cache => FILES.filter(isMusic).reduce((p, f) => p.then(() => whole(cache, new URL(f, self.registration.scope).href).catch(() => null)), Promise.resolve()))
+    .catch(() => null)
+    .finally(() => { warming = null; });
+  return warming;
+}
 
 async function whole(cache, url) {
   const hit = await cache.match(url, { ignoreSearch: true });
@@ -62,6 +74,7 @@ self.addEventListener('fetch', event => {
   const req = event.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
   if (req.headers.has('range')) { event.respondWith(caches.open(CACHE).then(cache => ranged(req, cache, event))); return; }
+  if (req.mode === 'navigate') event.waitUntil(warmMusic());
   const key = req.mode === 'navigate' ? './' : req;
   event.respondWith(caches.open(CACHE).then(cache =>
     cache.match(key, { ignoreSearch: true }).then(hit => hit || fetch(req).then(res => {

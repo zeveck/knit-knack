@@ -409,7 +409,7 @@ export class Work {
     const levels = [1];
     while (levels[levels.length - 1] < Math.max(3, (minPx / fit) * 1.5)) levels.push(r3(levels[levels.length - 1] * 1.5));
     const wl = box.w / ((ch.width + 4) * fit); // the zoom at which the width just fits
-    const cap = Math.max(minPx, (this.opts.maxFit ?? 28) * 1.25) / fit;
+    const cap = Math.max(minPx, this.opts.maxFit ?? 28) / fit;
     const want = Math.min(wl, cap);
     let L = levels;
     if (want > 1.04 && want < levels[levels.length - 1] && !levels.some((l) => l <= want && l >= want * 0.94)) {

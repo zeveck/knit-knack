@@ -73,7 +73,7 @@ const PURL_CROP = { head: [70, 0, 442, 330], neck: [70, 90, 442, 420] };
 // the finished object for the Finished screen: the same scenes, info.finish (0..1) plays the piece
 // turning into the thing (the mug drops onto its coaster, the cloth settles on the table, the toy puffs
 // up into a plush, the wearable slides onto its doll)
-export function drawObject(g, info) { renderCard(g, { ...info, large: true, progress: 1 }); }
+export function drawObject(g, info) { renderCard(g, { ...info, large: true, progress: 1, focus: true }); }
 export function objectReady() { loadProps(); return dollsReady() && !!IMG.wood; }
 
 export function renderCard(g, info) {
@@ -99,8 +99,10 @@ function wearable(g, info) {
   bg.addColorStop(0, hasPip ? '#f6e4c0' : '#d9c3a6'); bg.addColorStop(1, hasPip ? '#c79f74' : '#8c6d5c');
   g.fillStyle = bg; g.fillRect(0, 0, w, h);
   if (!dollsReady()) return;
-  const crop = large ? [10, 20, 502, 750] : (doll === 'purl' ? PURL_CROP : SLOT_CROP)[slot] || [0, 0, 512, 768];
-  const [cx0, cy0, cx1, cy1] = doll === 'purl' && large ? [40, 0, 472, 510] : crop;
+  // the enlarged card shows the whole doll; the finish shows the doll round the piece (the piece is the star)
+  let crop = large && !info.focus ? [10, 20, 502, 750] : (doll === 'purl' ? PURL_CROP : SLOT_CROP)[slot] || [0, 0, 512, 768];
+  if (info.focus) { const [a, b, c, d] = crop, ew = (c - a) * 0.22, eh = (d - b) * 0.22; crop = [Math.max(0, a - ew), Math.max(0, b - eh), Math.min(512, c + ew), Math.min(768, d + eh)]; }
+  const [cx0, cy0, cx1, cy1] = doll === 'purl' && large && !info.focus ? [40, 0, 472, 510] : crop;
   const k = Math.min(w / (cx1 - cx0), h / (cy1 - cy0)) * 0.96;
   // the real stitch renderer, at a cell size where motifs survive, drawn down into the card
   const W = clamp(Math.round(k * 7), 6, 14);

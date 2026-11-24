@@ -1794,7 +1794,7 @@ Row 12 (WS): p3 A, p6 B, p3 A
 Row 13 (RS): ssk A, k1 A, k6 B, k1 A, k2tog A (10 sts)
 Row 14 (WS): p1 A, p3 B, p2 C, p3 B, p1 A
 Row 15 (RS): k1 A, k3 B, k2 C, k3 B, k1 A
-Row 16 (WS): p1 A, p1 B, p1 A, p4 B, p1 A, p1 B, p1 A
+Row 16 (WS): [p1 A, p2 B] 3 times, p1 A
 Row 17 (RS): k2 A, k6 B, k2 A
 Row 18 (WS): p2 A, p6 B, p2 A
 Row 19 (RS): with A, k to end
@@ -1812,7 +1812,7 @@ Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on,
   19  ..kkkkkkkkkk..   ..AAAAAAAAAA..
   18  ..kkkkkkkkkk..   ..AABBBBBBAA..
   17  ..kkkkkkkkkk..   ..AABBBBBBAA..
-  16  ..kkkkkkkkkk..   ..ABABBBBABA..
+  16  ..kkkkkkkkkk..   ..ABBABBABBA..
   15  ..kkkkkkkkkk..   ..ABBBCCBBBA..
   14  ..kkkkkkkkkk..   ..ABBBCCBBBA..
   13  ..<kkkkkkkk>..   ..AABBBBBBAA..
@@ -2293,7 +2293,7 @@ Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on,
 ------------------------------------------------------------------------------
 45. Yoke Sweater  (Dolman sleeves and a yoke)
 Repeat: multiple of 8 sts + 0 (counted on row 31), over 9 rows. Wear: body (body). 1300 stitches.
-Stitch pattern: Stranded yoke band (8-st, 9-row star band) on a dolman front: 2×2 rib hem, sleeves grown over 6 rows (cast on at the row starts and M1 at the row ends, an underarm at about 30 degrees), 1×1 rib cuff columns, shoulders worked separately round the neck.
+Stitch pattern: Stranded yoke band (8-st, 9-row diamond band) on a dolman front: 2×2 rib hem, sleeves grown over 6 rows (cast on at the row starts and M1 at the row ends, an underarm at about 30 degrees), 1×1 rib cuff columns, shoulders worked separately round the neck.
 Yarn: A Cream wool, B Cranberry wool, C Sage wool.
 Size: 40 sts × 46 rows, scaled down for the game.
 Note: Left and right are as worn: the left shoulder is on the right of the chart.

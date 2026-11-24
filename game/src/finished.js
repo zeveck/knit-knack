@@ -141,7 +141,7 @@ export function frame(t) {
     g.fillStyle = gl; g.fillRect(0, 0, w, h);
     // the swatch turns into the thing: its scene card grows out of it (the preview card's prop scenes)
     const q = clamp01((el_ - T_OBJ) / OBJ_MS);
-    const side = Math.min(maxW, maxH, 560);
+    const side = Math.min(maxW * 0.94, maxH * 0.94, 560);
     const ready = objectReady();
     const qa = ready ? q : 0;
     if (qa < 1) {

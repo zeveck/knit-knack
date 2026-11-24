@@ -47,7 +47,7 @@ export function pump() {
   showing = { t, u, timer: setTimeout(close, 4000) };
   audio.play('unlock');
   // the first unlock: where new things live (once)
-  if (usable && !S.get().tips.includes('bag')) { S.get().tips.push('bag'); S.saveSoon(); notice('New things go in your Knitting Bag. Use it tries it now.', 5000); }
+  if (usable && !S.get().tips.includes('bag')) { S.get().tips.push('bag'); S.saveSoon(); notice('New things go in your Knitting Bag. Tap "Use it" to try one now.', 5000); }
 }
 function close() {
   if (!showing) return;
