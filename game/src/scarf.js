@@ -558,9 +558,9 @@ function drawHow(t) {
   const lw = widthOf(last) * s, sw = SCARF_W_CM * s, nw = widthOf(next) * s;
   const total = lw + sw + nw + (last ? gap : 0) + gap;
   let x = ruler + 6 + (Wc - total) / 2;
-  if (last) { drawThing(g, last, x, ground, s, cm); x += lw + gap; }
+  if (last) { drawThing(g, last, x, ground, s, cm, 'right'); x += lw + gap; }
   const sx = x; x += sw + gap;
-  if (next) drawThing(g, next, x, ground, s, cm);
+  if (next) drawThing(g, next, x, ground, s, cm, 'left');
   drawScarfUpright(g, sx, ground, s, cm, d);
   drawRuler(g, ruler, ground, s, Ht);
   H.box.querySelector('.how-len').textContent = fmtLen(cm);
@@ -614,7 +614,7 @@ function sky(g, W, H, ground, s) {
   g.fillStyle = gr; g.fillRect(0, ground, W, H - ground);
   g.fillStyle = 'rgba(255,240,210,0.35)'; g.fillRect(0, ground, W, 1.5);
 }
-function drawThing(g, m, x, ground, s, cm) {
+function drawThing(g, m, x, ground, s, cm, align = 'center') {
   const h = m.cm * s, w = widthOf(m) * s;
   if (m.img) {
     const im = cmpImg(m.img);
@@ -624,12 +624,13 @@ function drawThing(g, m, x, ground, s, cm) {
   } else silhouette(g, m.sil, x, ground, w, h);
   // its label under the ground line
   g.save();
-  g.font = '600 13px Fredoka, sans-serif'; g.textAlign = 'center'; g.fillStyle = '#f6ecd9';
+  g.font = '600 13px Fredoka, sans-serif'; g.textAlign = align; g.fillStyle = '#f6ecd9';
   const passed = m.cm <= cm;
-  const label = `${m.name.replace(/, stood.*$/, '').replace(/ \(.*\)$/, '')} · ${fmtLen(m.cm)}`;
-  g.fillText(label, x + w / 2, ground + 18, Math.max(120, w * 1.4));
+  const label = `${(m.short || m.name).replace(/, stood.*$/, '').replace(/ \(.*\)$/, '')} · ${fmtLen(m.cm)}`;
+  const tx = align === 'right' ? x + w : align === 'left' ? x : x + w / 2;
+  g.fillText(label, tx, ground + 18);
   g.font = '500 11px Fredoka, sans-serif'; g.fillStyle = passed ? '#c9e0b4' : '#f2d48a';
-  g.fillText(passed ? 'passed!' : 'next', x + w / 2, ground + 33);
+  g.fillText(passed ? 'passed!' : 'next', tx, ground + 33);
   g.restore();
 }
 function silhouette(g, kind, x, ground, w, h) {
@@ -666,7 +667,8 @@ function drawScarfUpright(g, x, ground, s, cm, d) {
   const rows = Math.ceil(store.n / WIDTH);
   if (!rows) return;
   const rowPx = s; // 1 cm a row
-  const w = SCARF_W_CM * s, h = (store.n / WIDTH) * s;
+  const w0 = SCARF_W_CM * s, w = Math.max(3, w0), h = (store.n / WIDTH) * s;
+  x -= (w - w0) / 2;
   // a soft shadow
   g.save(); g.fillStyle = 'rgba(20,10,20,0.3)'; g.beginPath(); g.ellipse(x + w / 2, ground, w * 0.9, Math.max(2, w * 0.12), 0, 0, Math.PI * 2); g.fill(); g.restore();
   if (rowPx * d >= 3) {
@@ -708,10 +710,10 @@ function drawScarfUpright(g, x, ground, s, cm, d) {
     g.restore();
   }
   // Purl's basket at the foot, like a beanstalk growing out of it (about 45 cm wide)
-  const bw = Math.max(26, 45 * s), bh = bw * (396 / 468);
+  const bw = Math.max(26, 32 * s), bh = bw * (396 / 468);
   if (bw < (g.canvas.width / d) * 0.6) {
     const e = S.get().equipped;
-    g.save(); g.beginPath(); g.rect(x - bw * 2, ground - bh * 3, bw * 4 + w, bh * 3 + 40); g.clip();
+    g.save(); g.beginPath(); g.rect(x - bw * 2, ground - bh * 3, bw * 2 + w / 2 + bw * 0.62, bh * 3 + 1); g.clip();
     drawStack(g, { x: x + w / 2 - bw * 0.35, y: ground - bh * 0.62, w: bw, h: bh }, { things: e.purl, holder: 'floor', yarn: store.current, purl: 'sleep', dpr: d });
     g.restore();
   }

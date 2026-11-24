@@ -126,9 +126,9 @@ function drawPreview() {
   if (tab === 'needles' || tab === 'marker' || tab === 'counter') {
     // a real Work view: a few rows of stockinette on the needles, in your current yarn
     const chart = previewChart();
-    work = new Work(c, { dpr: d, minFit: 10, maxFit: 34, fitBox: (w, h) => ({ x: w * 0.08, y: h * 0.18, w: w * 0.84, h: h * 0.74 }) });
+    work = new Work(c, { dpr: d, minFit: 10, maxFit: 40, fitBox: (w, h) => ({ x: w * 0.1, y: h * 0.12, w: w * 0.8, h: h * 0.86 }) });
     const y = yarnNow();
-    const done = chart.rowStart(4) + 5;
+    const done = chart.rowStart(3) + 5;
     work.load(chart, { yarns: Array.from({ length: done }, () => y), done, castOnYarn: y, nextYarn: y });
     work.setNeedles(e.needles); work.setMarkers(e.marker); work.setCounter(e.counter);
     return;
@@ -164,7 +164,7 @@ function drawPreview() {
 }
 function previewChart() {
   const row = 'k'.repeat(12);
-  return parseChart({ stitch: Array(6).fill(row).join('\n'), repeat: { width: 4, edges: 0, rows: 2 } });
+  return parseChart({ stitch: Array(4).fill(row).join('\n'), repeat: { width: 4, edges: 0, rows: 2 } });
 }
 function newestPhoto() { return null; }
 

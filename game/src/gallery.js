@@ -110,7 +110,7 @@ function renderBasket() {
   if (!list.length) box.append(el('div', { class: 'empty-note', text: 'The Basket is empty. Pieces you pick "Not now" for, or take down from the wall, wait here.' }));
   for (const g of list) {
     const pv = el('div', { class: 'pv' });
-    const b = el('button', { class: 'bpiece', 'aria-label': `${g.name}: see it up close` }, pv, el('span', { class: 'nm', text: g.name }));
+    const b = el('button', { class: 'bpiece', 'aria-label': `${g.name}: see it up close` }, pv, el('span', { class: 'nm' }, wornBy(g.id) ? el('span', { class: 'icw', title: 'Worn by a doll', html: ICON.doll }) : null, g.name));
     b.addEventListener('click', () => detail(g.id));
     pv.dataset.gid = g.id;
     box.append(b);

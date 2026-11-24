@@ -14,16 +14,16 @@ export const MILESTONES = [
   { cm: 180, name: 'a grown-up', img: 'cmp-08-grown-up', fact: 'A tall grown-up stands about 1.8 m. Most grown-ups are about 1.5 to 1.9 m tall.' },
   { cm: 200, name: 'a front door', img: 'cmp-09-front-door', fact: 'A front door is usually about 2 m tall and about 90 cm wide.' },
   { cm: 300, name: 'a basketball hoop', img: 'cmp-10-basketball-hoop', fact: 'A basketball hoop\'s rim is 10 feet off the floor: about 3.05 m.', unlock: 'Glow yarn' },
-  { cm: 440, name: 'a double-decker bus', img: 'cmp-11-double-decker-bus', fact: 'A London double-decker bus is about 4.4 m tall.' },
+  { cm: 440, name: 'a double-decker bus', short: 'a bus', img: 'cmp-11-double-decker-bus', fact: 'A London double-decker bus is about 4.4 m tall.' },
   { cm: 550, name: 'a giraffe', img: 'cmp-12-giraffe', fact: 'Giraffes are the tallest animals: a big male is about 5.5 m tall, and his neck alone is about 1.8 m long.' },
   { cm: 750, name: 'a two-storey house', img: 'cmp-13-house', fact: 'A two-storey house is about 7 to 8 m tall to the top of its roof.' },
-  { cm: 1000, name: 'an Olympic diving tower', img: 'cmp-14-diving-tower', fact: 'The highest Olympic diving platform is 10 m up. Divers hit the water at about 50 km/h.' },
+  { cm: 1000, name: 'an Olympic diving tower', short: 'a diving tower', img: 'cmp-14-diving-tower', fact: 'The highest Olympic diving platform is 10 m up. Divers hit the water at about 50 km/h.' },
   { cm: 1300, name: 'a Brachiosaurus', img: 'cmp-15-brachiosaurus', fact: 'A Brachiosaurus could raise its head about 12 to 13 m high, about as tall as a four-storey building.' },
   { cm: 2000, name: 'a big oak tree', img: 'cmp-16-oak', fact: 'A big oak tree is about 20 m tall, and an oak can live for about 1,000 years.' },
-  { cm: 3000, name: 'a blue whale, stood on its tail', img: 'cmp-17-blue-whale', fact: 'Blue whales, the biggest animals known, grow to about 30 m long. A blue whale\'s heart weighs about 180 kg.' },
-  { cm: 4600, name: 'the Statue of Liberty (heel to torch)', img: 'cmp-18-statue-of-liberty', fact: 'From heel to torch the Statue of Liberty is about 46 m tall. Her index finger is about 2.4 m long.' },
-  { cm: 5600, name: 'the Leaning Tower of Pisa', img: 'cmp-19-leaning-tower-of-pisa', fact: 'The Leaning Tower of Pisa is about 56 m tall and leans by about 4 degrees.' },
-  { cm: 11600, name: 'the tallest tree, a coast redwood', img: 'cmp-20-coast-redwood', fact: 'The tallest known tree, a coast redwood called Hyperion, is about 116 m tall.' },
+  { cm: 3000, name: 'a blue whale, stood on its tail', short: 'a blue whale', img: 'cmp-17-blue-whale', fact: 'Blue whales, the biggest animals known, grow to about 30 m long. A blue whale\'s heart weighs about 180 kg.' },
+  { cm: 4600, name: 'the Statue of Liberty (heel to torch)', short: 'Statue of Liberty', img: 'cmp-18-statue-of-liberty', fact: 'From heel to torch the Statue of Liberty is about 46 m tall. Her index finger is about 2.4 m long.' },
+  { cm: 5600, name: 'the Leaning Tower of Pisa', short: 'Pisa\'s tower', img: 'cmp-19-leaning-tower-of-pisa', fact: 'The Leaning Tower of Pisa is about 56 m tall and leans by about 4 degrees.' },
+  { cm: 11600, name: 'the tallest tree, a coast redwood', short: 'a coast redwood', img: 'cmp-20-coast-redwood', fact: 'The tallest known tree, a coast redwood called Hyperion, is about 116 m tall.' },
 ];
 
 // beyond the pictures: code-drawn silhouettes

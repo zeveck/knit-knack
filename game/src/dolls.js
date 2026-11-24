@@ -192,7 +192,6 @@ function openSlot(slot) {
     if (worn) b.append(el('span', { class: 'tick icw', html: ICON.check }));
     b.addEventListener('click', fn);
     grid.append(b);
-    requestAnimationFrame(() => thumb(pv));
   };
   for (const g of list) {
     const p = S.patternById(g.pattern);
@@ -200,8 +199,6 @@ function openSlot(slot) {
   }
   if (slot === 'neck' && scarfStore.n > 0) add('Infinite Scarf', `${fmtLen(scarfStore.cm())} long`, null, cur === 'scarf', () => { closeSheet(); dress(doll, 'scarf'); });
   // thumbnails
-  const pvs = [];
-  function thumb(pv) { pvs.push(pv); }
   requestAnimationFrame(() => requestAnimationFrame(() => {
     grid.querySelectorAll('.slot-piece').forEach((b, i) => {
       const pv = b.querySelector('.pv');
