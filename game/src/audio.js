@@ -60,6 +60,7 @@ export function unlock() {
   prefetch();
   for (const n of Object.keys(SFX)) decodeOne(n);
   if (ctx.state === 'suspended') ctx.resume();
+  if (wantSet) { const w = wantSet; wantSet = null; music(w); }
 }
 
 async function decodeOne(n) {
@@ -145,7 +146,7 @@ function sliceTicks(ab, fam) {
   let last = -1e9; const spaced = [];
   for (const c of clicks) if (c.onsetMs - last >= MIN_GAP_MS) { spaced.push(c); last = c.onsetMs; }
   // keep clicks that decay in time and aren't stray soft ones (the metal clip has one)
-  const good = spaced.filter((c) => c.decayMs !== null && c.decayMs <= F.decayMs && c.peak >= peak * 0.2);
+  const good = spaced.filter((c) => c.decayMs !== null && c.decayMs <= F.decayMs);
   const slices = sliceBuffers(ab, good, fam, ctx);
   // level the slices so no click jumps out
   return slices.map((b, i) => ({ buffer: b, gain: Math.min(2.5, (peak * 0.7) / Math.max(1e-4, good[i].peak)) }));
@@ -285,7 +286,9 @@ function crossTo(src, dur = XFADE) {
   active = next;
   startOn(active, src, first ? 1.5 : dur);
 }
+let wantSet = null;
 export function music(set) {
+  wantSet = set;
   if (!ctx || !MUSIC[set] || set === musicSet) return;
   ensureDeck();
   if (!deck.length) return;

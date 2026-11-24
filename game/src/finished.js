@@ -22,7 +22,7 @@ function build() {
 }
 
 function touchOf(p) {
-  if (p.touch) return p.touch;
+  if (p.touch) { const k = String(p.touch.kind || p.touch).toLowerCase().replace(/[^a-z]/g, ''); if (['pompom', 'tassel', 'eyes', 'buttons'].includes(k)) return k; if (k === 'buttoneyes') return 'eyes'; if (k === 'button') return 'buttons'; }
   const f = (p.finishing || '').toLowerCase();
   if (f.includes('pom-pom') || f.includes('pompom')) return 'pompom';
   if (f.includes('tassel')) return 'tassel';
@@ -98,13 +98,16 @@ export function frame(t) {
   const el_ = t - t0;
   // the piece: pops in after the bind-off (scale), slightly bounces, then settles flat
   const dprArt = Math.min(3, window.devicePixelRatio || 1);
+  const uiH = ui.offsetHeight || 180;
+  const bw = Math.min(w * 0.28, 200), bh = bw * (396 / 468);
+  const top = 64, bottom = h - uiH - bh * 0.55;
   if (art && art.width) {
-    const maxW = w * 0.8, maxH = h * (w < 600 ? 0.44 : 0.5);
+    const maxW = w * 0.84, maxH = Math.max(80, bottom - top);
     const k0 = Math.min(maxW / (art.width / dprArt), maxH / (art.height / dprArt), 1.6);
     const p = Math.min(1, el_ / 500);
     const sc = k0 * (p < 1 ? 0.6 + 0.48 * Math.sin(p * Math.PI * 0.75) : 1 + 0.02 * Math.sin(el_ / 900));
     const aw = (art.width / dprArt) * sc, ah = (art.height / dprArt) * sc;
-    const cx = w / 2, cy = h * (w < 600 ? 0.36 : 0.4);
+    const cx = w / 2, cy = top + maxH / 2;
     // warm glow behind
     const gl = g.createRadialGradient(cx, cy, 0, cx, cy, Math.max(aw, ah) * 0.8);
     gl.addColorStop(0, 'rgba(255,214,140,0.35)'); gl.addColorStop(1, 'rgba(255,214,140,0)');
@@ -145,8 +148,7 @@ export function frame(t) {
     g.restore();
   }
   // Purl in her basket, bottom corner, cheering (frames 0..3 at 8 fps once), then settling asleep
-  const bw = Math.min(w * 0.34, 210), bh = bw * (396 / 468);
-  const b = { x: w < 600 ? 10 : w * 0.06, y: h - bh - (w < 600 ? 190 : 150), w: bw, h: bh };
+  const b = { x: w < 600 ? 8 : w * 0.06, y: h - uiH - bh * 0.92, w: bw, h: bh };
   const fi = Math.floor((el_ - 800) / 125);
   let frameNo = 'sleep';
   if (fi >= 0 && fi < 8) frameNo = [0, 1, 2, 1, 2, 3, 3, 3][fi];

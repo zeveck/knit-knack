@@ -37,7 +37,8 @@ function render() {
   root.classList.toggle('night', lightsOut);
   if (tab === 'wall') renderWall(); else renderBasket();
   const cm = s.scarf.cm || 0;
-  root.append(el('div', { class: 'plaque', text: `${S.wall().length + S.basket().length} pieces · ${fmt(s.gallery.reduce((t, g) => t + g.yarns.length, 0))} stitches · scarf ${cm >= 100 ? (cm / 100).toFixed(2) + ' m' : Math.round(cm) + ' cm'}` }));
+  const np = S.wall().length + S.basket().length;
+  root.append(el('div', { class: 'plaque', text: `${np} piece${np === 1 ? '' : 's'} · ${fmt(s.gallery.reduce((t, g) => t + g.yarns.length, 0))} stitches · scarf ${cm >= 100 ? (cm / 100).toFixed(2) + ' m' : Math.round(cm) + ' cm'}` }));
 }
 
 function renderWall() {
@@ -97,7 +98,7 @@ function renderWall() {
       const box = peg.querySelector('.hang');
       const w = box.clientWidth - 6, h = box.clientHeight - 4;
       if (w < 10 || h < 10) continue;
-      box.replaceChildren(fitCanvas(pieceRender(g, p, cellFor(p, w, h, 3, 9)), w, h));
+      box.replaceChildren(fitCanvas(pieceRender(g, p, cellFor(p, w, h, 3, 14)), w, h));
     }
     if (arriving) { setTimeout(() => audio.play('peg'), 700); arriving = null; }
   });

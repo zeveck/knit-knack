@@ -183,6 +183,7 @@ function renderCastOn(p) {
     el('div', { class: 'facts', text: `${chart.width} sts × ${chart.height} rows · ${fmt(chart.total)} stitches${p.wear ? ' · wearable' : ''}` }));
   const used = [...chart.slotsUsed].sort();
   const names = { A: 'Main color', B: 'Contrast', C: 'Third color', D: 'Fourth color' };
+  for (const [k, v] of Object.entries(p.slots || {})) if (v && typeof v === 'object' && v.label) names[k] = v.label;
   for (const slot of used) {
     const ball = el('canvas');
     const row = el('button', { class: 'slot-row', 'aria-label': `Change yarn ${slot}` }, el('span', { class: 'letter', text: slot }), ball, el('span', { class: 'nm' }, yarnName(co.slots[slot]), el('small', { text: names[slot] || '' })), el('span', { class: 'chg', text: 'Change' }));

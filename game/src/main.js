@@ -5,7 +5,7 @@ import * as S from './state.js';
 import * as audio from './audio.js';
 import * as toasts from './toasts.js';
 import { loadScene, loadExtras } from './scene.js';
-import { loadYarnImages, normYarn } from './yarn.js';
+import { loadYarnImages, normYarn, registerColorNames } from './yarn.js';
 import { setFibreTexture } from './stitches.js';
 import { writtenPattern } from './chart.js';
 import { chartOf, suggestedSlots } from './render.js';
@@ -48,6 +48,7 @@ async function loadPatterns() {
   try {
     const m = await import('./patterns.js');
     list = m.PATTERNS || m.patterns || m.default || Object.values(m).find((v) => Array.isArray(v));
+    if (m.PALETTE) registerColorNames(m.PALETTE);
   } catch (e) { list = null; }
   if (!Array.isArray(list) || !list.length) {
     const m = await import('./patterns-dev.js');
@@ -113,7 +114,10 @@ async function boot() {
   };
   titleEl.addEventListener('pointerdown', start);
   setKeyHandler((e) => { if (currentScreen() === 'title' && (e.key === ' ' || e.key === 'Enter' || e.key === 'k' || e.key === 'K')) { start(e); return true; } return false; });
-  document.addEventListener('keydown', (e) => { if (!audio.audioState().context) { /* first key also starts audio */ } }, true);
+  // the first tap or key anywhere starts the audio (the title's tap normally does)
+  const firstInput = () => { audio.unlock(); applySettings(); };
+  document.addEventListener('pointerdown', firstInput, { capture: true, once: true });
+  document.addEventListener('keydown', firstInput, { capture: true, once: true });
   // the menu from any screen (Escape/P), closing a sheet first
   document.addEventListener('keydown', (e) => {
     if (window.gameReport && window.gameReport.isOpen()) return;

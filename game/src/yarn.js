@@ -15,6 +15,14 @@ export const PALETTE = [
 const BY_HEX = new Map(PALETTE.map(([n, h]) => [h.toLowerCase(), n]));
 const BY_NAME = new Map(PALETTE.map(([n, h]) => [n.toLowerCase(), h]));
 
+// extra color names from the pattern book's own palette ({name: hex})
+export function registerColorNames(map) {
+  for (const [n, h] of Object.entries(map || {})) {
+    const name = n[0].toUpperCase() + n.slice(1);
+    if (!BY_NAME.has(n.toLowerCase())) BY_NAME.set(n.toLowerCase(), h.toLowerCase());
+    if (!BY_HEX.has(h.toLowerCase())) BY_HEX.set(h.toLowerCase(), name);
+  }
+}
 export const colorName = (hex) => BY_HEX.get(String(hex).toLowerCase()) || nearestName(hex);
 function nearestName(hex) {
   const [r, g, b] = hexToRgb(hex);
