@@ -201,7 +201,9 @@ function drawBackdrop(g, w, h) {
     backdrop = c;
   }
   g.drawImage(backdrop, 0, 0, w, h);
-  const cb = layout === 'desk' || layout === 'land' ? relRect(dom.workArea) : null;
+  // the ghost stays in the work area (beside a side panel; below the top bar on a phone)
+  const wa = relRect(dom.workArea);
+  const cb = layout === 'desk' || layout === 'land' ? wa : { x: 0, y: wa.y, w: w, h: h - wa.y };
   g.save();
   if (cb) { g.beginPath(); g.rect(cb.x, cb.y, cb.w, cb.h); g.clip(); }
   drawGhost(g);

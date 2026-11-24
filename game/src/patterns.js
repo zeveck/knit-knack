@@ -636,7 +636,7 @@ const eyesOf = (p) => { const by = new Map(); for (const [r, c] of p.spots.E || 
   ...AAAAAAAA...
   ..AAAAAAAAAA..
   ..AABBBBBBAA..
-  ..ABABBBBABA..
+  ..ABBABBABBA..
   ..ABBBCCBBBA..
   ..AABBBBBBAA..
   .AAABBBBBBAAA.
