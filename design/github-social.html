@@ -1,0 +1,63 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<!-- Knit Knack GitHub preview, 1280x640 (the social card, rebalanced for the wider shape). Serve the project root and screenshot at 1280x640
+     once <body data-ready> is set. The knitted pieces are drawn live by the game's own renderer. -->
+<style>
+@font-face { font-family: 'Fredoka'; src: url('../game/fonts/Fredoka.woff2'); font-weight: 300 700; }
+@font-face { font-family: 'Caveat'; src: url('../game/fonts/Caveat.woff2'); }
+html{--w:1280px;--h:640px;--sx:150px;--sy:262px;--bx:440px;--by:458px;--tx:500px;--tw:640px;--ty:76px;--ts:118px;--py:208px;--gx:600px;--gy:250px}
+html,body{margin:0;width:var(--w,1200px);height:var(--h,630px);overflow:hidden;background:#2a1f3d}
+.bg{position:absolute;inset:0;background:url('../game/assets/bg/nook-land.webp') center 72%/cover;filter:brightness(.58) saturate(.95)}
+.v{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 55%,rgba(12,6,24,0) 38%,rgba(12,6,24,.72))}
+.glow{position:absolute;left:var(--gx,560px);top:var(--gy,230px);width:620px;height:420px;background:radial-gradient(ellipse at 50% 50%,rgba(255,214,150,.28),rgba(255,214,150,0) 65%)}
+.stack{position:absolute;left:var(--sx,96px);top:var(--sy,268px);width:330px;height:330px}
+.stack img{position:absolute;left:0;top:0;width:330px}
+.stack .purl{left:33px;top:-52px;width:264px}
+.ball{position:absolute;left:var(--bx,382px);top:var(--by,470px);width:118px;height:118px;background:#b8344a;-webkit-mask:url('../game/assets/items/yarn-wool.png') center/contain no-repeat;mask:url('../game/assets/items/yarn-wool.png') center/contain no-repeat}
+.ball img{width:100%;height:100%;mix-blend-mode:multiply}
+h1{position:absolute;left:var(--tx,470px);width:var(--tw,650px);top:var(--ty,44px);margin:0;font-family:Fredoka;font-weight:700;font-size:var(--ts,122px);line-height:1;text-align:center;color:#f6ecd9;text-shadow:0 5px 0 #7a1e2c,0 10px 28px rgba(0,0,0,.6);white-space:nowrap}
+h1 .b{color:#f2d48a;display:inline-block;transform:rotate(3deg)}h1 .a{display:inline-block;transform:rotate(-3deg)}
+p{position:absolute;left:var(--tx,470px);width:var(--tw,650px);top:var(--py,180px);margin:0;font-family:Caveat;font-size:42px;color:#f3e3c4;text-align:center;text-shadow:0 2px 10px #000}
+.piece{position:absolute;filter:drop-shadow(0 10px 14px rgba(10,4,20,.55))}
+.peg{position:absolute;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5))}
+</style></head><body><div class="bg"></div><div class="v"></div><div class="glow"></div>
+<div class="stack"><img src="../game/assets/sprites/basket-back.png"><img class="purl" src="../game/assets/sprites/purl-cat.png"><img src="../game/assets/sprites/basket-front.png"></div>
+<div class="ball"><img src="../game/assets/items/yarn-wool.png"></div>
+<h1><span class="a">Knit</span> <span class="b">Knack</span></h1>
+<p>every tap knits one real stitch</p>
+<script type="module">
+import P from '../game/src/patterns.js';
+import { patternRender, suggestedSlots, trimmed } from '../game/src/render.js';
+const css = getComputedStyle(document.documentElement);
+const num = (k, d) => parseFloat(css.getPropertyValue(k)) || d;
+// [pattern, box left, top, max width, max height, tilt]
+const pieces = [
+  ['holiday-stocking', 610, 322, 236, 244, -3],
+  ['snowflake-mitten', 876, 334, 220, 228, 4],
+];
+for (const [id, x, y, w, h, tilt] of pieces) {
+  const p = P.find((q) => q.id === id);
+  const src = trimmed(patternRender(p, suggestedSlots(p), 20));
+  const k = Math.min(w / src.width, h / src.height);
+  const c = document.createElement('canvas');
+  c.width = Math.round(src.width * k * 2); c.height = Math.round(src.height * k * 2);
+  const g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(src, 0, 0, c.width, c.height);
+  const cw = c.width / 2, ch = c.height / 2, top = 58;
+  c.className = 'piece';
+  Object.assign(c.style, { width: cw + 'px', height: ch + 'px', left: 0, top: top + 'px' });
+  // hung from a gallery peg on a yarn loop, tilted round the peg
+  const wrap = document.createElement('div');
+  Object.assign(wrap.style, { position: 'absolute', left: x + (w - cw) / 2 + 'px', top: y - top + 'px', width: cw + 'px', height: ch + top + 'px', transform: `rotate(${tilt}deg)`, transformOrigin: `50% 22px` });
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width', cw); svg.setAttribute('height', top + 12); svg.style.position = 'absolute'; svg.style.left = 0; svg.style.top = 0;
+  svg.innerHTML = `<path d="M${cw * 0.3} ${top + 8} L${cw / 2} 20 L${cw * 0.7} ${top + 8}" fill="none" stroke="#e9dcc2" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" opacity=".95"/>`;
+  wrap.append(svg, c);
+  document.body.append(wrap);
+  const peg = document.createElement('img');
+  peg.src = '../game/assets/items/gallery-peg.png'; peg.className = 'peg';
+  Object.assign(peg.style, { left: x + w / 2 - 22 + 'px', top: y - top + 0 + 'px', width: '44px' });
+  document.body.append(peg);
+}
+await document.fonts.ready;
+await Promise.all([...document.images].map((i) => i.decode().catch(() => {})));
+document.body.dataset.ready = '1';
+</script></body></html>
