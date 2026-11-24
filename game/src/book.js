@@ -67,7 +67,7 @@ function renderBook() {
   const tabs = el('div', { class: 'tabs', role: 'tablist' });
   S.CHAPTERS.forEach((name, i) => {
     const t = el('button', { class: 'tab' + (chapter === i + 1 ? ' on' : ''), role: 'tab', 'aria-selected': chapter === i + 1 ? 'true' : 'false' }, el('span', { class: 'n', text: i + 1 }), el('span', { class: 'nm', text: name }));
-    if (chapter !== i + 1) t.setAttribute('aria-label', `Chapter ${i + 1}: ${name}`);
+    t.setAttribute('aria-label', `Chapter ${i + 1}: ${name}`);
     t.addEventListener('click', () => { if (chapter !== i + 1) { chapter = i + 1; audio.play('page'); renderBook(); } });
     tabs.append(t);
   });
@@ -237,9 +237,17 @@ function renderCastOn(p) {
   page.append(el('div', { class: 'caston-wrap' }, pv, info));
   root.replaceChildren(page);
   requestAnimationFrame(() => {
-    const w = Math.min(pv.clientWidth - 24, 560), h = Math.max(240, Math.min(innerHeight * 0.5, 460));
+    // a phone held upright: a shorter preview, so the yarn rows fit above the pinned Cast on bar
+    const w = Math.min(pv.clientWidth - 24, 560), h = phoneUpright() ? Math.max(130, Math.min(innerHeight * 0.24, 200)) : Math.max(240, Math.min(innerHeight * 0.5, 460));
     pv.replaceChildren(fitCanvas(patternRender(p, co.slots, cellFor(p, w, h, 4, 22)), w, h));
+    scrollCue();
   });
+}
+const phoneUpright = () => innerWidth < 760 && innerHeight >= 500;
+// the pinned Cast on bar casts a shadow up the page while there's more page under it
+function scrollCue() {
+  const r = castonEl();
+  r.classList.toggle('more-below', r.scrollHeight - r.scrollTop - r.clientHeight > 24);
 }
 function castOn(p) {
   if (S.getPiece(p.id)) { go('knit', p.id); return; }
@@ -255,6 +263,8 @@ registerScreen('caston', {
     if (!S.patternUnlocked(p.id)) { notice('That pattern is still locked.'); go('book'); return; }
     renderCastOn(p);
     castonEl().scrollTop = 0;
+    if (!castonEl()._cue) { castonEl()._cue = true; castonEl().addEventListener('scroll', scrollCue, { passive: true }); addEventListener('resize', scrollCue); }
+    requestAnimationFrame(() => requestAnimationFrame(scrollCue));
     setKeyHandler((e) => {
       if (e.key === 'Escape') { go('book', { chapter: p.chapter }); return true; }
       if (e.key === 'm' || e.key === 'M') { toggleMute(); return true; }

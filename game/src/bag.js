@@ -10,12 +10,12 @@ import * as audio from './audio.js';
 import * as toasts from './toasts.js';
 import { Work, drawNeedle, NEEDLE_STYLES, MARKER_STYLES, COUNTER_STYLES } from './work.js';
 import { parseChart } from './chart.js';
-import { drawNook, drawStack, image as sceneImage } from './scene.js';
+import { drawNook, drawStack, nookFit, image as sceneImage } from './scene.js';
 import { drawBall } from './yarn.js';
 import { loadDolls, dressedDoll, dollSilhouette, dollBounds, dollSize, DOLL_NAMES } from './worn.js';
 
 const TABS = [
-  ['needles', 'Needles'], ['marker', 'Markers'], ['counter', 'Counter'], ['holder', 'Holder'], ['decor', 'Decor'], ['purl', 'Purl'], ['doll', 'Dolls'],
+  ['needles', 'Needles'], ['marker', 'Markers'], ['counter', 'Counter'], ['holder', 'Holder'], ['decor', 'Decor'], ['purl', 'Purl'], ['doll', 'Doll Shelf'],
 ];
 let root = null, tab = 'needles', menuFn = () => {}, work = null, workCanvas = null, prevScreen = null;
 export const setMenu = (fn) => { menuFn = fn; };
@@ -126,7 +126,7 @@ function drawPreview() {
   if (tab === 'needles' || tab === 'marker' || tab === 'counter') {
     // a real Work view: a few rows of stockinette on the needles, in your current yarn
     const chart = previewChart();
-    work = new Work(c, { dpr: d, minFit: 10, maxFit: 40, fitBox: (w, h) => ({ x: w * 0.1, y: h * 0.12, w: w * 0.8, h: h * 0.86 }) });
+    work = new Work(c, { dpr: d, minFit: 10, maxFit: 40, fitBox: (w, h) => ({ x: w * 0.1, y: h * 0.1, w: w * 0.8, h: h * 0.72 }) });
     const y = yarnNow();
     const done = chart.rowStart(3) + 5;
     work.load(chart, { yarns: Array.from({ length: done }, () => y), done, castOnYarn: y, nextYarn: y });
@@ -139,10 +139,13 @@ function drawPreview() {
   const w = r.width, h = r.height;
   if (tab === 'decor') { drawNook(g, w, h, { decor: e.decor, photo: newestPhoto() }); return; }
   if (tab === 'holder' || tab === 'purl') {
-    drawNook(g, w, h, { decor: e.decor });
+    // the nook's floor along the bottom of the strip (not its middle: the basket stands on the boards,
+    // to the left of the side table and its teacup)
+    const fit = nookFit(w, h);
+    g.save(); g.translate(0, fit.oy); drawNook(g, w, h, { decor: e.decor }); g.restore();
     g.fillStyle = 'rgba(34,18,40,0.45)'; g.fillRect(0, 0, w, h);
-    const bh = Math.min(h * 0.62, w * 0.36), bw = bh * (468 / 396);
-    const b = { x: w / 2 - bw * 0.85, y: h - bh - h * 0.08, w: bw, h: bh };
+    const bh = Math.min(h * 0.62, w * 0.32), bw = bh * (468 / 396);
+    const b = { x: Math.max(w * 0.05, w * 0.36 - bw), y: h - bh - h * 0.05, w: bw, h: bh };
     drawStack(g, b, { t: performance.now(), things: e.purl, holder: e.holder, yarn: yarnNow(), dpr: d, purl: 'sleep' });
     return;
   }

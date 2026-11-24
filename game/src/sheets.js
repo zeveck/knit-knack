@@ -66,7 +66,7 @@ export function openPicker({ title = 'Pick a yarn', current, onPick, name = 'pic
   upd();
   const use = el('button', { class: 'btn primary small', text: 'Use this color' });
   use.addEventListener('click', () => { const h = mixHex(); S.pushCustom(h); pick(h); });
-  const mix = el('div', { class: 'mix' }, el('div', { class: 'row' }, big, el('span', { text: 'Mix your own' })), lh, ls, ll, use);
+  const mix = el('div', { class: 'mix' }, el('div', { class: 'row' }, big, el('span', { text: 'Slide to mix a color, then use it.' })), lh, ls, ll, use);
   root.append(cur, types, hint, el('h3', { text: 'Colors' }), sw);
   if (S.get().custom.length) root.append(el('h3', { text: 'Your colors' }), customRow);
   root.append(el('h3', { text: 'Mix your own' }), mix);

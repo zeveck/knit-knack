@@ -101,7 +101,12 @@ function wearable(g, info) {
   if (!dollsReady()) return;
   // the enlarged card shows the whole doll; the finish shows the doll round the piece (the piece is the star)
   let crop = large && !info.focus ? [10, 20, 502, 750] : (doll === 'purl' ? PURL_CROP : SLOT_CROP)[slot] || [0, 0, 512, 768];
-  if (info.focus) { const [a, b, c, d] = crop, ew = (c - a) * 0.22, eh = (d - b) * 0.22; crop = [Math.max(0, a - ew), Math.max(0, b - eh), Math.min(512, c + ew), Math.min(768, d + eh)]; }
+  if (info.focus) {
+    const [a, b, c, d] = crop, ew = (c - a) * 0.22, eh = (d - b) * 0.22;
+    crop = [Math.max(0, a - ew), Math.max(0, b - eh), Math.min(512, c + ew), Math.min(768, d + eh)];
+    // a crop whose top edge would slice through the doll's head takes in the whole head instead
+    if (crop[1] > 0 && crop[1] < 200) crop[1] = 0;
+  }
   const [cx0, cy0, cx1, cy1] = doll === 'purl' && large && !info.focus ? [40, 0, 472, 510] : crop;
   const k = Math.min(w / (cx1 - cx0), h / (cy1 - cy0)) * 0.96;
   // the real stitch renderer, at a cell size where motifs survive, drawn down into the card
@@ -217,14 +222,15 @@ function scene(g, info) {
   const bake = large || w >= 200 ? liveBake(info, W) : flatBake(info);
   if (kind === 'coaster') {
     tabletop(g, w, h, 0);
-    // the mug waits at the back; the coaster, big, in front
-    flatOnTable(g, bake, w * 0.47, h * 0.62, w * 0.8, 0.62);
-    // the mug waits at the back (at the finish it drops onto the new coaster)
+    // the mug waits small in the back corner, behind the coaster (at the finish it drops in there), so
+    // the coaster just knit shows whole, in front
     const f = info.finish;
+    const mx = w * 0.77, my = h * 0.1, mw = w * 0.21, mh = h * 0.29;
     if (IMG.mug && f != null) {
       const e = f < 0.55 ? 0 : Math.min(1, (f - 0.55) / 0.45), d = 1 - Math.pow(1 - e, 3);
-      g.save(); g.globalAlpha = e > 0 ? 1 : 0; fitImg(g, IMG.mug, w * 0.29, h * 0.12 - (1 - d) * h * 0.5, w * 0.36, h * 0.5); g.restore();
-    } else if (IMG.mug) fitImg(g, IMG.mug, w * 0.56, h * 0.02, w * 0.4, h * 0.42);
+      if (e > 0) fitImg(g, IMG.mug, mx, my - (1 - d) * h * 0.5, mw, mh);
+    } else if (IMG.mug) fitImg(g, IMG.mug, mx, my, mw, mh);
+    flatOnTable(g, bake, w * 0.45, h * 0.63, w * 0.8, 0.62);
   } else if (kind === 'cozy') {
     tabletop(g, w, h, h * 0.62);
     if (IMG.mug) {

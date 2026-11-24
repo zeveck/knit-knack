@@ -23,6 +23,32 @@ export const pageZoom = () => (innerWidth >= 1500 ? Math.max(1, Math.min(1.45, i
 const applyZoom = () => document.documentElement.style.setProperty('--pz', String(Math.round(pageZoom() * 100) / 100));
 applyZoom(); addEventListener('resize', applyZoom);
 export const fmt = (n) => Math.round(n).toLocaleString('en-US');
+// The instruction card: a long row first grows to its full height (three lines; two on a landscape
+// phone; the card itself is always that tall, so it never jumps), then shrinks (never below `floor`);
+// if it still doesn't fit it scrolls, never cut, so the current stitch is always in view.
+export function fitStrip(w, land) {
+  w.style.fontSize = ''; w.style.webkitLineClamp = ''; w.style.display = ''; w.style.overflowY = ''; w.style.maxHeight = '';
+  w.scrollTop = 0;
+  const over = () => w.scrollHeight > w.clientHeight + 1 || w.scrollWidth > w.clientWidth + 1;
+  const lines = land ? 2 : 3;
+  if (over()) w.style.webkitLineClamp = String(lines);
+  let px = parseFloat(getComputedStyle(w).fontSize);
+  const floor = land ? 19 : 18;
+  while (over() && px > floor) { px -= 1; w.style.fontSize = `${px}px`; }
+  if (over()) {
+    const lh = parseFloat(getComputedStyle(w).lineHeight) || px * 1.1;
+    w.style.webkitLineClamp = 'unset'; w.style.display = 'block'; w.style.overflowY = 'auto'; w.style.maxHeight = `${Math.floor(lh * lines)}px`;
+    const cur = w.querySelector('.cur');
+    // scrolled by whole lines, the current stitch's line in view (the second of three, or the first of two)
+    if (cur) {
+      const off = cur.getBoundingClientRect().top - w.getBoundingClientRect().top + w.scrollTop;
+      const line = Math.floor((off + lh * 0.5) / lh);
+      w.scrollTop = Math.max(0, (line - (lines > 2 ? 1 : 0)) * lh);
+    }
+  }
+}
+// keep words together with no-break spaces, breaking only after commas ("k2 A", "3 times", "to end", "Black wool")
+export const nb = (t) => String(t).replace(/([^,]) /g, '$1\u00a0');
 
 const P = (d, extra = '') => `<svg viewBox="0 0 24 24" aria-hidden="true" ${extra}><path d="${d}"/></svg>`;
 export const ICON = {
@@ -78,7 +104,13 @@ export function go(name, arg) {
   if (prev && prev.leave) prev.leave(name);
   current = name; currentArg = arg;
   if (next.enter) next.enter(arg, prevName);
-  if (nextEl) nextEl.hidden = false;
+  // its enter sent us somewhere else (e.g. a locked pattern's Cast On goes back to the book): that won
+  if (current !== name || currentArg !== arg) return;
+  if (nextEl) {
+    nextEl.hidden = false;
+    // a scrolling page opens at its top (a hidden element keeps its old scroll offset otherwise)
+    if (name !== prevName) { nextEl.scrollTop = 0; nextEl.scrollLeft = 0; }
+  }
   for (const s of document.querySelectorAll('[data-screen]')) if (s !== nextEl) s.hidden = true;
   hooks.change.forEach((f) => f(name, prevName));
 }
@@ -86,6 +118,9 @@ export function go(name, arg) {
 // ---------------------------------------------------------------- sheets (pickers, glossary, menu…)
 let sheet = null; // {name, el, onClose}
 let openedAt = -1e9;
+// listeners told when a sheet opens (true) or closes (false): the toasts wait while one is open
+const sheetHooks = [];
+export const onSheet = (fn) => sheetHooks.push(fn);
 export const openSheetName = () => (sheet ? sheet.name : null);
 export function openSheet(name, content, { onClose, cls = '', title = '', modal = true } = {}) {
   closeSheet(true);
@@ -106,6 +141,7 @@ export function openSheet(name, content, { onClose, cls = '', title = '', modal 
   sheet = { name, el: card, onClose };
   openedAt = performance.now();
   requestAnimationFrame(() => card.classList.add('in'));
+  sheetHooks.forEach((f) => f(true));
   return card;
 }
 export function closeSheet(silent) {
@@ -114,6 +150,7 @@ export function closeSheet(silent) {
   const layer = document.getElementById('sheet-layer');
   layer.hidden = true; layer.innerHTML = '';
   if (s.onClose) s.onClose(silent);
+  if (!sheet) sheetHooks.forEach((f) => f(false));
   return true;
 }
 export function initSheets() {
@@ -131,5 +168,14 @@ export function initSheets() {
 export function notice(text, ms = 3500) {
   const n = document.getElementById('notice');
   n.textContent = text; n.hidden = false; n.classList.add('show');
+  // on the knitting screens it sits at the top of the work, clear of the yarn bar (and under a tip)
+  const scr = document.querySelector('.knit-screen:not([hidden])');
+  const wa = scr && scr.querySelector('.work-area');
+  if (wa && wa.getClientRects().length) {
+    const tipEl = wa.querySelector('.tip:not([hidden]):not(.out)');
+    const r = wa.getBoundingClientRect();
+    n.style.top = `${(tipEl ? tipEl.getBoundingClientRect().bottom : r.top) + 12}px`; n.style.bottom = 'auto';
+    n.style.left = `${r.left + r.width / 2}px`; n.style.maxWidth = `${Math.min(r.width - 16, innerWidth * 0.92)}px`;
+  } else { n.style.top = ''; n.style.bottom = ''; n.style.left = ''; n.style.maxWidth = ''; }
   clearTimeout(n._t); n._t = setTimeout(() => { n.classList.remove('show'); n.hidden = true; }, ms);
 }

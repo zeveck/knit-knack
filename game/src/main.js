@@ -136,8 +136,39 @@ async function boot() {
     game: 'Knit Knack', key: 'knitknack', visibility: 'on',
     state: () => reportState(),
     pause: () => {},
-    grab: () => new Promise((r) => { const c = document.querySelector('[data-screen]:not([hidden]) canvas'); if (c && c.toBlob) c.toBlob(r, 'image/png'); else r(null); }),
+    grab: () => grabScreen(),
     releaseAll: () => releaseHolds(),
+  });
+}
+
+// Report a bug's picture of the screen. The screens drawn on canvas (the title, the knitting and scarf
+// screens, the finish) are put back together from their canvases, each at its place on the screen; the
+// paper and gallery screens are mostly page text a canvas can't copy, so they send no picture rather than
+// a misleading one (a single card's thumbnail).
+function grabScreen() {
+  return new Promise((done) => {
+    try {
+      const scr = document.querySelector('[data-screen]:not([hidden])');
+      const name = scr && scr.dataset.screen;
+      if (!['title', 'knit', 'scarf', 'finished'].includes(name)) { done(null); return; }
+      // "How long is it?" covers the scarf screen: its picture is its own canvas
+      const how = scr.querySelector('.howlong');
+      const host = how || scr;
+      const shown = [...host.querySelectorAll('canvas')].filter((c) => {
+        if (!c.width || !c.height || !c.getClientRects().length) return false;
+        const st = getComputedStyle(c);
+        return st.visibility !== 'hidden' && st.display !== 'none' && +st.opacity !== 0;
+      });
+      if (!shown.length) { done(null); return; }
+      const W = innerWidth, H = innerHeight, k = Math.min(2, window.devicePixelRatio || 1);
+      const out = document.createElement('canvas'); out.width = Math.round(W * k); out.height = Math.round(H * k);
+      const g = out.getContext('2d'); g.scale(k, k);
+      g.fillStyle = getComputedStyle(host).backgroundColor || '#2a1f3d';
+      if (g.fillStyle === 'rgba(0, 0, 0, 0)') g.fillStyle = '#2a1f3d';
+      g.fillRect(0, 0, W, H);
+      for (const c of shown) { const r = c.getBoundingClientRect(); try { g.drawImage(c, r.left, r.top, r.width, r.height); } catch { /* a tainted canvas: skipped */ } }
+      out.toBlob((b) => done(b), 'image/png');
+    } catch { done(null); }
   });
 }
 

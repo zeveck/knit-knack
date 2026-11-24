@@ -435,7 +435,7 @@ const STYLES = `
     text-align: center;
     margin-top: 8px;
   }
-  .link-note p { margin-bottom: 8px; }
+  .link-note p { margin-bottom: 8px; text-wrap: balance; }
   .link-note .done-btn { margin-top: 12px; }
 `;
 

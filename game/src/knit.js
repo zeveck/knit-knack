@@ -2,7 +2,7 @@
 // the basket slot, the preview card, the three layouts.
 import { Work } from './work.js';
 import { stripWording, wordingCursor, drapeOf } from './chart.js';
-import { el, $, ICON, go, openSheet, closeSheet, openSheetName, registerScreen, currentScreen, fmt } from './ui.js';
+import { el, $, ICON, go, openSheet, closeSheet, openSheetName, registerScreen, currentScreen, fmt, nb, fitStrip } from './ui.js';
 import { onRelease, onHold, markKnit, setKeyHandler, holdKnitter } from './input.js';
 import * as S from './state.js';
 import * as audio from './audio.js';
@@ -569,42 +569,19 @@ function hud() {
     const frag = document.createDocumentFragment();
     frag.append(el('span', { class: 'lbl', text: w.label + ':' }), ' ');
     const m = w.text.match(/^with \w, /);
-    if (m) frag.append(m[0]);
+    if (m) frag.append(nb(m[0]));
     w.tokens.forEach((t, j) => {
       if (j) frag.append(t.glue || ', ');
-      frag.append(el('span', { class: 'tok' + (t.rep ? ' rep' : '') + (j === cur.token ? ' cur' : ''), text: t.text }));
+      frag.append(el('span', { class: 'tok' + (t.rep ? ' rep' : '') + (j === cur.token ? ' cur' : ''), text: nb(t.text) }));
     });
-    if (w.countChanged && L.r > 1) frag.append(` (${w.count} sts)`);
+    if (w.countChanged && L.r > 1) frag.append(nb(` (${w.count} sts)`));
     if (cur.reps) frag.append(el('span', { class: 'cnt', text: `rep ${cur.rep} of ${cur.reps} · st ${cur.st} of ${cur.of}` }));
     dom.words.replaceChildren(frag);
     fitWords();
   }
   if (piece.follow) refreshNext();
 }
-// a long row first grows to three lines, then shrinks (never below 16 px); if it still doesn't fit it
-// scrolls, never cut, so the current stitch is always in view. Landscape: one line that slides sideways.
-function fitWords() {
-  const w = dom.words;
-  w.style.fontSize = ''; w.style.webkitLineClamp = ''; w.style.display = ''; w.style.overflowY = ''; w.style.maxHeight = '';
-  w.scrollLeft = 0; w.scrollTop = 0;
-  const over = () => w.scrollHeight > w.clientHeight + 1 || w.scrollWidth > w.clientWidth + 1;
-  let px = parseFloat(getComputedStyle(w).fontSize);
-  const land = layout === 'land';
-  if (!land && over()) w.style.webkitLineClamp = '3';
-  const floor = land ? 15 : 16;
-  while (over() && px > floor) { px -= 1; w.style.fontSize = `${px}px`; }
-  const cur = w.querySelector('.cur');
-  if (land) {
-    if (cur && w.scrollWidth > w.clientWidth + 1) w.scrollLeft = Math.max(0, cur.offsetLeft - w.clientWidth * 0.35);
-    return;
-  }
-  if (over()) {
-    // still too long at three lines: show it all as a scrolling box, three lines tall
-    const lh = parseFloat(getComputedStyle(w).lineHeight) || px * 1.1;
-    w.style.webkitLineClamp = 'unset'; w.style.display = 'block'; w.style.overflowY = 'auto'; w.style.maxHeight = `${Math.ceil(lh * 3) + 2}px`;
-    if (cur) w.scrollTop = Math.max(0, cur.getBoundingClientRect().top - w.getBoundingClientRect().top - lh);
-  }
-}
+const fitWords = () => fitStrip(dom.words, layout === 'land');
 let lastNextSlot = null;
 function refreshNext() {
   const L = chart.locate(Math.min(currentIndex(), chart.total - 1));

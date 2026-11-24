@@ -4,7 +4,7 @@
 // thing it passed and the next one, at one shared scale, under a sky that darkens with height).
 import { Work } from './work.js';
 import { stripWording, wordingCursor, parseChart } from './chart.js';
-import { el, ICON, go, openSheet, closeSheet, openSheetName, registerScreen, currentScreen, fmt } from './ui.js';
+import { el, ICON, go, openSheet, closeSheet, openSheetName, registerScreen, currentScreen, fmt, nb, fitStrip } from './ui.js';
 import { onRelease, onHold, markKnit, setKeyHandler, holdKnitter } from './input.js';
 import { toggleMute } from './knit.js';
 import * as S from './state.js';
@@ -256,20 +256,14 @@ function hud() {
     const cur = wordingCursor(w, L.k);
     const frag = document.createDocumentFragment();
     frag.append(el('span', { class: 'lbl', text: w.label + ':' }), ' ');
-    w.tokens.forEach((t, j) => { if (j) frag.append(t.glue || ', '); frag.append(el('span', { class: 'tok' + (t.rep ? ' rep' : '') + (j === cur.token ? ' cur' : ''), text: t.text })); });
+    w.tokens.forEach((t, j) => { if (j) frag.append(t.glue || ', '); frag.append(el('span', { class: 'tok' + (t.rep ? ' rep' : '') + (j === cur.token ? ' cur' : ''), text: nb(t.text) })); });
     if (cur.reps) frag.append(el('span', { class: 'cnt', text: `rep ${cur.rep} of ${cur.reps} · st ${cur.st} of ${cur.of}` }));
     html = frag;
   } catch { html = document.createTextNode(`Row ${L.r}`); }
   const key = `${L.r}|${L.k}|${store.runs.length}`;
   if (dom.words._k !== key) {
     dom.words._k = key; dom.words.replaceChildren(html);
-    // shrink a long row to fit (down to 15 px), then slide so the current stitch shows
-    const w = dom.words; w.style.fontSize = ''; w.scrollLeft = 0;
-    const over = () => w.scrollHeight > w.clientHeight + 1 || w.scrollWidth > w.clientWidth + 1;
-    let px = parseFloat(getComputedStyle(w).fontSize);
-    while (over() && px > 15) { px -= 1; w.style.fontSize = `${px}px`; }
-    const cur = w.querySelector('.cur');
-    if (cur && w.scrollWidth > w.clientWidth + 1) w.scrollLeft = Math.max(0, cur.offsetLeft - w.clientWidth * 0.35);
+    fitStrip(dom.words, layout === 'land');
   }
   dom.stitchBtn.querySelector('.sp').textContent = SCARF_PATTERNS[queuedOrCurrent()].name;
 }
@@ -278,10 +272,8 @@ const queuedOrCurrent = () => store.patternAtRow(rowNow() + (store.n % WIDTH ? 1
 // big rolling digits: each digit is a column of 0-9 that slides
 let digitFmt = '';
 function setDigits(cm) {
-  let txt, unit;
-  if (cm >= 100000) { txt = (cm / 100000).toFixed(cm >= 1e7 ? 0 : 2); unit = 'km'; }
-  else if (cm >= 100) { txt = (cm / 100).toFixed(cm >= 10000 ? 1 : 2); unit = 'm'; }
-  else { txt = String(Math.floor(cm)); unit = 'cm'; }
+  // the same steps as every other length (fmtLen): no trailing zeros
+  const [txt, unit] = fmtLen(cm).split(' ');
   const shape = txt.replace(/\d/g, '0') + unit;
   if (shape !== digitFmt) {
     digitFmt = shape;
@@ -529,10 +521,12 @@ function openHow() {
   box.append(el('div', { class: 'how-top' }, back, el('h2', { text: 'How long is it?' }), el('span', { class: 'how-len' })), el('div', { class: 'how-body' }, stage, cards));
   root.append(box);
   how = { box, cv, stage, cards, s: 0, target: 0, anim: null, pairKey: '', dirty: true, resize: true, cardsKey: '' };
+  toasts.anchor(dom.progress);
 }
 function closeHow(silent) {
   if (!how) return;
   how.box.remove(); how = null;
+  toasts.anchor(dom.progress);
   if (!silent) audio.play('ui', { gain: 0.6 });
 }
 function pairOf(cm) {
@@ -550,9 +544,9 @@ function drawHow(t) {
   const d = dprOf();
   if (H.resize || H.cv.width !== Math.round(r.width * d)) { H.cv.width = Math.round(r.width * d); H.cv.height = Math.round(r.height * d); H.resize = false; H.dirty = true; }
   const W = r.width, Ht = r.height;
-  // text grows with the view (about 11 px on a landscape phone, 16-17 px on a desktop); the ground line
+  // text grows with the view (13 px on a phone, 16-17 px on a desktop); the ground line
   // leaves room under it for the two label lines
-  const fs = clamp(Ht / 38, 11, 17);
+  const fs = clamp(Ht / 38, 13, 17);
   const ruler = Math.round(Math.max(46, fs * 4.8));
   const ground = Ht - Math.max(Ht * 0.1, fs * 2.7 + 10);
   const Wc = W - ruler - 10;
@@ -660,7 +654,7 @@ function drawThing(g, m, x, ground, s, cm, align = 'center', fs = 13) {
   const label = `${(m.short || m.name).replace(/, stood.*$/, '').replace(/ \(.*\)$/, '')} · ${fmtLen(m.cm)}`;
   const tx = align === 'right' ? x + w : align === 'left' ? x : x + w / 2;
   g.fillText(label, tx, ground + fs * 1.35);
-  g.font = `500 ${Math.round(fs * 0.85)}px Fredoka, sans-serif`; g.fillStyle = passed ? '#c9e0b4' : '#f2d48a';
+  g.font = `500 ${Math.max(12, Math.round(fs * 0.85))}px Fredoka, sans-serif`; g.fillStyle = passed ? '#c9e0b4' : '#f2d48a';
   g.fillText(passed ? 'passed!' : 'next', tx, ground + fs * 2.45);
   g.restore();
 }
@@ -681,7 +675,7 @@ function silhouette(g, kind, x, ground, w, h) {
 function drawRuler(g, rw, ground, s, H, fs = 13) {
   g.save();
   g.fillStyle = 'rgba(246,230,190,0.92)'; g.fillRect(4, 0, rw - 12, ground);
-  const rf = Math.round(fs * 0.85);
+  const rf = Math.max(12, Math.round(fs * 0.85));
   g.strokeStyle = 'rgba(80,50,30,0.8)'; g.fillStyle = '#4a2c14'; g.font = `600 ${rf}px Fredoka, sans-serif`; g.textAlign = 'left';
   const steps = [1, 2, 5]; let step = 1;
   outer: for (let e = 0; e < 12; e++) for (const k of steps) { step = k * Math.pow(10, e); if (step * s >= Math.max(46, rf * 4)) break outer; }

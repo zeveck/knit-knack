@@ -107,7 +107,9 @@ export const goalAfter = (cm) => GOALS.find((m) => m.cm > cm) || null;
 export const lastPassed = (cm) => { let b = null; for (const m of MILESTONES) if (m.cm <= cm) b = m; return b; };
 // one formatter for every length shown (the scarf's rolling counter uses the same steps)
 export function fmtLen(cm) {
-  if (cm >= 100000) { const km = cm / 100000; return `${km >= 100 ? Math.round(km).toLocaleString('en-US') : km.toFixed(2)} km`; }
-  if (cm >= 100) { const m = cm / 100; return `${m.toLocaleString('en-US', { minimumFractionDigits: m >= 100 ? 1 : 2, maximumFractionDigits: m >= 100 ? 1 : 2 })} m`; }
+  // no trailing zeros ("13 m", "100 km", "2.5 m"); decimals only where they say something
+  const n = (v, d) => v.toLocaleString('en-US', { maximumFractionDigits: d });
+  if (cm >= 100000) { const km = cm / 100000; return `${n(km, km >= 100 ? 0 : km >= 10 ? 1 : 2)} km`; }
+  if (cm >= 100) { const m = cm / 100; return `${n(m, m >= 100 ? 1 : 2)} m`; }
   return `${Math.floor(cm)} cm`;
 }

@@ -1,5 +1,5 @@
 // gallery.js — the Gallery Wall (pegs laid out by code, pages, a plaque, Lights out), the Basket tab,
-// and the piece close-up (rename, Knit again, Take down / Hang it). Doll Shelf is go('dolls').
+// and the piece close-up (rename, Knit again, Take down / Display it). Doll Shelf is go('dolls').
 import { el, ICON, go, registerScreen, openSheet, closeSheet, fmt, currentScreen } from './ui.js';
 import { setKeyHandler } from './input.js';
 import { fmtLen } from './scarfFacts.js';
@@ -139,7 +139,7 @@ function detail(id) {
   const acts = el('div', { class: 'acts' });
   const again = el('button', { class: 'btn primary', text: 'Knit again' });
   again.addEventListener('click', () => { closeSheet(); if (S.getPiece(p.id)) go('knit', p.id); else go('caston', p.id); });
-  const move = el('button', { class: 'btn', text: g.hung ? 'Take down' : g.shelf ? 'Hang it instead' : 'Hang it' });
+  const move = el('button', { class: 'btn', text: g.hung ? 'Take down' : g.shelf ? 'Display it instead' : 'Display it' });
   move.addEventListener('click', () => { if (g.hung) { S.takeDown(g.id); audio.play('card'); } else { S.hang(g.id); audio.play('peg'); } closeSheet(); render(); });
   acts.append(again, move);
   if (p.wear) { const d = el('button', { class: 'btn sage', text: 'Put it on a doll' }); d.addEventListener('click', () => { closeSheet(); go('dolls', g.id); }); acts.append(d); }

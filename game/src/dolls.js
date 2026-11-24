@@ -4,6 +4,7 @@
 // go('dolls') = the shelf; go('dolls', galleryId) = dressing view with that piece put on;
 // go('dolls', {doll}) or go('dress', dollId) = dressing view for a doll.
 import { el, ICON, go, registerScreen, openSheet, closeSheet, currentScreen } from './ui.js';
+import { fmtLen } from './scarfFacts.js';
 import { setKeyHandler, onTap } from './input.js';
 import * as S from './state.js';
 import * as audio from './audio.js';
@@ -85,7 +86,7 @@ function renderShelf() {
       tr.append(b);
     }
     shelf.append(el('div', { class: 'toy-shelf' }, tr, el('div', { class: 'toy-board' })));
-    if (arrivingToy) { const id = arrivingToy; requestAnimationFrame(() => { const c = tr.querySelector(`[data-gid="${id}"]`); if (c) c.scrollIntoView({ block: 'nearest', inline: 'center' }); }); }
+    if (arrivingToy) { const id = arrivingToy; requestAnimationFrame(() => { const c = tr.querySelector(`[data-gid="${id}"]`); if (c) tr.scrollLeft = Math.max(0, c.offsetLeft + c.offsetWidth / 2 - tr.clientWidth / 2); }); }
     arrivingToy = null;
   }
   if (pages > 1) {
@@ -250,7 +251,6 @@ function openSlot(slot) {
   }
   openSheet('slot', box, { title: `${DOLL_NAMES[doll]}: ${SLOT_NAMES[slot]}` });
 }
-const fmtLen = (cm) => (cm >= 100 ? `${(cm / 100).toFixed(cm >= 1000 ? 1 : 2)} m` : `${Math.round(cm)} cm`);
 
 // put a piece on (gallery id or 'scarf'), returns true if it fits
 export function dress(d, gid, { quiet = false } = {}) {

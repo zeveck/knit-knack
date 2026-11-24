@@ -815,7 +815,11 @@ export class Work {
       for (const L of loopsR) drawLoop(g, L, rad, G.cp, 'front');
       for (const b of markers) if (onRight(b, ns)) { const x = G.colL(b); drawMarker(g, x, rY(x), rad, G.cp, MARKER_STYLES[this.markerStyle]); }
       // row counter near the needle's end
-      const cpT = { x: far.x + ux * 1.2 * G.cp, y: far.y + uy * 1.2 * G.cp };
+      // (on the needle, and never past the work area's edge: a needle that reaches off the side late in a
+      // piece keeps its counter on the part that shows)
+      const dVis = Math.abs(ux) > 1e-3 ? ((ux < 0 ? bL : bR) - tip.x) / ux : Infinity;
+      const dc = Math.max(0.6 * G.cp, Math.min(ul + 1.2 * G.cp, dVis - 0.45 * G.cp));
+      const cpT = { x: tip.x + ux * dc, y: tip.y + uy * dc };
       const pop = clamp((t - this.anim.counter) / 300, 0, 1);
       drawCounter(g, cpT, Math.atan2(uy, ux), rad, G.cp, ns.r, COUNTER_STYLES[this.counterStyle], pop < 1 ? 1 + 0.35 * Math.sin(pop * Math.PI) : 1);
     };

@@ -1,26 +1,56 @@
 // toasts.js — unlock toasts, one at a time, 4 s each, with "Use it". Each shows exactly once
 // (state.takeToast() adds it to seenUnlocks as it shows).
-import { el, ICON, go, notice } from './ui.js';
+import { el, ICON, go, notice, onSheet, openSheetName, onScreenChange } from './ui.js';
 import * as S from './state.js';
 import * as audio from './audio.js';
 import { onRelease } from './input.js';
 
-let showing = null, held = false;
+let showing = null, held = false, anchorEl = null;
 const host = () => document.getElementById('toasts');
 const listeners = [];
 export const onUse = (fn) => listeners.push(fn);
 // hold toasts back (the Finished celebration); release pumps the queue
 export function hold(on) { held = !!on; if (!held) pump(); }
-// position over an element (the progress line), or null for top centre
-export function anchor(elm) {
+// position over an element (the progress line on the knitting screens), or null: below the screen's header
+export function anchor(elm) { anchorEl = elm || null; place(); }
+const visible = (e) => !!(e && e.isConnected && e.getClientRects().length);
+function place() {
   const h = host();
-  if (!elm) { h.classList.remove('over'); return; }
-  const r = elm.getBoundingClientRect();
-  h.style.setProperty('--tl', r.left + 'px'); h.style.setProperty('--tt', (r.top + r.height / 2 - 22) + 'px'); h.style.setProperty('--tw', r.width + 'px');
-  h.classList.add('over');
+  const scr = document.querySelector('[data-screen]:not([hidden])');
+  const how = scr && scr.querySelector('.howlong');
+  if (!how && visible(anchorEl)) {
+    const r = anchorEl.getBoundingClientRect();
+    h.style.setProperty('--tl', r.left + 'px'); h.style.setProperty('--tt', (r.top + r.height / 2 - 22) + 'px'); h.style.setProperty('--tw', r.width + 'px');
+    h.classList.add('over');
+    return;
+  }
+  h.classList.remove('over');
+  // clear of the header, its Back / Menu buttons and the tabs under it: just below them
+  const bars = scr ? [...scr.querySelectorAll(how ? '.how-top' : '.gal-top, .gal-tabs, .topline, .bag-tabs, .topbar')].filter(visible) : [];
+  const top = bars.reduce((m, b) => Math.max(m, b.getBoundingClientRect().bottom + 8), 8);
+  h.style.setProperty('--tb', top + 'px');
 }
+addEventListener('resize', () => { if (showing) place(); });
+onScreenChange(() => { if (showing) requestAnimationFrame(place); });
+// a sheet or modal open: the toast waits (its clock stopped), and the queue too
+let paused = false;
+onSheet((open) => {
+  if (open) {
+    paused = true; host().classList.add('wait');
+    if (showing) clearTimeout(showing.timer);
+  } else {
+    // a sheet closing as another opens (openSheet closes the old one first) must not flash a toast
+    setTimeout(() => {
+      if (openSheetName()) return;
+      paused = false; host().classList.remove('wait');
+      if (showing) { place(); clearTimeout(showing.timer); showing.timer = setTimeout(close, 3000); } else pump();
+    }, 0);
+  }
+});
+const blocked = () => held || paused || !!openSheetName() || !!(window.gameReport && window.gameReport.isOpen && window.gameReport.isOpen());
 export function pump() {
-  if (held || showing) return;
+  if (showing || blocked()) return;
+  place();
   // 3 or more at once: one toast for all of them
   if (S.pendingToasts().length >= 3) {
     const n = S.pendingToasts().length;

@@ -2,6 +2,7 @@
 // counters, pieces in progress, the gallery and Basket, recent and custom yarns, equipped things.
 import { u16ToBase64, base64ToU16 } from './chart.js';
 import { normYarn, yarnKey } from './yarn.js';
+import { fmtLen } from './scarfFacts.js';
 
 export const SAVE_KEY = 'knitknack';
 const VERSION = 2;
@@ -241,7 +242,7 @@ export function remainingText(rule) {
   if (rule.pieces != null) { const n = rule.pieces - s.piecesFinished; return `Finish ${fmt(n)} more piece${n === 1 ? '' : 's'}`; }
   if (rule.chapter != null) { const l = chapterLast(rule.chapter); return `Finish chapter ${rule.chapter}${l ? ` (its last pattern is the ${l.name})` : ''}`; }
   if (rule.pattern != null) { const p = findPattern(rule.pattern); return `Finish the ${p ? p.name : rule.pattern}`; }
-  if (rule.scarfCm != null) { const cm = rule.scarfCm - (s.scarf.cm || 0); return `Knit the Infinite Scarf ${cm >= 100 ? (cm / 100).toFixed(cm % 100 ? 1 : 0) + ' m' : Math.ceil(cm) + ' cm'} longer`; }
+  if (rule.scarfCm != null) { const cm = rule.scarfCm - (s.scarf.cm || 0); return `Knit the Infinite Scarf ${fmtLen(Math.ceil(cm))} longer`; }
   if (rule.firstWearable) return 'Finish your first wearable (a wristwarmer or a headband)';
   if (rule.allPatterns) { const n = BOOK.filter((p) => !s.finishedPatterns.includes(p.id)).length; return `Finish all ${BOOK.length} patterns (${n} to go)`; }
   return '';

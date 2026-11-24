@@ -9,6 +9,7 @@ import { renderSwatch } from './work.js';
 import { chartOf } from './render.js';
 import { data as sceneData, image as sceneImage } from './scene.js';
 import * as S from './state.js';
+import { fmtLen } from './scarfFacts.js';
 
 export const DOLLS = ['pip', 'clementine', 'bramble', 'juniper', 'basil', 'mabel', 'purl'];
 export const DOLL_NAMES = { pip: 'Pip', clementine: 'Clementine', bramble: 'Bramble', juniper: 'Juniper', basil: 'Basil', mabel: 'Mabel', purl: 'Purl' };
@@ -477,7 +478,7 @@ export function pieceLayer(item, dollId, k, opts = {}) {
     const pl = planScarf(A, T, pl0.rowsUsed);
     parts = pl.parts.sort((a, b) => a.z - b.z);
     const more = sv.totalRows - pl.rowsUsed;
-    if (more > 0) label = { x: pl.label.x * kq, y: pl.label.y * kq, text: `+ ${more >= 100 ? (more / 100).toFixed(1) + ' m' : more + ' cm'} more` };
+    if (more > 0) label = { x: pl.label.x * kq, y: pl.label.y * kq, text: `+ ${fmtLen(more)} more` };
   } else {
     let chart, slots;
     if (item.preview) { bake = item.preview.bake; chart = item.preview.chart; slots = item.preview.slots; } else {

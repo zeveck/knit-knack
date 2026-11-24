@@ -1,7 +1,7 @@
 // finished.js — the celebration: the bind-off flourish, a puff of steam, yarn-fluff confetti, the
 // finishing touch, Purl waking up to cheer (purl-cheer frames, mirrored so the paw reaches the piece),
 // then "Display it", "Put it on a doll" (wearables), "Not now".
-import { el, go, registerScreen, currentScreen, fmt } from './ui.js';
+import { el, go, registerScreen, currentScreen, fmt, nb } from './ui.js';
 import { onTap, setKeyHandler } from './input.js';
 import * as S from './state.js';
 import * as audio from './audio.js';
@@ -50,7 +50,7 @@ function enter(id) {
   const used = [];
   const seen = new Set();
   for (const y of gal.yarns) { const k = yarnKey(y); if (!seen.has(k)) { seen.add(k); used.push(y); } }
-  const names = used.slice(0, 4).map(yarnName).join(', ') + (used.length > 4 ? ` and ${used.length - 4} more` : '');
+  const names = used.slice(0, 4).map((y) => nb(yarnName(y))).join(', ') + (used.length > 4 ? ` and ${used.length - 4} more` : '');
   ui.replaceChildren(
     el('h2', { text: pat.name }),
     el('div', { class: 'facts', text: `${fmt(gal.yarns.length)} stitches · ${used.length} yarn${used.length > 1 ? 's' : ''}: ${names}` }),
@@ -126,8 +126,10 @@ export function frame(t) {
   const uiH = ui.offsetHeight || 180;
   // a short screen (a phone held sideways): a smaller basket on the floor in the corner, the piece above the words
   const short = h < 500;
-  const bw = short ? Math.min(w * 0.16, h * 0.32) : Math.min(w * 0.28, 200), bh = bw * (396 / 468);
-  const top = short ? 56 : 64, bottom = short ? h - uiH - 8 : h - uiH - bh * 0.55;
+  // a phone held upright: a smaller basket, and the piece's card ends above it (never over it)
+  const narrow = !short && w < 600;
+  const bw = short ? Math.min(w * 0.16, h * 0.32) : narrow ? Math.min(w * 0.22, 120) : Math.min(w * 0.28, 200), bh = bw * (396 / 468);
+  const top = short ? 56 : 64, bottom = short ? h - uiH - 8 : narrow ? h - uiH - bh * 0.95 : h - uiH - bh * 0.55;
   if (art && art.width) {
     const maxW = w * 0.84, maxH = Math.max(80, bottom - top);
     const k0 = Math.min(maxW / (art.width / dprArt), maxH / (art.height / dprArt), 1.6);

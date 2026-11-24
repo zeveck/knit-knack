@@ -78,7 +78,7 @@ export function openHowTo() {
   cards.append(
     mk(drawTap, 'Tap to knit', 'Every tap anywhere on the knitting (or Space, Enter or K) knits one real stitch. When a row ends, the work turns and you knit back the other way.'),
     mk(drawYarns, 'Change yarn any time', 'Tap a yarn in the yarn bar, on any stitch. Follow chart switches yarns for you; pick any yarn from the basket to knit your own way. Rip back undoes stitches.'),
-    mk(drawFinish, 'Finish, display, unlock', 'Finish a piece and Display it on your gallery wall. Every piece you finish opens the next pattern, and stitches unlock needles, yarns and more.'),
+    mk(drawFinish, 'Finish, display, unlock', 'Finish a piece and display it on your gallery wall. Every piece you finish opens the next pattern, and stitches unlock needles, yarns and more.'),
   );
   const keys = el('p', { class: 'keys-list howto-keys', html: '<kbd>Space</kbd> <kbd>Enter</kbd> <kbd>K</kbd> knit · <kbd>Backspace</kbd> <kbd>U</kbd> rip back · <kbd>1</kbd>–<kbd>4</kbd> chart yarns · <kbd>5</kbd>–<kbd>9</kbd> recent yarns · <kbd>Y</kbd> any yarn · <kbd>C</kbd> follow chart · <kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd> zoom · <kbd>V</kbd> preview · <kbd>G</kbd> glossary · <kbd>R</kbd> read the pattern · <kbd>M</kbd> mute · <kbd>Esc</kbd> menu · <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd> report a bug' });
   openSheet('howto', el('div', {}, cards, keys), { title: 'How to play' });
