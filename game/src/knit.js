@@ -145,6 +145,7 @@ function relayout() {
     fillBar();
   }
   root.classList.toggle('big-buttons', !!S.get().settings.big && l !== 'land');
+  work.setMaxFit(layout === 'desk' ? 46 : 28);
   const r = dom.basketSlot.getBoundingClientRect();
   const dpr = Math.min(3, window.devicePixelRatio || 1);
   dom.basketCanvas.width = Math.round(r.width * dpr); dom.basketCanvas.height = Math.round(r.height * dpr);
@@ -157,7 +158,14 @@ const relRect = (elm) => { const a = elm.getBoundingClientRect(), b = root.getBo
 function fitBox() {
   const r = relRect(dom.workArea);
   const p = layout === 'port' ? 8 : 12;
-  return { x: r.x + p, y: r.y + p, w: Math.max(40, r.w - p * 2), h: Math.max(40, r.h - p * 2) };
+  const box = { x: r.x + p, y: r.y + p, w: Math.max(40, r.w - p * 2), h: Math.max(40, r.h - p * 2) };
+  // on a phone held upright a wide, short piece sits low, just above the basket band, not adrift mid-screen
+  if (layout === 'port' && chart && !chart.endless) {
+    const cp = Math.max(8, Math.min(28, box.w / (chart.width + 5), box.h / ((chart.height + 3.2) * 0.72)));
+    const need = (chart.height + 3.2) * 0.72 * cp;
+    if (need < box.h) { box.y += box.h - need; box.h = need; }
+  }
+  return box;
 }
 // the basket body box inside the slot (slot-relative), sized so Purl's head fits above it
 function basketBox(sw, sh) {
@@ -196,16 +204,58 @@ function drawBackdrop(g, w, h) {
   drawGhost(g);
 }
 // a faint ghost of the finished shape behind the work, so you can see what you're making
-function drawGhost(g) {
-  if (!chart || !work || !work.fabric || !work.fabric.canvas || !work._geo) return;
-  const G = work._geo();
-  g.save();
-  g.beginPath();
-  for (let r = 1; r <= chart.height; r++) {
-    const y = G.rowT(r) - G.ch * 0.15;
-    for (const run of chart.row(r).runs) { const x0 = G.colL(run.a), x1 = G.colL(run.b + 1); g.rect(x0, y, x1 - x0, G.ch * 1.02); }
+let ghostSegs = null, ghostChart = null;
+// the outline of the chart's shape layer, as merged edge segments in grid units: x = column line, y = row line
+// (row line b is the top of row b; the bottom of row 1 is line 0)
+function ghostOutline() {
+  if (ghostChart === chart && ghostSegs) return ghostSegs;
+  const on = (r, c) => r >= 1 && r <= chart.height && c >= 0 && c < chart.width && !!chart.cell(r, c);
+  const hz = new Map(), vt = new Map(); // key line -> sorted list of unit starts
+  const push = (m, k, v) => { if (!m.has(k)) m.set(k, []); m.get(k).push(v); };
+  for (let r = 1; r <= chart.height; r++) for (let c = 0; c < chart.width; c++) {
+    if (!on(r, c)) continue;
+    if (!on(r + 1, c)) push(hz, r, c);
+    if (!on(r - 1, c)) push(hz, r - 1, c);
+    if (!on(r, c - 1)) push(vt, c, r);
+    if (!on(r, c + 1)) push(vt, c + 1, r);
   }
-  g.fillStyle = 'rgba(246,236,217,0.11)'; g.fill();
+  const segs = [];
+  const merge = (m, horiz) => {
+    for (const [k, list] of m) {
+      list.sort((x, y) => x - y);
+      let s0 = list[0], prev = list[0];
+      for (let i = 1; i <= list.length; i++) {
+        if (i < list.length && list[i] === prev + 1) { prev = list[i]; continue; }
+        if (horiz) segs.push({ h: true, y: k, x0: s0, x1: prev + 1 });
+        else segs.push({ h: false, x: k, r0: s0, r1: prev }); // rows r0..r1
+        if (i < list.length) { s0 = prev = list[i]; }
+      }
+    }
+  };
+  merge(hz, true); merge(vt, false);
+  ghostChart = chart; ghostSegs = segs;
+  return segs;
+}
+// a faint ghost of the finished shape behind the work: a dashed outline of the real silhouette, a whisper of fill
+function drawGhost(g) {
+  const G = chart && work ? work.geometry() : null;
+  if (!G) return;
+  const lineY = (b) => G.rowT(b + 1) + G.ch; // top of row b+1 == bottom of row b... line b sits under row b+1
+  g.save();
+  // fill: one rect per run, very faint
+  g.beginPath();
+  for (let r = 1; r <= chart.height; r++) for (const run of chart.row(r).runs) g.rect(G.colL(run.a), G.rowT(r), G.colL(run.b + 1) - G.colL(run.a), G.ch);
+  g.fillStyle = 'rgba(246,236,217,0.05)'; g.fill();
+  // outline
+  g.beginPath();
+  for (const sg of ghostOutline()) {
+    if (sg.h) { const y = lineY(sg.y); g.moveTo(G.colL(sg.x0), y); g.lineTo(G.colL(sg.x1), y); }
+    else { const x = G.colL(sg.x); g.moveTo(x, G.rowT(sg.r1)); g.lineTo(x, G.rowT(sg.r0) + G.ch); }
+  }
+  g.lineWidth = Math.max(1, Math.min(2, G.cp * 0.08));
+  g.setLineDash([Math.max(2, G.cp * 0.18), Math.max(3, G.cp * 0.26)]);
+  g.lineCap = 'round';
+  g.strokeStyle = 'rgba(246,236,217,0.32)'; g.stroke();
   g.restore();
 }
 function newestPhoto() {
@@ -229,7 +279,7 @@ function drawFx(t) {
   if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
   const g = c.getContext('2d');
   g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h); c._dirty = true;
-  const G = work._geo ? work._geo() : null;
+  const G = work.geometry();
   if (castAnim && G && backdrop) {
     const p = (t - castAnim.t0) / 520;
     if (p >= 1) castAnim = null;
@@ -250,7 +300,7 @@ function drawFx(t) {
   for (let i = flyers.length - 1; i >= 0; i--) {
     const f = flyers[i];
     const p = (t - f.t0) / 200;
-    const tip = work._lastNeedle ? work._lastNeedle.tip : null;
+    const tip = work.needleTip();
     if (p >= 1 || !tip) { flyers.splice(i, 1); continue; }
     const q = 1 - Math.pow(1 - p, 2);
     const x = f.x + (tip.x - f.x) * q, y = f.y + (tip.y - f.y) * q - Math.sin(q * Math.PI) * 30;
@@ -315,7 +365,7 @@ function fillBar() {
 }
 function refreshBar() {
   if (!piece) return;
-  const size = layout === 'desk' ? 42 : S.get().settings.big && layout !== 'land' ? 50 : 44;
+  const size = layout === 'desk' ? 46 : S.get().settings.big && layout !== 'land' ? 50 : 44;
   const nextSlot = piece.follow ? (chart.locate(Math.min(currentIndex(), chart.total - 1)) || { entry: { slot: 'A' } }).entry.slot : null;
   for (const b of dom.skeins) {
     const y = piece.slots[b._slot];

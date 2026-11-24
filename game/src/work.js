@@ -476,6 +476,13 @@ export class Work {
     if (busy) requestAnimationFrame(this._frame); else this.running = false;
   }
 
+  // ---- public getters
+  // geometry(): the view's current mapping, CSS px: {cp, ch, colL(c), colC(c), rowT(r)}, or null before load
+  geometry() { return this.chart && this.fabric && this.fabric.canvas ? this._geo() : null; }
+  // needleTip(): the right needle's tip as last drawn, CSS px {x, y}, or null
+  needleTip() { return this._lastNeedle ? { x: this._lastNeedle.tip.x, y: this._lastNeedle.tip.y } : null; }
+  setMaxFit(px) { if (this.opts.maxFit !== px) { this.opts.maxFit = px; if (this.chart) this._layout(true); this._kick(); } }
+
   // ---- geometry helpers (CSS px)
   _geo() {
     const box = this._box();

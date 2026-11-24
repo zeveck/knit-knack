@@ -1,6 +1,6 @@
 // toasts.js — unlock toasts, one at a time, 4 s each, with "Use it". Each shows exactly once
 // (state.takeToast() adds it to seenUnlocks as it shows).
-import { el, ICON } from './ui.js';
+import { el, ICON, go } from './ui.js';
 import * as S from './state.js';
 import * as audio from './audio.js';
 import { onRelease } from './input.js';
@@ -21,6 +21,19 @@ export function anchor(elm) {
 }
 export function pump() {
   if (held || showing) return;
+  // 3 or more at once: one toast for all of them
+  if (S.pendingToasts().length >= 3) {
+    const n = S.pendingToasts().length;
+    while (S.takeToast()) { /* each joins seenUnlocks */ }
+    const look = el('button', { text: 'Look' });
+    const t = el('div', { class: 'toast', role: 'status' }, el('span', { class: 'icw', html: ICON.star }), el('span', { class: 't', text: `${n} new things in your Knitting Bag` }), look);
+    onRelease(look, () => { audio.play('ui'); close(); go('bag'); });
+    t.addEventListener('pointerdown', (e) => e.stopPropagation());
+    host().append(t);
+    showing = { t, u: { id: `many:${n}` }, timer: setTimeout(close, 4000) };
+    audio.play('unlock');
+    return;
+  }
   const u = S.takeToast();
   if (!u) return;
   const use = el('button', { text: 'Use it' });

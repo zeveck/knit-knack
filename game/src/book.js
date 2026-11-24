@@ -1,5 +1,6 @@
 // book.js — the Pattern Book (cover, front page, chapter tabs, cards, "Read the pattern") and Cast On.
-import { el, ICON, go, registerScreen, fmt, notice } from './ui.js';
+import { el, ICON, go, registerScreen, fmt, notice, openSheet, closeSheet } from './ui.js';
+import { drawStack } from './scene.js';
 import { setKeyHandler } from './input.js';
 import * as S from './state.js';
 import * as audio from './audio.js';
@@ -164,10 +165,43 @@ registerScreen('book', {
       return false;
     });
     audio.music('nook'); audio.ambience(true);
-    toasts.pump();
+    if (S.get().bookComplete && !S.get().bookCompleteShown) bookComplete();
+    else toasts.pump();
   },
-  leave() { setKeyHandler(null); pvJob++; },
+  leave() { setKeyHandler(null); pvJob++; cancelAnimationFrame(bcRaf); },
 });
+
+// ---------------------------------------------------------------- "Book complete" (shown once)
+let bcRaf = 0;
+function bookComplete() {
+  const s = S.get();
+  s.bookCompleteShown = true; S.saveNow();
+  const c = el('canvas', { style: { width: '220px', height: '140px', display: 'block', margin: '0 auto' } });
+  const box = el('div', { class: 'book-complete' },
+    el('div', { class: 'gold-ribbon' }),
+    el('h2', { text: 'Book complete!' }),
+    el('p', { text: `You've knit all ${S.BOOK.length} patterns, ${fmt(s.lifetimeStitches)} stitches of them, one tap at a time. The book wears its gold ribbon now.` }),
+    c);
+  const ok = el('button', { class: 'btn primary big', text: 'Hooray!' });
+  ok.addEventListener('click', () => closeSheet());
+  box.append(ok);
+  openSheet('complete', box, { title: '', onClose: () => { cancelAnimationFrame(bcRaf); toasts.pump(); } });
+  audio.play('finish');
+  setTimeout(() => { audio.play('mew'); if (s.equipped.purl.includes('bell')) audio.play('bell'); }, 700);
+  setTimeout(() => audio.play('purr'), 1600);
+  const t0 = performance.now();
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  c.width = 220 * dpr; c.height = 140 * dpr;
+  const g = c.getContext('2d');
+  const draw = (t) => {
+    g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, 220, 140);
+    const fi = Math.floor((t - t0 - 500) / 125);
+    const frame = fi >= 0 && fi < 8 ? [0, 1, 2, 1, 2, 3, 3, 3][fi] : 'sleep';
+    drawStack(g, { x: 24, y: 34, w: 120, h: 102 }, { t, purl: frame, mirror: true, things: s.equipped.purl, holder: s.equipped.holder, yarn: s.recent[0] || { color: '#d9a441', type: 'wool' } });
+    bcRaf = requestAnimationFrame(draw);
+  };
+  bcRaf = requestAnimationFrame(draw);
+}
 
 // ---------------------------------------------------------------- Cast On
 let co = null;

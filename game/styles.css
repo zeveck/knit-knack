@@ -247,13 +247,14 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .knit-screen.lay-land .strip .words { -webkit-line-clamp: 1; font-size: 21px; white-space: nowrap; text-overflow: ellipsis; display: block; }
 .knit-screen.lay-land .yarnbar { grid-template-columns: repeat(3, 56px); grid-auto-rows: 56px; gap: 6px 14px; }
 .knit-screen.lay-land .topbar { padding-top: calc(4px + var(--sat)); padding-bottom: 4px; }
-.knit-screen.lay-desk { grid-template-columns: 1fr 380px; grid-template-rows: auto auto 1fr 150px; grid-template-areas: "top top" "work panel" "work preview" "work basket"; }
-.knit-screen.lay-desk .panel { background: rgba(34, 22, 46, 0.62); padding: 12px; }
-.knit-screen.lay-desk .preview-slot { background: rgba(34, 22, 46, 0.62); }
-.knit-screen.lay-desk .preview-card { width: 160px; height: 160px; }
-.knit-screen.lay-desk .basket-slot { width: 380px; height: 150px; background: linear-gradient(rgba(34, 22, 46, 0.62), rgba(34, 22, 46, 0.35)); }
-.knit-screen.lay-desk .yarnbar { grid-template-columns: repeat(6, 52px); --btn: 52px; gap: 8px; }
-.knit-screen.lay-desk .strip .words { -webkit-line-clamp: 3; }
+.knit-screen.lay-desk { grid-template-columns: 1fr 400px; grid-template-rows: auto auto minmax(0, 1fr) 190px; grid-template-areas: "top top" "work panel" "work preview" "work basket"; }
+.knit-screen.lay-desk .panel { background: rgba(34, 22, 46, 0.62); padding: 14px 14px 8px; gap: 12px; }
+.knit-screen.lay-desk .preview-slot { background: rgba(34, 22, 46, 0.62); padding: 4px 0 8px; min-height: 0; }
+.knit-screen.lay-desk .preview-card { height: min(300px, 100%); width: auto; aspect-ratio: 1; min-height: 120px; }
+.knit-screen.lay-desk .basket-slot { width: 400px; height: 190px; background: linear-gradient(rgba(34, 22, 46, 0.62), rgba(34, 22, 46, 0.35)); }
+.knit-screen.lay-desk .yarnbar { grid-template-columns: repeat(6, 56px); --btn: 56px; gap: 8px; justify-content: space-between; }
+.knit-screen.lay-desk .strip { min-height: 84px; padding-left: 16px; }
+.knit-screen.lay-desk .strip .words { -webkit-line-clamp: 2; font-size: 28px; line-height: 1.1; }
 .knit-screen.lay-desk .prog-line { font-size: 16px; }
 
 /* ---------- toasts (over the progress line on the knitting screen; top centre elsewhere) */
@@ -399,3 +400,7 @@ input[type=range] { width: 100%; accent-color: var(--cranberry); height: 32px; t
 gh-feedback { font-family: 'Fredoka', sans-serif; }
 .card .tech, .card .lock-text, .card h3, .front-btns .lbl, .set-row small, .set-row span, .facts, p { text-wrap: pretty; }
 .pattern-text .ln { text-wrap: pretty; }
+.book-complete { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; padding-top: 4px; }
+.book-complete h2 { font-size: 30px; color: var(--plum); }
+.book-complete p { color: var(--ink-soft); max-width: 420px; }
+.gold-ribbon { width: 54px; height: 82px; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%); background: linear-gradient(#fff0b8, #e6b83e 45%, #a8781a); filter: drop-shadow(0 3px 4px rgba(0,0,0,.3)); animation: flip 0.9s ease both; }
