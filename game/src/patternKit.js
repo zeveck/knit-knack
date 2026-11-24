@@ -81,6 +81,14 @@ export function polygon(W, H, pts, ch = 'A') {
   for (let i = 0; i < H; i++) { let l = ''; for (let c = 0; c < W; c++) l += inside(c + 0.5, i + 0.5) ? ch : '.'; out.push(l); }
   return out;
 }
+// stretch(lines, rows): resample a picture drawn with square cells to `rows` rows. A knitted
+// stitch is wider than tall (rows are 0.72 of a stitch wide), so a picture drawn square needs
+// about 1.4 times as many rows to keep its proportions.
+export function stretch(lines, rows) {
+  const L = pic(lines), n = L.length, out = [];
+  for (let i = 0; i < rows; i++) out.push(L[Math.min(n - 1, Math.floor(((i + 0.5) * n) / rows))]);
+  return out;
+}
 // rows given as widths, bottom first, centred in W (leftOff lets a row sit off-centre)
 export function widths(W, list, ch = 'A') {
   const out = list.map((w) => {
@@ -112,7 +120,16 @@ export function runsOf(row) {
 // opts.singles: 'any' (default) puts 1-st steps on any row; 'rs' only on RS rows (garter and
 // textured fabrics, whose WS decreases would show the wrong way), moving WS ones up a row.
 // opts.fill(r, c, fromR) is called when a cell is added to a row by a moved step.
+//
+// EDGE_CO_MAX: the most stitches cast on at a row start in one go. chart.js (rowAtoms) words a
+// '+' that is not at a run's very end as a gap cast-on ("turn, cast on 3 sts, turn"), so an edge
+// cast-on of 2 or more reads wrongly ("cast on 1 st, turn, cast on 3 sts, turn"). Until that is
+// fixed, an outward step at a row start is worked as "cast on 1 st, k1, M1" (2 sts a row) and a
+// wider step is spread over the next rows. Set it to Infinity once chart.js words "cast on 4 sts".
+export let EDGE_CO_MAX = Infinity;
+export const setEdgeCoMax = (n) => { EDGE_CO_MAX = n; };
 export function shapeEdges(mask, opts = {}) {
+  const coMax = opts.coMax ?? EDGE_CO_MAX;
   const H = mask.length - 1, W = mask[1].length;
   const marks = grid(W, H, null);
   const singles = opts.singles || 'any'; // or fn(r) -> 'any' | 'rs'
@@ -123,7 +140,7 @@ export function shapeEdges(mask, opts = {}) {
     const mode = typeof singles === 'function' ? singles(r) : singles;
     const singleOk = mode === 'any' || rs;
     // up to a few passes: a moved step changes this row's runs
-    for (let pass = 0; pass < 4; pass++) {
+    for (let pass = 0; pass < 12; pass++) {
       let changed = false;
       const prev = runsOf(mask[r - 1]), cur = runsOf(mask[r]);
       for (const u of cur) {
@@ -139,7 +156,9 @@ export function shapeEdges(mask, opts = {}) {
           if (d >= 2 && rs) { for (let c = pl.a; c < u.a; c++) add(r, c); moved.push([r, 'L', d]); changed = true; break; }
           if (d === 1 && !singleOk) { add(r, pl.a); moved.push([r, 'L', d]); changed = true; break; }
           if (d <= -2 && rs) { for (let c = u.a; c < pl.a; c++) mask[r][c] = false; moved.push([r, 'L', d]); changed = true; break; }
-          if (d === -1 && !singleOk) { mask[r][u.a] = false; moved.push([r, 'L', d]); changed = true; break; }
+          if (d < -2 && coMax === 1) { for (let c = u.a; c < pl.a - 2; c++) mask[r][c] = false; moved.push([r, 'L', d]); changed = true; break; }
+          // garter-style WS rows take no M1: the row-start side may still cast on 1 st
+          if (d === -2 && coMax === 1 && !singleOk) { mask[r][u.a] = false; moved.push([r, 'L', d]); changed = true; break; }
         }
         // ---- right edge (row start on RS)
         if (!sibR.length) {
@@ -147,7 +166,25 @@ export function shapeEdges(mask, opts = {}) {
           if (d >= 2 && !rs) { for (let c = u.b + 1; c <= pr.b; c++) add(r, c); moved.push([r, 'R', d]); changed = true; break; }
           if (d === 1 && !singleOk) { add(r, pr.b); moved.push([r, 'R', d]); changed = true; break; }
           if (d <= -2 && !rs) { for (let c = pr.b + 1; c <= u.b; c++) mask[r][c] = false; moved.push([r, 'R', d]); changed = true; break; }
+          if (d < -2 && coMax === 1) { for (let c = pr.b + 3; c <= u.b; c++) mask[r][c] = false; moved.push([r, 'R', d]); changed = true; break; }
+        }
+        // ---- (the end-of-part check follows the loop)
+        // ---- a 1-st run cannot take 3 sts (chart.js gives a lone decrease both neighbours):
+        // keep 2 sts, adding the one at the row's end side
+        if (u.a === u.b && pl === pr && pl.b - pl.a >= 2 && !sibL.length && !sibR.length) {
+          const c = rs ? u.a - 1 : u.b + 1;
+          if (c >= pl.a && c <= pl.b) { add(r, c); moved.push([r, 'tip', 1]); changed = true; break; }
           if (d === -1 && !singleOk) { mask[r][u.b] = false; moved.push([r, 'R', d]); changed = true; break; }
+        }
+      }
+      if (!changed) {
+        // a part that stops here is bound off: only allowed where it sits at the row's start
+        // (no stitches of this row to its right on RS rows, to its left on WS rows); else it
+        // is worked one more row
+        for (const p of prev) {
+          if (cur.some((u) => p.b >= u.a && p.a <= u.b)) continue;
+          const ahead = cur.some((u) => (rs ? u.a > p.b : u.b < p.a));
+          if (ahead) { for (let c = p.a; c <= p.b; c++) add(r, c); moved.push([r, 'end', p.a]); changed = true; }
         }
       }
       if (!changed) break;
@@ -167,10 +204,13 @@ export function shapeEdges(mask, opts = {}) {
       // a 1-wide run cannot hold two decreases: bind off the row-start side instead
       if (width === 1 && dl === 1 && dr === 1) { if (rs) dr = 99; else dl = 99; }
       if (dl === 1) marks[r][u.a] = '<';
+      else if (dl === -1 && !singleOk && !rs) marks[r][u.a] = '+'; // CO 1 at the WS row start
       else if (dl === -1) marks[r][width >= 3 ? u.a + 1 : u.a] = 'm';
+      else if (dl <= -2 && coMax === 1) { marks[r][u.a] = '+'; marks[r][pl.a] = 'm'; }
       else if (dl <= -2) for (let c = u.a; c < pl.a; c++) marks[r][c] = '+';
       if (dr === 1) marks[r][u.b] = '>';
       else if (dr === -1) marks[r][width >= 3 ? u.b - 1 : u.b] = 'm';
+      else if (dr <= -2 && coMax === 1) { marks[r][u.b] = '+'; marks[r][pr.b] = 'm'; }
       else if (dr <= -2) for (let c = pr.b + 1; c <= u.b; c++) marks[r][c] = '+';
     }
   }
@@ -238,15 +278,25 @@ export function knit(art) { return new Piece(pic(art)); }
 export class Piece {
   constructor(lines) {
     this.W = Math.max(...lines.map((l) => l.length));
+    // every line of the art must be the same width: a wider line once made a chart whose middle
+    // rows had stitches with nothing below them (the heart pillow's row 3, 22 sts on 20)
+    this.ragged = lines.map((l, i) => [lines.length - i, l.length]).filter(([, n]) => n !== this.W);
     this.H = lines.length;
     const W = this.W, H = this.H;
     this.mask = grid(W, H, false);
     this.col = grid(W, H, 'A');
     this.st = grid(W, H, null);
     this.fixed = grid(W, H, false); // cells set by an overlay (textures don't overwrite them)
+    this.spots = {};
     for (let i = 0; i < H; i++) {
       const r = H - i, l = lines[i].padEnd(W, '.');
-      for (let c = 0; c < W; c++) { const ch = l[c]; if (ch !== '.') { this.mask[r][c] = true; this.col[r][c] = /[A-D]/.test(ch) ? ch : 'A'; } }
+      for (let c = 0; c < W; c++) {
+        const ch = l[c]; if (ch === '.') continue;
+        this.mask[r][c] = true;
+        if (/[A-D]/.test(ch)) this.col[r][c] = ch;
+        else if (/[a-d]/.test(ch)) { this.col[r][c] = ch.toUpperCase(); this.st[r][c] = 'p'; this.fixed[r][c] = true; } // purl in that slot
+        else { this.col[r][c] = 'A'; (this.spots[ch] = this.spots[ch] || []).push([r, c]); } // a marked spot (eyes…)
+      }
     }
     this.marks = grid(W, H, null);
     this.cableList = [];
@@ -275,7 +325,7 @@ export class Piece {
   // so the repeat sits whole at the region's left edge.
   texture(t, o = {}) {
     const fn = texture(t);
-    const [ra, rb] = o.rows || [1, this.H];
+    const [ra, rb0] = o.rows || [1, this.H], rb = Math.min(rb0, this.H);
     const [ca, cb] = o.cols || [0, this.W - 1];
     let [r0, c0] = o.origin || [null, null];
     if (r0 == null) r0 = ra;
@@ -298,7 +348,7 @@ export class Piece {
   }
   // colors: fn(r, c) -> slot|null, over a region (local coordinates as in texture)
   colors(fn, o = {}) {
-    const [ra, rb] = o.rows || [1, this.H];
+    const [ra, rb0] = o.rows || [1, this.H], rb = Math.min(rb0, this.H);
     const [ca, cb] = o.cols || [0, this.W - 1];
     const [r0, c0] = o.origin || [ra, ca];
     for (let r = ra; r <= rb; r++) for (let c = ca; c <= cb; c++) {

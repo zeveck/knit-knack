@@ -1,7 +1,7 @@
 // knit.js — the knitting screen: taps → stitches, rip back, the yarn bar, the wording strip, tips,
 // the basket slot, the preview card, the three layouts.
 import { Work } from './work.js';
-import { stripWording, wordingCursor } from './chart.js';
+import { stripWording, wordingCursor, drapeOf } from './chart.js';
 import { el, $, ICON, go, openSheet, closeSheet, openSheetName, registerScreen, currentScreen, fmt } from './ui.js';
 import { onRelease, onHold, markKnit, setKeyHandler } from './input.js';
 import * as S from './state.js';
@@ -241,16 +241,26 @@ function drawGhost(g) {
   const G = chart && work ? work.geometry() : null;
   if (!G) return;
   const lineY = (b) => G.rowT(b + 1) + G.ch; // top of row b+1 == bottom of row b... line b sits under row b+1
+  // a drape (chevron, Old Shale) shifts each column of the finished piece up or down
+  const dp = drapeOf(chart);
+  const dy = (c) => (dp ? dp[Math.max(0, Math.min(dp.length - 1, c))] * G.ch : 0);
   g.save();
-  // fill: one rect per run, very faint
+  // fill: one rect per run (per stitch with a drape), very faint
   g.beginPath();
-  for (let r = 1; r <= chart.height; r++) for (const run of chart.row(r).runs) g.rect(G.colL(run.a), G.rowT(r), G.colL(run.b + 1) - G.colL(run.a), G.ch);
+  for (let r = 1; r <= chart.height; r++) for (const run of chart.row(r).runs) {
+    if (!dp) { g.rect(G.colL(run.a), G.rowT(r), G.colL(run.b + 1) - G.colL(run.a), G.ch); continue; }
+    for (let c = run.a; c <= run.b; c++) g.rect(G.colL(c), G.rowT(r) + dy(c), G.cp, G.ch);
+  }
   g.fillStyle = 'rgba(246,236,217,0.05)'; g.fill();
   // outline
   g.beginPath();
   for (const sg of ghostOutline()) {
-    if (sg.h) { const y = lineY(sg.y); g.moveTo(G.colL(sg.x0), y); g.lineTo(G.colL(sg.x1), y); }
-    else { const x = G.colL(sg.x); g.moveTo(x, G.rowT(sg.r1)); g.lineTo(x, G.rowT(sg.r0) + G.ch); }
+    if (sg.h && !dp) { const y = lineY(sg.y); g.moveTo(G.colL(sg.x0), y); g.lineTo(G.colL(sg.x1), y); }
+    else if (sg.h) { for (let c = sg.x0; c < sg.x1; c++) { const y = lineY(sg.y) + dy(c); g.moveTo(G.colL(c), y); g.lineTo(G.colL(c + 1), y); } }
+    else {
+      const x = G.colL(sg.x), c = chart.cell(sg.r0, sg.x) ? sg.x : sg.x - 1;
+      g.moveTo(x, G.rowT(sg.r1) + dy(c)); g.lineTo(x, G.rowT(sg.r0) + G.ch + dy(c));
+    }
   }
   g.lineWidth = Math.max(1, Math.min(2, G.cp * 0.08));
   g.setLineDash([Math.max(2, G.cp * 0.18), Math.max(3, G.cp * 0.26)]);

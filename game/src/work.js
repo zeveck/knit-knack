@@ -2,8 +2,10 @@
 // the view canvas (background, shadow, fabric, needles, live loops, strand, markers, row counter,
 // lamp light, effects), the tap animation and the row turn.
 import { getSprite, yarnColorAt, palette, drawEffects, drawTwinkle, holeEllipse, hash, CELL_ASPECT, typeInfo } from './stitches.js';
+import { drapeOf } from './chart.js';
 
 const KNITLIKE = new Set(['k', 'x', '<', '>', 'm', '+', 'b']);
+const RAMP = 3; // rows below the needle over which a drape reaches its full wave
 const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 const mk = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(1, Math.ceil(w)); c.height = Math.max(1, Math.ceil(h)); return c; };
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -45,9 +47,22 @@ export const COUNTER_STYLES = {
 class Fabric {
   constructor(chart, src) {
     this.chart = chart;
-    this.src = src; // {done(), yarn(i), castOnYarn, finished()}
+    this.src = src; // {done(), yarn(i), castOnYarn, finished(), liveRow()?}
     this.canvas = null;
     this.rowIdx = new Map();
+    // the drape (chart.js drapeOf): per-column offsets in rows, + = down. On the needles the
+    // stitches sit in a straight line; the waves form in the rows below (full after RAMP rows)
+    this.drape = drapeOf(chart);
+    if (this.drape) { let lo = 0, hi = 0; for (const v of this.drape) { lo = Math.min(lo, v); hi = Math.max(hi, v); } this.dUp = -lo; this.dDown = hi; }
+    else { this.dUp = 0; this.dDown = 0; }
+  }
+  liveRow() { return this.src.liveRow && !this.src.finished() ? this.src.liveRow() : Infinity; }
+  // vertical drape offset of the stitch at (r, c), in rows
+  dyRows(r, c) {
+    if (!this.drape) return 0;
+    const v = this.drape[Math.max(0, Math.min(this.drape.length - 1, c))];
+    const live = this._live ?? this.liveRow();
+    return live === Infinity ? v : v * clamp((live - r) / RAMP, 0, 1);
   }
   idx(r, c) {
     let a = this.rowIdx.get(r);
@@ -80,7 +95,9 @@ class Fabric {
   setWindow(c0, c1, r0, rTop, W) {
     const H = Math.round(W * CELL_ASPECT);
     this.c0 = c0; this.c1 = c1; this.r0 = r0; this.rTop = rTop; this.W = W; this.H = H;
-    this.padX = Math.ceil(W * 1.2); this.padT = Math.ceil(H * 1.0); this.padB = Math.ceil(H * 1.6);
+    this.padX = Math.ceil(W * 1.2);
+    this.dTop = Math.ceil(this.dUp * H); this.dBot = Math.ceil(this.dDown * H); // room for the drape
+    this.padT = Math.ceil(H * 1.0) + this.dTop; this.padB = Math.ceil(H * 1.6) + this.dBot;
     const w = (c1 - c0) * W + this.padX * 2, h = (rTop - r0 + 1) * H + this.padT + this.padB;
     if (!this.canvas) this.canvas = mk(w, h);
     if (this.canvas.width !== w || this.canvas.height !== h) { this.canvas.width = w; this.canvas.height = h; }
@@ -90,10 +107,11 @@ class Fabric {
   xy(r, c) {
     const j = hash(r + 7, c + 3, 5);
     return [this.padX + (c - this.c0) * this.W + (((j & 255) / 255) - 0.5) * 0.04 * this.W,
-      this.padT + (this.rTop - r) * this.H + ((((j >> 8) & 255) / 255) - 0.5) * 0.05 * this.H];
+      this.padT + (this.rTop - r + this.dyRows(r, c)) * this.H + ((((j >> 8) & 255) / 255) - 0.5) * 0.05 * this.H];
   }
   stampAll() {
     const g = this.g;
+    this._live = this.drape ? this.liveRow() : undefined;
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.region(this.r0 - 1, this.rTop, this.c0 - 3, this.c1 + 3);
@@ -102,6 +120,8 @@ class Fabric {
   // redraw the small band around (r, c): clip, clear, redraw rows r-2..r+2 bottom-up, re-cut holes
   band(r, c) {
     if (!this.canvas || r < this.r0 - 2 || r > this.rTop + 2) return;
+    // with a drape the rows below the needle move when the needle row changes: restamp
+    if (this.drape && this.liveRow() !== this._live) { this.stampAll(); return; }
     const ch = this.chart;
     let cA = c - 2, cB = c + 2;
     for (const rr of [r - 1, r, r + 1, r + 2, r + 3]) for (let cc = cA; cc <= cB; cc++) {
@@ -110,13 +130,15 @@ class Fabric {
     }
     const g = this.g;
     const x0 = this.padX + (cA - this.c0) * this.W - 1, x1 = this.padX + (cB + 1 - this.c0) * this.W + 1;
-    const y0 = this.padT + (this.rTop - (r + 1)) * this.H - (r + 1 >= this.rTop ? this.padT : 0);
+    // the drape shifts columns up (dTop) or down (dBot): the clip covers them, the redraw a few rows more
+    const y0 = this.padT + (this.rTop - (r + 1)) * this.H - (r + 1 >= this.rTop ? this.padT : this.dTop);
     // cable pieces reach ~3.4 rows down, so the band reaches 4 rows below the stitch
-    const y1 = r - 4 <= this.r0 ? this.canvas.height : this.padT + (this.rTop - (r - 4) + 1) * this.H;
+    const y1 = r - 4 <= this.r0 ? this.canvas.height : Math.min(this.canvas.height, this.padT + (this.rTop - (r - 4) + 1) * this.H + this.dBot);
+    const k = this.drape ? Math.ceil(this.dUp + this.dDown) : 0;
     g.save();
     g.beginPath(); g.rect(x0, y0, x1 - x0, y1 - y0); g.clip();
     g.clearRect(x0, y0, x1 - x0, y1 - y0);
-    this.region(r - 6, r + 3, cA - 3, cB + 3);
+    this.region(r - 6 - k, r + 3 + k, cA - 3, cB + 3);
     g.restore();
     this.dirty = true;
   }
@@ -249,10 +271,11 @@ export function renderSwatch(chart, opts) {
   const fab = new Fabric(chart, { done: () => total, yarn: opts.yarnAt, castOnYarn: opts.castOnYarn || opts.yarnAt(0), finished: () => opts.bindOff !== false });
   fab.setWindow(0, chart.width, 1, chart.height, W);
   const m = opts.margin ?? Math.round(W * 0.6);
-  const out = mk(fab.canvas.width - fab.padX * 2 + m * 2 + fab.padX * 0.5, fab.canvas.height - fab.padT - fab.padB + m * 2 + fab.H * 1.4);
+  // the drape's waves reach dTop above the top row and dBot below the cast-on: room for both
+  const out = mk(fab.canvas.width - fab.padX * 2 + m * 2 + fab.padX * 0.5, fab.canvas.height - fab.padT - fab.padB + fab.dTop + fab.dBot + m * 2 + fab.H * 1.4);
   const g = out.getContext('2d');
   if (opts.background) { g.fillStyle = opts.background; g.fillRect(0, 0, out.width, out.height); }
-  const ox = m - fab.padX, oy = m - fab.padT + fab.H * 0.4;
+  const ox = m - fab.padX, oy = m - fab.padT + fab.dTop + fab.H * 0.4;
   if (opts.shadow !== false) drawShadow(g, fab.canvas, ox, oy, fab.canvas.width, fab.canvas.height, W);
   g.drawImage(fab.canvas, ox, oy);
   return { canvas: out, W, H: fab.H };
@@ -312,7 +335,7 @@ export class Work {
     this.finished = false;
     if (nextYarn) this.nextYarn = nextYarn;
     this.castOnYarn = castOnYarn || this.yarns[0] || this.nextYarn;
-    this.fabric = new Fabric(chart, { done: () => this.done, yarn: (i) => this.yarns[i] || this.nextYarn, castOnYarn: this.castOnYarn, finished: () => this.finished });
+    this.fabric = new Fabric(chart, { done: () => this.done, yarn: (i) => this.yarns[i] || this.nextYarn, castOnYarn: this.castOnYarn, finished: () => this.finished, liveRow: () => this._needleRow().r });
     this.anim = { tap: null, turn: null, pop: null, twitch: 0, counter: 0 };
     this.cam.ok = false;
     this._layout(true);
@@ -764,7 +787,7 @@ export class Work {
       const ph = ((t / 1000) * 0.6 + (h % 1000) / 1000 * 4) % 4;
       if (ph < 0.3) {
         const a = Math.sin((ph / 0.3) * Math.PI);
-        drawTwinkle(g, G.colL(c) + ((h >> 4) % 100) / 100 * G.cp, G.rowT(r) + ((h >> 11) % 100) / 100 * G.ch, G.cp * 0.28, a);
+        drawTwinkle(g, G.colL(c) + ((h >> 4) % 100) / 100 * G.cp, G.rowT(r) + (f.dyRows(r, c) + ((h >> 11) % 100) / 100) * G.ch, G.cp * 0.28, a);
       }
     }
     return any;
@@ -780,7 +803,7 @@ export class Work {
       const i = f.idx(r, c);
       if (i < 0 || i >= this.done || !this.yarns[i] || this.yarns[i].type !== 'glow') continue;
       const P = palette(yarnColorAt(this.yarns[i], i), 'glow');
-      const x = G.colC(c), y = G.rowT(r) + G.ch * 0.6;
+      const x = G.colC(c), y = G.rowT(r) + G.ch * (0.6 + f.dyRows(r, c));
       const gr = g.createRadialGradient(x, y, 0, x, y, G.cp * 0.9);
       gr.addColorStop(0, rgba(P.hi, 0.5)); gr.addColorStop(1, rgba(P.base, 0));
       g.fillStyle = gr; g.fillRect(x - G.cp, y - G.cp, G.cp * 2, G.cp * 2);
