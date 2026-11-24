@@ -5,3 +5,11 @@ assets/anim8gen/
 .playwright/
 .*-history.jsonl
 node_modules
+
+# bulky design screenshots (a curated few are kept)
+design/screenshots/*
+!design/screenshots/pattern-sheet*.png
+!design/screenshots/doll-sheet-pip.png
+!design/screenshots/stitch-lab-swatches.png
+!design/screenshots/stitch-lab-cables.png
+!design/screenshots/stitch-lab-tap-frames.png

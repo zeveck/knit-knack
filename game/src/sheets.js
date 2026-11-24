@@ -101,7 +101,15 @@ export function slotYarnNames(slots) {
 }
 
 // opts: {chart, pattern, yarns: slot yarns, currentRow}
-export function openPattern({ chart, pattern, slots, currentRow = 0 }) {
+export function openPattern({ chart, pattern, slots, currentRow = 0, currentIndex = null }) {
+  // which part's lines to highlight, when the current row is worked part by part
+  let curKey = null;
+  if (currentIndex != null && chart.total) {
+    const L = chart.locate(Math.min(currentIndex, chart.total - 1));
+    currentRow = L.r;
+    const node = chart.partIndex(L.r, L.entry.col);
+    if (node >= 0) { const ctx = (chart._plan().rows.get(L.r) || []).find((x) => x.ids && x.ids.includes(node)); if (ctx && ctx.key != null) curKey = ctx.key; }
+  }
   const wp = writtenPattern(chart, { name: pattern.name, source: pattern.source, yarns: slotYarnNames(slots || pattern.slots) });
   const box = el('div', { class: 'pattern-text' });
   let curEl = null;
@@ -110,7 +118,7 @@ export function openPattern({ chart, pattern, slots, currentRow = 0 }) {
     if (l.label) { d.append(el('span', { class: 'l', text: l.label + ': ' })); }
     const t = el('span'); t.innerHTML = l.kind === 'row' || l.kind === 'end' || l.kind === 'info' ? patternHTML(l.text) : esc(l.text);
     d.append(t);
-    if (currentRow && l.rows && currentRow >= l.rows[0] && currentRow <= l.rows[1] && !curEl) { d.classList.add('cur'); curEl = d; }
+    if (currentRow && l.rows && currentRow >= l.rows[0] && currentRow <= l.rows[1] && !curEl && (curKey == null || l.part == null || l.part === curKey)) { d.classList.add('cur'); curEl = d; }
     box.append(d);
   }
   const key = el('div', { class: 'key' });

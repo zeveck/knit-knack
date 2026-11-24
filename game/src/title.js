@@ -18,6 +18,10 @@ export function frame(t) {
   const J = fit.json;
   if (J && J.basket) {
     const b = fracBox(fit, J.basket);
+    // keep the basket (and the ball beside it) on screen when a narrow window crops the nook
+    const pad = Math.max(10, w * 0.03);
+    if (b.x < pad) b.x = pad;
+    if (b.x + b.w * 1.6 > w - pad) b.x = Math.max(pad, w - pad - b.w * 1.6);
     const yarn = lastYarn();
     drawStack(g, b, { t, things: e.purl, holder: e.holder, yarn, dpr });
   }

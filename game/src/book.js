@@ -121,7 +121,7 @@ function card(p, i, unlockedN) {
   const times = S.get().gallery.filter((g) => g.pattern === p.id).length;
   const meta = el('div', { class: 'meta' }, `${fmt(chart.total)} stitches`, times ? el('span', { class: 'done-tag', text: times > 1 ? `knit ${times}×` : 'knit' }) : null, p.wear ? el('span', { class: 'icw', title: 'Wearable', html: ICON.doll }) : null);
   const read = el('button', { class: 'read', text: 'Read the pattern' });
-  read.addEventListener('click', (e) => { e.stopPropagation(); audio.play('card'); openPattern({ chart, pattern: p, slots: piece ? piece.slots : suggestedSlots(p), currentRow: piece ? chart.locate(Math.min(piece.yarns.length, chart.total - 1)).r : 0 }); });
+  read.addEventListener('click', (e) => { e.stopPropagation(); audio.play('card'); openPattern({ chart, pattern: p, slots: piece ? piece.slots : suggestedSlots(p), currentIndex: piece ? piece.yarns.length : null }); });
   const btn = el('button', { class: 'card-open', style: { all: 'unset', display: 'flex', flexDirection: 'column', gap: '6px', cursor: 'pointer' }, 'aria-label': `${p.name}${piece ? ', in progress' : ''}` }, pv, el('h3', { text: p.name }), el('div', { class: 'tech', text: p.blurb || p.technique || '' }), meta);
   btn.addEventListener('click', () => { audio.play('ui'); if (piece) go('knit', p.id); else go('caston', p.id); });
   c.append(btn);

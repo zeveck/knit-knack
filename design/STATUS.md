@@ -40,10 +40,10 @@ openai (imagegen2, anim8gen), gemini (nanogen), elevenlabs (audiogen), node, pyt
 - [x] Change 1 (request 4) — CHANGE_1 folded into GAME_DESIGN.md after one review round (Player 6, Art 7, Builder 8 should-fix; all fixed). ~19,000 stitches, 12 needles, accessories, 7 dolls, written patterns. Estimate ~$18 of $50.
 - [x] 4 Art and audio — all accepted: ~48 images, Purl's cheer (4 frames), 5 songs, 22 sounds; ~$12.33 of $50 (design/ASSETS.md). Art sheet deferred to wrap-up (after publish, so it links the live site).
 - [x] 5 Build — all features built: chart/stitches/work (stitch lab), app shell + knitting screen, 47 patterns (tech-edited and fixed, commit aba0793: bind-off counts, row-start CO, parts, whale, octopus, cardigan, bunny safety note, drape waves for chevron/Old Shale, heart pillow width bug), dolls/bag/scarf/preview card.
-- [ ] 6 Play-test — full play-test helper running (definition of done, 47 solutions → tools/solutions.mjs, whole-game run, every screen at 4 sizes, play it wrong, feedback, offline)
-- [ ] 7 Final review
-- [ ] 8 Polish
-- [ ] 9 Wrap up
+- [x] 6 Play-test — DoD passes (47/47 twice, hashes match; whole-game run, 43 unlocks once each; 100k scarf; feedback; offline). Fixed in eca7ca4, b927d53, ae999e6, 587fcde, 84ca10a. tools/solutions.mjs replays all 47. Leftover small layout items: doll shelf (landscape tag, desktop arm overlap, phone empty wood), landscape wall tag size, 1920 empty space, ruler label formats/size, scarf HUD over knitting on phone, Clementine orphan, right needle under desktop panel, grouped toasts.
+- [x] 7 Final review — round 1: 1 must-fix + 8 should (fixed 993681e, 3acda60); round 2: no must-fix, 7 should + lead notes (fixed 10f0d9e, 5eafc0d, a9e1260, deff481: purl underlay in yarn shade, strand, start zoom fit + remembered, real-stitch preview card, toys plush + shelf, friendly blurbs, finish turns into the object, canvas cap). solutions.mjs 47/47.
+- [x] 8 Polish — 12 should-fix + 6 nice fixed (7e4f77b), rescanned at 4 sizes, solutions 47/47.
+- [ ] 9 Wrap up — wrap-up helper: github-social, social card check, README (making-of), media screenshots, art sheet; then publish to knitknack.synapticnoise.com, gallery, plans card + design page update
 
 ## Notes for --continue
 

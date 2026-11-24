@@ -124,3 +124,13 @@ Reviewers: Player (6 should-fix, 1 nice), Art and sound director (7 should-fix, 
 | B8: the debug hook and play-test don't cover the new systems | should-fix | judgment | Fixed: state() additions (counts, unlocked, equipped, outfits, toasts, previewCard rect); addStitches, dress, equip, writtenPattern; unlockAll covers everything; go() covers bag, dolls and dress; an unlock play-test run; doll-sheet.html in the DoD |
 
 All findings are fixed. The core promises are kept: one tap = one stitch, no auto-knit, 47 real patterns, color and yarn type on any stitch, the gallery and the infinite scarf.
+
+## Final review, round 1
+
+Bug hunter: 1 must-fix (mouse hold-to-knit timer never cleared on leaving the screen; verified in knit.js leave() and main.js releaseAll no-op), 2 should-fix (holds not released on blur/report/sheet; no finger hold on the scarf), nice items. Playtester: 6 should-fix (big pieces at 8–11 px so the tap animation is invisible; markers on every stitch for 1–2 st repeats; phone Cast on below the fold; desktop wording strip truncates; rainbow needles plain blue; cables faint in mid-tone/fuzzy yarn) and nice items. All accepted; details in .gamegen/review/final-bugs.md and final-play.md. Fixes in progress.
+
+Round 1 fixes: commits 993681e, 3acda60 (solutions 47/47).
+
+## Final review, round 2
+
+No must-fix. Playtester: 6 should-fix (purl underlay dark grey instead of the yarn's own shade; stale strand at each new cast-on; start zoom cuts pieces / zoom not remembered; desktop preview card flat; toys finish as flat panels; designer-note card descriptions) + nice. Bug hunter: 1 should-fix (fabric canvas over 8 MP at deep comfortZoom) + 3 nice. Lead's own notes: strand detours when zoomed, dishcloth preview card weak. All accepted (.gamegen/review/final2-*.md, lead-notes.md); fixing, then the polish pass.

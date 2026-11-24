@@ -654,7 +654,7 @@ function onKey(e) {
   if (k === 'g' || k === 'G') { openGlossary(chart, pattern); return true; }
   if (k === 'm' || k === 'M') { toggleMute(); return true; }
   if (k === 'Escape' || k === 'p' || k === 'P') { menuFn(); return true; }
-  if (k === 'r' || k === 'R') { openPattern({ chart, pattern, slots: piece.slots, currentRow: chart.locate(Math.min(currentIndex(), chart.total - 1)).r }); return true; }
+  if (k === 'r' || k === 'R') { openPattern({ chart, pattern, slots: piece.slots, currentIndex: currentIndex() }); return true; }
   return false;
 }
 
