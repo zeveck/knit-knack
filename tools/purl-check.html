@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Knit Knack — purl check</title>
+<style>
+  body { margin: 0; padding: 12px; background: #6b4a66; color: #f3e9dc; font: 12px/1.3 system-ui, sans-serif; }
+  h1 { font-size: 16px; margin: 0 0 8px; }
+  table { border-collapse: collapse; }
+  td, th { padding: 4px; vertical-align: middle; }
+  th { text-align: left; font-weight: 600; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<h1>Purl check: rib, garter, seed, moss, reverse st, cables in four colors, small and large cells</h1>
+<table id="t"></table>
+<script type="module">
+// tools/purl-check.html?cell=12  (one cell size per page) or ?cell=40&crop=1
+import { parseChart } from '../game/src/chart.js';
+import { renderSwatch } from '../game/src/work.js';
+import { PATTERNS } from '../game/src/patterns.js';
+const q = new URLSearchParams(location.search);
+const CELL = +(q.get('cell') || 12);
+const CROP = q.get('crop') === '1';
+const TYPE = q.get('type') || 'wool';
+const COLORS = (q.get('colors') || '#efe4cf,#1f2a4d,#8fa77f,#f2b8c6').split(',');
+const IDS = (q.get('ids') || 'ribbed-wristwarmer,striped-headband,garter-dishcloth,seed-bookmark,moss-ear-warmer,basketweave-mug-cozy,stockinette-coaster,cable-headband,fisherman-beanie').split(',');
+const t = document.getElementById('t');
+const hr = document.createElement('tr'); hr.innerHTML = '<th></th>' + COLORS.map((c) => `<th>${c}</th>`).join(''); t.append(hr);
+for (const id of IDS) {
+  const p = PATTERNS.find((x) => x.id === id);
+  const ch = parseChart(p);
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<th>${p.name}</th>`;
+  for (const color of COLORS) {
+    const y = { color, type: TYPE };
+    const { canvas } = renderSwatch(ch, { yarnAt: () => y, cellPx: CELL, castOnYarn: y, background: null });
+    const td = document.createElement('td');
+    if (CROP) {
+      const w = Math.min(canvas.width, 300), h = Math.min(canvas.height, 200);
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      c.getContext('2d').drawImage(canvas, 0, canvas.height - h, w, h, 0, 0, w, h);
+      td.append(c);
+    } else { canvas.style.maxWidth = '260px'; canvas.style.maxHeight = '200px'; td.append(canvas); }
+    tr.append(td);
+  }
+  t.append(tr);
+}
+document.body.dataset.ready = '1';
+</script>
+</body>
+</html>

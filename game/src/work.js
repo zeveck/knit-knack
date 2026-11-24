@@ -174,7 +174,7 @@ class Fabric {
         const [x, y] = this.xy(r, c);
         const kl = this.knit(r, c - 1), kr = this.knit(r, c + 1);
         const x0 = kl ? x - 1 : x + W * 0.1, x1 = kr ? x + W + 1 : x + W * 0.9;
-        g.fillStyle = rgba(P.deep);
+        g.fillStyle = rgba(P.trough);
         g.fillRect(x0, y + H * 0.15, x1 - x0, H * (r === 1 ? 0.95 : 1.0));
       }
       const spans = new Set();
@@ -239,10 +239,13 @@ class Fabric {
       const cl = cells[c];
       if (!cl || !this.knit(r, c)) continue;
       const [x, y] = this.xy(r, c);
+      // shade toward the stitch's own deep tone (never a grey or black wash)
+      const i = this.idx(r, c), P = palette(yarnColorAt(this.yarnOf(i), i), this.yarnOf(i).type);
+      const sc = mixc(P.troughDeep, [28, 10, 26], 0.35);
       const side = (dx, a, w) => {
         const x0 = dx < 0 ? x : x + W, x1 = dx < 0 ? x + W * w : x + W * (1 - w);
         const gr = g.createLinearGradient(x0, 0, x1, 0);
-        gr.addColorStop(0, `rgba(28,10,26,${a})`); gr.addColorStop(1, 'rgba(28,10,26,0)');
+        gr.addColorStop(0, rgba(sc, a)); gr.addColorStop(1, rgba(sc, 0));
         g.fillStyle = gr;
         g.fillRect(Math.min(x0, x1) - (dx < 0 ? W * 0.15 : 0), y - H * 0.1, Math.abs(x1 - x0) + W * 0.15, H * 1.45);
       };

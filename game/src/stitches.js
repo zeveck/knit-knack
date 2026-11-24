@@ -66,16 +66,26 @@ export function palette(hex, type = 'wool') {
   const [, , L] = rgbToHsl(...base);
   const k = T.shade;
   const dk = (t) => mix(base, SHADOW, Math.min(0.92, t * k));
-  return {
+  // the yarn's own shade (same hue, lower lightness): the troughs between loops and
+  // behind purl bumps, so cream fabric shades to tan and navy to deep navy, never to grey or black
+  const [h0, s0, l0] = rgbToHsl(...base);
+  let out;
+  const own = (f) => mix(mix([base[0] * f, base[1] * f, base[2] * f], hslToRgb(h0, s0, Math.max(0.05, l0 * f)), 0.4), SHADOW, 0.08);
+  out = {
     base,
     hi: mix(base, WARM, 0.55 - 0.15 * L),
     light: mix(base, WARM, 0.22 - 0.08 * L),
-    mid: dk(0.18 + 0.1 * L),
-    dark: dk(0.42 + 0.18 * L),
+    mid: mix(dk(0.18 + 0.1 * L), own(0.84), 0.45),
+    dark: mix(dk(0.42 + 0.18 * L), own(0.56), 0.35),
     deep: dk(0.66 + 0.12 * L),
     gap: dk(0.8),
+    trough: own(0.7 + 0.05 * (1 - L)),
+    troughDeep: own(0.5 + 0.1 * (1 - L)),
     L,
   };
+  // strands set back (cable back strands, the far leg) darken toward the yarn's own deep tone
+  out.shade = mix(out.troughDeep, out.deep, 0.45);
+  return out;
 }
 
 // Self-striping: 16 shades drifting along the yarn (hue ±22°, lightness ±10%).
@@ -202,7 +212,7 @@ function leg(g, x0, y0, x1, y1, t, P, T, W, opt = {}) {
   const sgn = lightDir >= 0 ? -1 : 1;
   const gr = g.createLinearGradient(0, sgn * ry * 1.1, 0, -sgn * ry * 1.1);
   const tone = opt.tone || 0; // >0 darker (back strands)
-  const tc = (c) => mix(c, P.deep, tone);
+  const tc = (c) => mix(c, P.shade || P.deep, tone);
   gr.addColorStop(0, css(tc(P.light)));
   gr.addColorStop(0.28, css(tc(P.base)));
   gr.addColorStop(0.62, css(tc(P.base)));
@@ -314,8 +324,8 @@ function frame(W, H, padL, padR, padT, padB) {
 // the dark interior between loops, so gaps read as depth rather than holes
 function backing(g, x, y, W, H, P, alpha = 1, h = 1.0) {
   const gr = g.createLinearGradient(0, y, 0, y + H * h);
-  gr.addColorStop(0, css(P.gap, alpha));
-  gr.addColorStop(1, css(P.deep, alpha));
+  gr.addColorStop(0, css(P.troughDeep, alpha));
+  gr.addColorStop(1, css(P.trough, alpha));
   g.fillStyle = gr;
   const x0 = x + W * 0.06, x1 = x + W * 0.94, y0 = y + H * 0.08, y1 = y + H * h, r = W * 0.18;
   g.beginPath();
@@ -343,8 +353,8 @@ function drawKnitV(g, x, y, W, H, P, T, R, v, o = {}) {
   // the notch between the legs (where the row above pulls through)
   if (W >= 10 && !o.noNotch) {
     const ng = g.createRadialGradient(x + W / 2 + lean * 0.8, y + H * 0.05, 0, x + W / 2 + lean * 0.8, y + H * 0.05, W * 0.22);
-    ng.addColorStop(0, css(P.gap, 0.55));
-    ng.addColorStop(1, css(P.gap, 0));
+    ng.addColorStop(0, css(P.troughDeep, 0.7));
+    ng.addColorStop(1, css(P.troughDeep, 0));
     g.fillStyle = ng;
     g.fillRect(x, y - H * 0.2, W, H * 0.6);
   }
@@ -353,7 +363,7 @@ function drawKnitV(g, x, y, W, H, P, T, R, v, o = {}) {
 // A curved strand (a round tube) along a path: outline, body, shading, highlight and ply marks.
 function tube(g, path, t, P, T, W, opt = {}) {
   const tone = opt.tone || 0;
-  const tc = (c) => mix(c, P.deep, tone);
+  const tc = (c) => mix(c, P.shade || P.deep, tone);
   g.save();
   g.lineCap = opt.cap || 'round'; g.lineJoin = 'round';
   if (opt.shadow) {
@@ -379,18 +389,25 @@ function tube(g, path, t, P, T, W, opt = {}) {
 }
 
 function drawPurl(g, x, y, W, H, P, T, R, v) {
-  // reverse-stockinette pebbles: a squat, slightly wavy bead that meets its neighbours in a ridge,
-  // sunk into shadow. Knit columns beside it overlap and shade it (see work.js shadeRow).
-  const Pd = { ...P, base: mix(P.base, P.mid, 0.45), light: mix(P.light, P.mid, 0.35), hi: mix(P.hi, P.base, 0.6) };
-  backing(g, x, y, W, H, { ...P, gap: P.deep, deep: mix(P.deep, [0, 0, 0], 0.25) }, 1, 1.15);
+  // a purl bump as it looks in real fabric: the loop's head, a plump horizontal bump across the stitch,
+  // with the sinker loops (the strand between stitches) half a stitch over, just below it. Purl rows
+  // then interlock brick-wise into the continuous, wavy ridges of garter and reverse stockinette.
+  // Everything shades in the yarn's own colour (troughs to tan for cream, to deep navy for navy).
+  const Q = { ...P, deep: P.troughDeep, dark: mix(P.dark, P.trough, 0.55), mid: mix(P.mid, P.trough, 0.25), gap: P.troughDeep };
+  backing(g, x, y, W, H, P, 1, 1.12);
   const th = T.thick;
-  const wv = (v % 2 ? 1 : -1) * H * (0.06 + R() * 0.05), dy = (R() - 0.5) * H * 0.08;
-  // the loop of the row above, peeking in the dip between beads
-  g.save(); g.beginPath(); g.rect(x - 1, y - H * 0.25, W + 2, H * 1.7); g.clip();
-  leg(g, x + W * 0.25, y + H * 0.2, x + W * 0.75, y + H * 0.2, H * 0.3 * th, Pd, T, W, { tone: 0.45, soft: true });
-  leg(g, x + W * 0.0, y + H * 0.62 + wv + dy, x + W * 1.0, y + H * 0.62 - wv + dy, H * 0.48 * th, Pd, T, W, { phase: R(), tone: 0.08, soft: true });
-  g.restore();
-  fuzz(g, x + W / 2, y + H * 0.6, W * 0.45, H * 0.35, P, T, W, R, 0.6);
+  const wob = () => (R() - 0.5) * H * 0.06;
+  // sinker loops: each half clipped to its half of the cell, so neighbouring purls join into one strand
+  for (const side of [0, 1]) {
+    g.save(); g.beginPath(); g.rect(x + side * W * 0.5, y - H * 0.3, W * 0.5 + (side ? 1 : 0), H * 1.8); g.clip();
+    const cx = x + side * W, cy = y + H * 0.84 + wob();
+    leg(g, cx - W * 0.46, cy + H * 0.03, cx + W * 0.46, cy - H * 0.03, H * 0.48 * th, Q, T, W, { tone: 0.16, soft: true, phase: R() });
+    g.restore();
+  }
+  // the head: overlaps its neighbours a little so the row reads as a ridge, not separate beans
+  const hy = y + H * 0.36 + wob(), tilt = (v % 2 ? 1 : -1) * H * 0.04;
+  leg(g, x - W * 0.04, hy + tilt, x + W * 1.04, hy - tilt, H * 0.6 * th, Q, T, W, { phase: R(), soft: true });
+  fuzz(g, x + W / 2, y + H * 0.5, W * 0.48, H * 0.4, P, T, W, R, 0.6);
 }
 
 function drawYo(g, x, y, W, H, P, T, R) {
