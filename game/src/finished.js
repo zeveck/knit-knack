@@ -79,8 +79,11 @@ function enter(id) {
   setTimeout(() => audio.play('steam'), 260);
   setTimeout(() => { audio.play('mew'); if (S.get().equipped.purl.includes('bell')) audio.play('bell'); }, 900);
   setTimeout(() => audio.play('purr'), 1700);
-  setTimeout(() => { if (currentScreen() === 'finished' && pat.wear && !S.get().tips.includes('doll')) { S.get().tips.push('doll'); } }, 1600);
-  if (!S.get().tips.includes('display')) { S.get().tips.push('display'); S.saveSoon(); setTimeout(() => { if (currentScreen() === 'finished') ui.append(el('div', { class: 'facts', text: pat.wear ? 'Display it hangs it in your gallery. Put it on a doll: meet Pip!' : 'Display it hangs it in your gallery.' })); }, 1600); }
+  // the tips, once each: the first finish explains Display it; the first wearable introduces Pip
+  const tips = [];
+  if (!S.get().tips.includes('display')) { S.get().tips.push('display'); tips.push('Display it hangs it in your gallery.'); }
+  if (pat.wear && !S.get().tips.includes('doll')) { S.get().tips.push('doll'); tips.push('Put it on a doll: meet Pip!'); }
+  if (tips.length) { S.saveSoon(); setTimeout(() => { if (currentScreen() === 'finished' && gal && gal.id === id) ui.append(el('div', { class: 'facts tipline', text: tips.join(' ') })); }, 1600); }
   // knit keys still drumming from the last stitch never pick for you: a key acts only after a pause
   let lastKey = performance.now();
   setKeyHandler((e) => {

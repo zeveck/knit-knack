@@ -1,6 +1,6 @@
 // toasts.js — unlock toasts, one at a time, 4 s each, with "Use it". Each shows exactly once
 // (state.takeToast() adds it to seenUnlocks as it shows).
-import { el, ICON, go } from './ui.js';
+import { el, ICON, go, notice } from './ui.js';
 import * as S from './state.js';
 import * as audio from './audio.js';
 import { onRelease } from './input.js';
@@ -46,6 +46,8 @@ export function pump() {
   host().append(t);
   showing = { t, u, timer: setTimeout(close, 4000) };
   audio.play('unlock');
+  // the first unlock: where new things live (once)
+  if (usable && !S.get().tips.includes('bag')) { S.get().tips.push('bag'); S.saveSoon(); notice('New things go in your Knitting Bag. Use it tries it now.', 5000); }
 }
 function close() {
   if (!showing) return;
