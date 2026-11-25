@@ -81,3 +81,22 @@ Budget for this change: $20 (default).
 - [x] #2 cat coat/name/petting (ef81f17 + 4bd9a8b neutral captions), #4 unlock-all setting (e117309)
 - [x] Replays 47/47 ✓; published 2026-11-25 (deploy c985fa3), issues #1–#4 closed, live check on iPhone 15 OK
 Order: these land before changes 2 and 3 are built.
+
+## Handoff (2026-11-25 02:46 UTC, before context compaction)
+
+**Where things stand**
+- Live: https://knitknack.synapticnoise.com at deploy c985fa3 (fixes #1–#4 published, issues closed). Repo zeveck/knit-knack, branch main.
+- Change 2 (knitting in the round), spec design/CHANGE_2.md (reviewed; findings in .gamegen/review/c2-*.md):
+  - Part A (engine, patterns, migration) DONE in commits cd2d564, c0ee96c, cc7b801: round model in chart.js (rsOf, round row map, step rows, Rnd wording, parser), patternKit helpers, 19 patterns rebuilt (book 24,637 sts), editions + patterns-flat-v1.json + v1 save fixture, check-chart 110 checks, check-patterns 47/47, solutions.mjs 47/47 + migration replay.
+  - Part A's helper was still waiting on its knitting-expert review of tools/patterns.txt; if it never reports, re-run that review and fix what it finds.
+  - Part A's API for part B is documented at the top of game/src/chart.js.
+  - Part B NEXT: the turning-tube view (column-strip projection, needle tip travels, eased turns every 4–6 sts / per DPN, left-to-right front motion, marker charm, end-of-round beat, jog at the back, flat sections frozen), circular cable / DPN needles, step animations, tube.js shape maps (dome, ring, sock, mitten, body; back + front halves) for worn/card/gallery/ghost, raised-cable relief pass, first-round tip, sfx-join (~$0.25). Spec sections B, E, F, I.
+- Change 3 (the cozy room), spec design/CHANGE_3.md (reviewed; findings .gamegen/review/c3-*.md). Art DONE and UNTRACKED (commit with the room build): game/assets/bg/room-{land,port}.webp + .json + room-*-front-*.png, items/room-*.png, tools/cut-room-fronts.py (~$0.86). Build after change 2 part B (drapeOnto needs the new worn.js). Then fold CHANGE_3's "To fold into GAME_DESIGN.md" list into GAME_DESIGN.md.
+- After both: play-test changed parts + node tools/solutions.mjs (all 47 + migration), final review (playtester + bug hunter), polish pass, README/making-of (requests 5 and 6), shared design page + plans card + art sheet update. Publishing changes 2 and 3 was NOT requested: ask, or wait for --publish.
+
+**Gotchas**
+- `pkill -f <pattern>` matching your own command line kills the Bash call (exit 144): use pgrep with a [b]racket trick or kill by PID.
+- design/screenshots is gitignored except a curated few; never commit bulk screenshots (history was rewritten once to drop 580 MB before the first push).
+- Local git identity: commit with `-c user.name=gamegen -c user.email=gamegen@users.noreply.github.com`; the gallery repo (zeveck/synapticnoise, cloned at .gamegen/gallery) uses Rich Conlan <2100661+zeveck@users.noreply.github.com>.
+- The art page in plans/knit-knack/art/ was hand-patched for phones (gamegen issue #56); a rebuild loses the patch.
+- Spending: original $12.33 of $50; change 3 art $0.86 of its $20.
