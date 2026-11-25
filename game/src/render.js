@@ -5,7 +5,7 @@ import { renderSwatch } from './work.js';
 import { normYarn } from './yarn.js';
 import { isToy, toyEyes, plushify } from './plush.js';
 import { shapeOf, localBounds } from './tube.js';
-import { roundObject, POSE_OF } from './worn.js';
+import { roundObject, POSE_OF, forgetBakes } from './worn.js';
 
 // Charts are cached by pattern and edition (Change 2, CHANGE_2.md G). Edition 1 of a pattern that
 // Change 2 rewrote for knitting in the round is built from patterns-flat-v1.json (loaded at boot only
@@ -25,6 +25,7 @@ export function setFlatV1(json) {
   flatV1State = FLAT_V1 ? 'ok' : 'failed';
   for (const k of [...charts.keys()]) if (k.endsWith('|plain')) charts.delete(k);
   forget('');
+  forgetBakes(''); // (the dolls' layers and bakes of stand-in swatches too)
 }
 export async function loadFlatV1(src = 'src/patterns-flat-v1.json') {
   if (flatV1State === 'ok') return true;
@@ -164,6 +165,40 @@ export function trimmed(src) {
 }
 
 // fit a render into a box (CSS px) and return a canvas element styled to that size
+// (Change 2) the close-up of a round object turning in your hands: 24 spin steps rendered lazily and
+// kept, at half the cell size while it's being dragged (fast) and full size once let go, all drawn into
+// one canvas the size of the spin-0 view. -> {canvas, draw(spin), dragging}
+export function spinView(g, pattern, cellPx, maxW, maxH) {
+  const STEPS = 24, frames = new Map();
+  const half = Math.max(3, Math.round(cellPx * 0.5));
+  const frame = (q, fast) => {
+    const k = `${q}|${fast ? 'h' : 'f'}`;
+    if (!frames.has(k)) { let c = null; try { c = roundObject(g, pattern, fast ? half : cellPx, { spin: q / STEPS }); } catch (e) { console.warn('spin', g.id, e); } frames.set(k, c); }
+    return frames.get(k);
+  };
+  const f0 = objectRender(g, pattern, cellPx);
+  const dpr = Math.min(3, window.devicePixelRatio || 1) * pageZoom();
+  const k = Math.min((maxW * dpr) / f0.width, (maxH * dpr) / f0.height, 1.6);
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(f0.width * k)); c.height = Math.max(1, Math.round(f0.height * k));
+  c.style.width = c.width / dpr + 'px'; c.style.height = c.height / dpr + 'px';
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingQuality = 'high';
+  const view = {
+    canvas: c, dragging: false,
+    draw(spin) {
+      const q = ((Math.round(spin * STEPS) % STEPS) + STEPS) % STEPS;
+      const src = (q === 0 && !view.dragging ? f0 : frame(q, view.dragging)) || f0;
+      const kk = k * (src === f0 || !view.dragging ? 1 : cellPx / half);
+      const w = src.width * kk, h = src.height * kk;
+      ctx.clearRect(0, 0, c.width, c.height);
+      ctx.drawImage(src, (c.width - w) / 2, (c.height - h) / 2, w, h);
+    },
+  };
+  view.draw(0);
+  return view;
+}
+
 export function fitCanvas(src, maxW, maxH) {
   const dpr = Math.min(3, window.devicePixelRatio || 1) * pageZoom();
   const k = Math.min((maxW * dpr) / src.width, (maxH * dpr) / src.height, 1.6);

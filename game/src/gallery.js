@@ -6,7 +6,7 @@ import { fmtLen } from './scarfFacts.js';
 import * as S from './state.js';
 import * as audio from './audio.js';
 import * as toasts from './toasts.js';
-import { objectRender, fitCanvas, cellFor, trimmed, recordChart } from './render.js';
+import { objectRender, fitCanvas, cellFor, trimmed, recordChart, spinView } from './render.js';
 import { shapeOf } from './tube.js';
 import { isToy } from './plush.js';
 import { galTabs } from './galTabs.js';
@@ -150,8 +150,9 @@ export function detail(id) {
     const w = Math.min(big.clientWidth - 20, 520), h = Math.min(innerHeight * 0.45, 460);
     const cell = cellFor(p, w, h, 4, 24, g);
     let spin = 0, raf = 0;
-    const draw = () => { raf = 0; big.replaceChildren(fitCanvas(objectRender(g, p, cell, { spin }), w, h)); };
-    draw();
+    const sh0 = shapeOf(recordChart(g, p), p), sv = sh0 && ['dome', 'ring', 'body'].includes(sh0.kind) ? spinView(g, p, cell, w, h) : null; // (cached spin frames)
+    const draw = () => { raf = 0; if (sv) sv.draw(spin); else big.replaceChildren(fitCanvas(objectRender(g, p, cell, { spin }), w, h)); };
+    if (sv) big.replaceChildren(sv.canvas); else draw();
     // (Change 2) a hat, a band, a cowl or a sweater knit in the round turns round in your hands: drag, or the arrow keys
     const sh = shapeOf(recordChart(g, p), p);
     if (sh && ['dome', 'ring', 'body'].includes(sh.kind)) {
@@ -159,9 +160,9 @@ export function detail(id) {
       big.setAttribute('aria-label', 'The piece: drag or use the arrow keys to turn it round');
       const turn = (d) => { spin = (((spin + d) % 1) + 1) % 1; if (!raf) raf = requestAnimationFrame(draw); };
       let px = null;
-      big.addEventListener('pointerdown', (e) => { px = e.clientX; big.setPointerCapture && big.setPointerCapture(e.pointerId); });
+      big.addEventListener('pointerdown', (e) => { px = e.clientX; if (sv) sv.dragging = true; big.setPointerCapture && big.setPointerCapture(e.pointerId); });
       big.addEventListener('pointermove', (e) => { if (px == null) return; turn(-(e.clientX - px) / (w * 2)); px = e.clientX; });
-      const up = () => { px = null; };
+      const up = () => { px = null; if (sv && sv.dragging) { sv.dragging = false; turn(0); } };
       big.addEventListener('pointerup', up); big.addEventListener('pointercancel', up);
       big.addEventListener('keydown', (e) => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); turn(e.key === 'ArrowLeft' ? 1 / 24 : -1 / 24); } });
     }
