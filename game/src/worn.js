@@ -32,7 +32,7 @@ const TUNE = {
   clementine: { hatW: 1.12, brim: 0.4, cowlW: 1.05 },
   bramble: { hatW: 0.86, brim: 0.42, hatUp: 0.06 },
   juniper: { hatW: 1.0, brim: 0.42 },
-  basil: { hatW: 0.84, brim: 0.4, hatDx: -0.035 },
+  basil: { hatW: 0.84, brim: 0.4, hatDx: -0.035, bandW: 0.82 }, // (a band sits between the ears, above the eyes)
   mabel: { hatW: 1.16, brim: 0.5, mitW: 1.3 },
   purl: { hatW: 0.72, brim: 0.27, hatUp: 0.04, cowlW: 0.85, bandW: 0.8, bandDy: -0.06, neckW: 96, neckDy: -14 },
 };
