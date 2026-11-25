@@ -104,6 +104,14 @@ function bagHasNew() {
   return S.UNLOCK_RULES.some((u) => !u.rule.start && ['needles', 'marker', 'counter', 'holder', 'decor', 'purl', 'room'].includes(u.kind) && S.ruleMet(u.rule) && !s.bagSeen.includes(u.id));
 }
 
+// a piece's size as its pattern says it: "40 sts around × 10 rnds" for a round piece (no join row, no
+// filler columns), "24 sts × 12 rows" for a flat one
+function sizeLine(chart) {
+  if (!chart.round) return `${chart.width} sts × ${chart.height} rows`;
+  let rnds = 0, rws = 0, widest = 0;
+  for (let r = 1; r <= chart.height; r++) { const u = chart.rowNo(r).unit; if (u === 'Rnd') rnds++; else if (u === 'Row') rws++; if (chart.row(r).round) widest = Math.max(widest, chart.row(r).ring.length); }
+  return `${chart.castOnCols.length || widest} sts around × ${rnds} rnds${rws ? ` and ${rws} rows` : ''}`;
+}
 function card(p, i, unlockedN) {
   const s = S.get();
   // with "Unlock everything" on nothing is locked; a piece on the needles or a pattern already knit stays open
@@ -224,7 +232,7 @@ function renderCastOn(p) {
   const info = el('div', { class: 'caston-info' });
   info.append(el('h2', { text: p.name, style: { color: 'var(--plum)', fontSize: '28px' } }), el('div', { class: 'src', text: p.blurb || p.technique || '' }),
     p.technique ? el('div', { class: 'facts', text: `New here: ${p.technique.charAt(0).toLowerCase()}${p.technique.slice(1)}` }) : null,
-    el('div', { class: 'facts', text: `${chart.width} sts × ${chart.height} rows · ${fmt(chart.total)} stitches${p.wear ? ' · wearable' : ''}` }));
+    el('div', { class: 'facts', text: `${sizeLine(chart)} · ${fmt(chart.total)} stitches${p.wear ? ' · wearable' : ''}` }));
   const used = [...chart.slotsUsed].sort();
   const names = { A: 'Main color', B: 'Contrast', C: 'Third color', D: 'Fourth color' };
   for (const [k, v] of Object.entries(p.slots || {})) if (v && typeof v === 'object' && v.label) names[k] = v.label;

@@ -26,14 +26,15 @@ export const fmt = (n) => Math.round(n).toLocaleString('en-US');
 // The instruction card: a long row first grows to its full height (three lines; two on a landscape
 // phone; the card itself is always that tall, so it never jumps), then shrinks (never below `floor`);
 // if it still doesn't fit it scrolls, never cut, so the current stitch is always in view.
-export function fitStrip(w, land) {
+export function fitStrip(w, land, maxLines = 0) {
   w.style.fontSize = ''; w.style.webkitLineClamp = ''; w.style.display = ''; w.style.overflowY = ''; w.style.maxHeight = '';
   w.scrollTop = 0;
   const over = () => w.scrollHeight > w.clientHeight + 1 || w.scrollWidth > w.clientWidth + 1;
-  const lines = land ? 2 : 3;
+  const lines = maxLines || (land ? 2 : 3);
+  if (maxLines) w.style.webkitLineClamp = String(lines); // (a step's sentence may take a line or two more)
   if (over()) w.style.webkitLineClamp = String(lines);
   let px = parseFloat(getComputedStyle(w).fontSize);
-  const floor = land ? 19 : 18;
+  const floor = maxLines ? 15 : land ? 19 : 18; // (a step's sentence may go a little smaller rather than be cut)
   while (over() && px > floor) { px -= 1; w.style.fontSize = `${px}px`; }
   if (over()) {
     const lh = parseFloat(getComputedStyle(w).lineHeight) || px * 1.1;

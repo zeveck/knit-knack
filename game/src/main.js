@@ -193,7 +193,7 @@ function grabScreen() {
 
 function reportState() {
   const k = currentScreen() === 'knit' ? knit.knitState() : {};
-  return { screen: currentScreen(), sheet: openSheetName(), pattern: k.pattern || null, row: k.row || null, stitch: k.stitch ?? null, yarn: k.yarn || null, mode: k.mode || null };
+  return { screen: currentScreen(), sheet: openSheetName(), pattern: k.pattern || null, row: k.row || null, stitch: k.stitch ?? null, yarn: k.yarn || null, mode: k.mode || null, edition: k.edition ?? null, section: k.section ?? null, step: k.step ?? null };
 }
 
 // ---------------------------------------------------------------- the debug hook

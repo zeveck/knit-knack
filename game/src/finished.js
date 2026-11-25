@@ -37,6 +37,20 @@ function build() {
   });
 }
 const calm = () => root._calm !== false;
+// the banner says how the piece was finished: from its last step (gathered, grafted, seamed) or its
+// finishing text (a toy is stuffed and sewn, a cosy seamed); else it was bound off
+function bannerOf(gal, p) {
+  let last = null;
+  try { const ch = recordChart(gal, p); if (ch && ch.round) for (let r = ch.height; r >= 1 && !last; r--) { const st = ch.row(r).step; if (st && st.kind !== 'centre') last = st.kind; else if (!st) break; } } catch { /* the plain banner */ }
+  const f = (p.finishing || '').toLowerCase();
+  if (last === 'gather') return f.includes('pom-pom') ? 'Gathered, with a pom-pom!' : 'Gathered and blocked!';
+  if (last === 'graft') return 'Toe grafted, all done!';
+  if (last === 'graftUnderarm') return 'Underarms grafted, all done!';
+  if (isToy(p) || f.includes('stuff')) return 'Stuffed and sewn!';
+  if (f.includes('thread the cast-on tail')) return 'Drawn up and tied!';
+  if (/\bseam/.test(f)) return 'Seamed and blocked!';
+  return 'Bound off and blocked!';
+}
 
 function touchOf(p) {
   if (p.touch) { const k = String(p.touch.kind || p.touch).toLowerCase().replace(/[^a-z]/g, ''); if (['pompom', 'tassel', 'eyes', 'buttons'].includes(k)) return k; if (k === 'buttoneyes') return 'eyes'; if (k === 'button') return 'buttons'; }
@@ -53,6 +67,7 @@ function enter(id) {
   gal = S.galleryById(id);
   pat = gal && S.patternById(gal.pattern);
   if (!gal || !pat) { go('book'); return; }
+  root.querySelector('.fin-top').textContent = bannerOf(gal, pat);
   toasts.hold(true);
   t0 = performance.now(); cheerDone = false;
   const used = [];

@@ -424,9 +424,19 @@ function refreshBar() {
   work.setNextYarn(currentYarn());
 }
 
+// the cast-on is in the first row's yarn (a cream cuff casts on in cream), fixed once knitting starts
+function syncCastOn() {
+  if (!piece || !chart || piece.yarns.length) return false;
+  const fc = chart.castOnCols && chart.castOnCols.length ? chart.cell(chart.firstRow || 1, chart.castOnCols[chart.castOnCols.length - 1]) : null;
+  const y = fc && fc.slot && piece.slots[fc.slot];
+  if (!y || (piece.castOn && sameYarn(piece.castOn, y))) return false;
+  piece.castOn = y;
+  return true;
+}
 function changeYarn(fn, label, yarn) {
   undoSnap = { slots: { ...piece.slots }, follow: piece.follow, free: piece.free, recent: S.get().recent.slice() };
   fn();
+  if (syncCastOn()) work.load(chart, { yarns: piece.yarns, done: 0, castOnYarn: normYarn(piece.castOn), nextYarn: currentYarn() });
   audio.play('yarn');
   refreshBar();
   S.saveSoon();
@@ -612,12 +622,23 @@ function hud() {
   if (key !== stripKey) {
     stripKey = key;
     const frag = document.createDocumentFragment();
-    frag.append(el('span', { class: 'lbl', text: w.label + ':' }), ' ');
+    // (a step's sentence that starts with the step's own name, "Join to work in the rnd…", drops that
+    // name from the label: "Cuff: Join to work…", not "Cuff · Join: Join to work…")
+    // (and a step's text that repeats its name, "Set-up rnd: Set-up rnd: k4, …", shows it once)
+    let lbl = w.label, stepText = null;
+    if (w.step) {
+      const parts = lbl.split(' · '), last = parts[parts.length - 1];
+      const low = w.text.toLowerCase();
+      if (last && low.startsWith(last.toLowerCase() + ':')) { stepText = w.text.slice(last.length + 1).trim(); stepText = stepText[0].toUpperCase() + stepText.slice(1); }
+      else if (last && low.startsWith(last.toLowerCase() + ' ')) lbl = parts.length > 1 ? parts.slice(0, -1).join(' · ') : '';
+    }
+    if (lbl) frag.append(el('span', { class: 'lbl', text: lbl + ':' }), ' ');
     const m = w.text.match(/^with \w, /);
     if (m) frag.append(nb(m[0]));
+    // a step is a sentence: it wraps at its spaces (stitch tokens keep their words together)
     w.tokens.forEach((t, j) => {
       if (j) frag.append(t.glue || ', ');
-      frag.append(el('span', { class: 'tok' + (t.rep ? ' rep' : '') + (j === cur.token ? ' cur' : ''), text: nb(t.text) }));
+      frag.append(el('span', { class: 'tok' + (t.rep ? ' rep' : '') + (j === cur.token ? ' cur' : ''), text: w.step ? (stepText ?? t.text) : nb(t.text) }));
     });
     if (w.countChanged && L.r > 1) frag.append(nb(` (${w.count} sts)`));
     const R = chart.row(L.r);
@@ -628,11 +649,13 @@ function hud() {
     else if (chart.round && R.step && !done && R.map.length > 1) frag.append(el('span', { class: 'cnt', text: `${L.k + 1} of ${R.map.length}` }));
     else if (cur.reps) frag.append(el('span', { class: 'cnt', text: `rep ${cur.rep} of ${cur.reps} · st ${cur.st} of ${cur.of}` }));
     dom.words.replaceChildren(frag);
+    stripStep = !!w.step;
     fitWords();
   }
   if (piece.follow) refreshNext();
 }
-const fitWords = () => fitStrip(dom.words, layout === 'land');
+let stripStep = false;
+const fitWords = () => fitStrip(dom.words, layout === 'land', stripStep ? (layout === 'land' ? 3 : 4) : 0);
 let lastNextSlot = null;
 function refreshNext() {
   const L = chart.locate(Math.min(currentIndex(), chart.total - 1));
@@ -735,6 +758,7 @@ export function enter(patternId) {
   root.hidden = false; // measure with the screen showing
   relayout();
   equipWork();
+  syncCastOn();
   const castOn = piece.castOn ? normYarn(piece.castOn) : piece.slots.A;
   work.load(chart, { yarns: piece.yarns, done: piece.yarns.length, castOnYarn: castOn, nextYarn: currentYarn() });
   // start with the whole width in view, stitches big enough to watch (the − button or 0 shows the whole
