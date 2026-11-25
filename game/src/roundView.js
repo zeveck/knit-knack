@@ -349,11 +349,14 @@ export class RoundView {
   // SHEAR_ROWS; and it fades out where the tube narrows or widens steeply (a crown, a gusset, a
   // mitten's top), where a column lifted past the marker would stand out of the ring's outline
   liftK(P, y) {
+    const key = P.b.i * 4096 + Math.round(y * 64), C = this._lk || (this._lk = new Map());
+    if (C.has(key)) return C.get(key);
     let k = P.b.shear == null ? 1 : clamp((y - P.b.shear) / SHEAR_ROWS, 0, 1);
     if (k > 0 && P.phi >= 0.999 && !this.isCup(P.b)) {
       const yD = this.mapY(P.b, y), slope = Math.abs(this.radiusAt(P, yD + 0.75, y + 0.75) - this.radiusAt(P, yD - 0.25, y - 0.25));
       k *= clamp(1 - slope / 0.35, 0, 1);
     }
+    C.set(key, k);
     return k;
   }
   // the same at a fractional ring position jf (a strip's edge): the lift runs on smoothly round the
@@ -652,6 +655,7 @@ export class RoundView {
     const w = this.w, f = w.fabric;
     if (!f.canvas) return false;
     this.drawCalls = 0;
+    this._lk = null; // (the helix's lift per height: worked out once a frame)
     const F = this._F(G);
     this.F = F;
     // back: the top rows' inside, darkened
