@@ -369,9 +369,11 @@ export class RoundView {
     let c = this.bufs[i];
     const W = Math.round(w.vw * dpr), H = Math.round(w.vh * dpr);
     if (!c) { c = document.createElement('canvas'); this.bufs[i] = c; }
-    if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
+    if (c.width !== W || c.height !== H) { c.width = W; c.height = H; c._resized = true; }
     const g = c.getContext('2d');
-    g.setTransform(1, 0, 0, 1, 0, 0); if (clear || c._dirtyAll) { g.clearRect(0, 0, W, H); c._dirtyAll = false; }
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    // clear what was drawn last frame (its box), or all of it after a resize
+    if (clear) { const b = c._bb; if (b && !c._resized) g.clearRect(Math.floor(b.x0 * dpr) - 2, Math.floor(b.y0 * dpr) - 2, Math.ceil((b.x1 - b.x0) * dpr) + 4, Math.ceil((b.y1 - b.y0) * dpr) + 4); else g.clearRect(0, 0, W, H); c._resized = false; }
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.imageSmoothingEnabled = true;
     return g;
@@ -384,9 +386,10 @@ export class RoundView {
     const f = this.w.fabric, ch = this.ch, geo = this.geo, live = Math.max(F.live, geo.firstRow);
     const s = F.cp / f.W, w = this.w, dpr = w.dpr;
     const curG = geo.rows[Math.min(ch.height, live)].g;
-    let sc = null;
-    if (pass === 'front') sc = this._buf(2, F, false);
+    // (front strips are shaded one by one, right after each is drawn: a solid tone over its own rect)
     let prevN = 0;
+    const bb = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
+    const grow = (x0, y0, x1, y1) => { bb.x0 = Math.min(bb.x0, x0); bb.y0 = Math.min(bb.y0, y0); bb.x1 = Math.max(bb.x1, x1); bb.y1 = Math.max(bb.y1, y1); };
     for (const b of geo.bands) {
       const nBelow = prevN; prevN = b.n;
       if (b.ra > live) continue;
@@ -411,7 +414,7 @@ export class RoundView {
         for (let k = 0; k < 3; k++) segs.push({ bot: y0 + k / 3, top: k === 2 ? (rHi > b.ra ? y1 : topW) : y0 + (k + 1) / 3, k: lerp(nBelow / b.n, 1, (k + 0.5) / 3) });
         if (rHi > b.ra) segs.push({ bot: y1, top: topW, k: 1 });
       } else segs.push({ bot: botW, top: topW, k: 1 });
-      const tg = sc || gb;
+      const tg = gb;
       let minY = Infinity, maxY = -Infinity, maxK = 1;
       for (const sg of segs) {
         const cy0 = (wy) => f.padT + (f.yT - wy) * f.H;
@@ -452,31 +455,27 @@ export class RoundView {
           if (fade < 1) tg.globalAlpha = fade;
           tg.drawImage(f.canvas, sx, sy0, sw, syB - sy0, xl, dy, ww + 0.35, dhB);
           if (fade < 1) tg.globalAlpha = 1;
+          if (pass === 'front' && P.phi >= 0.15) {
+            // the tube's roundness: darker toward the sides, a soft lamp highlight up and to the left
+            const sn = Math.sin(tm), cs = Math.max(0, Math.cos(tm));
+            const dark = 0.58 * Math.pow(1 - cs, 0.85) * P.phi;
+            const hl = Math.max(0, 1 - Math.abs(sn + 0.36) / 0.32) * 0.13 * P.phi;
+            if (dark > 0.01 || hl > 0.01) {
+              tg.globalCompositeOperation = 'source-atop';
+              tg.fillStyle = hl > dark ? `rgba(255,236,200,${(hl - dark * 0.5).toFixed(3)})` : `rgba(34,12,34,${dark.toFixed(3)})`;
+              tg.fillRect(xl, dy, ww + 0.35, dhB);
+              tg.globalCompositeOperation = 'source-over';
+            }
+          }
           this.drawCalls++;
           minY = Math.min(minY, dy); maxY = Math.max(maxY, dy + dhB);
+          grow(xl, dy, xl + ww + 1, dy + dhB);
         }
       }
-      if (!sc || !(minY < maxY)) continue;
-      // shade the band round, then copy it in
-      const xa = this.X(F, P.axis - P.Rc * maxK) - 2, xb = this.X(F, P.axis + P.Rc * maxK) + 2;
-      const bx = Math.floor(Math.max(0, Math.min(xa, xb))), by = Math.floor(Math.max(0, minY - 1));
-      const bw = Math.ceil(Math.min(w.vw, Math.max(xa, xb)) - bx), bh = Math.ceil(Math.min(w.vh, maxY + 1) - by);
-      if (bw <= 0 || bh <= 0) continue;
-      if (P.phi >= 0.15) {
-        const ga = this.X(F, P.axis - P.Rc), gz = this.X(F, P.axis + P.Rc);
-        const gr = sc.createLinearGradient(ga, 0, gz, 0);
-        for (let q = 0; q <= 16; q++) {
-          const tq = q / 16, sn = tq * 2 - 1, cs = Math.sqrt(Math.max(0, 1 - sn * sn));
-          const dark = 0.58 * Math.pow(1 - cs, 0.85) * P.phi;
-          const hl = Math.max(0, 1 - Math.abs(sn + 0.36) / 0.32) * 0.13 * P.phi;
-          gr.addColorStop(tq, hl > dark ? `rgba(255,236,200,${(hl - dark * 0.5).toFixed(3)})` : `rgba(34,12,34,${dark.toFixed(3)})`);
-        }
-        sc.save(); sc.globalCompositeOperation = 'source-atop'; sc.fillStyle = gr; sc.fillRect(bx, by, bw, bh); sc.restore();
-      }
-      gb.drawImage(sc.canvas, bx * dpr, by * dpr, bw * dpr, bh * dpr, bx, by, bw, bh);
-      sc.clearRect(bx - 1, by - 1, bw + 2, bh + 2);
-      this.drawCalls++;
     }
+    const v = this.w;
+    bb.x0 = Math.max(0, Math.floor(bb.x0)); bb.y0 = Math.max(0, Math.floor(bb.y0)); bb.x1 = Math.min(v.vw, Math.ceil(bb.x1)); bb.y1 = Math.min(v.vh, Math.ceil(bb.y1));
+    return bb.x1 > bb.x0 && bb.y1 > bb.y0 ? bb : null;
   }
 
   draw(g, G, t) {
@@ -487,11 +486,15 @@ export class RoundView {
     this.F = F;
     // back: the top rows' inside, darkened
     const gb1 = this._buf(0, F);
-    this._strips(gb1, F, 'back');
-    gb1.save(); gb1.globalCompositeOperation = 'source-atop'; gb1.fillStyle = 'rgba(28,10,30,0.62)'; gb1.fillRect(0, 0, w.vw, w.vh); gb1.restore();
+    const bb1 = this._strips(gb1, F, 'back');
+    this.bufs[0]._bb = bb1;
+    if (bb1) { gb1.save(); gb1.globalCompositeOperation = 'source-atop'; gb1.fillStyle = 'rgba(28,10,30,0.62)'; gb1.fillRect(bb1.x0, bb1.y0, bb1.x1 - bb1.x0, bb1.y1 - bb1.y0); gb1.restore(); }
     // front
     const gb2 = this._buf(1, F);
-    this._strips(gb2, F, 'front');
+    const bb2 = this._strips(gb2, F, 'front');
+    this.bufs[1]._bb = bb2;
+    // copy just the drawn box of a buffer
+    const blit = (dst, i, bb, k = 1) => { if (!bb) return; const d = w.dpr; dst.drawImage(this.bufs[i], bb.x0 * d, bb.y0 * d, (bb.x1 - bb.x0) * d, (bb.y1 - bb.y0) * d, bb.x0 * k, bb.y0 * k, (bb.x1 - bb.x0) * k, (bb.y1 - bb.y0) * k); };
     // compose: shadow, the inside, the far needles and loops, the tube, the near needles
     const dpr = w.dpr;
     if (!this.small) this.small = document.createElement('canvas');
@@ -499,7 +502,7 @@ export class RoundView {
     if (sm.width !== sw || sm.height !== sh) { sm.width = sw; sm.height = sh; }
     const sg = sm.getContext('2d');
     sg.globalCompositeOperation = 'source-over'; sg.clearRect(0, 0, sw, sh);
-    sg.drawImage(this.bufs[1], 0, 0, sw, sh);
+    blit(sg, 1, bb2, sw / w.vw);
     sg.globalCompositeOperation = 'source-in'; sg.fillStyle = 'rgb(30,10,32)'; sg.fillRect(0, 0, sw, sh);
     this.drawCalls += 2;
     g.save();
@@ -507,7 +510,7 @@ export class RoundView {
     g.globalAlpha = 0.5; g.drawImage(sm, F.cp * 0.22, F.cp * 0.38, w.vw, w.vh);
     g.globalAlpha = 0.25; g.drawImage(sm, F.cp * 0.5, F.cp * 0.8, w.vw * 1.01, w.vh * 1.01);
     g.restore();
-    g.drawImage(this.bufs[0], 0, 0, w.vw, w.vh);
+    blit(g, 0, bb1);
     this.drawCalls += 3;
     const nd = this.w.finished ? null : this._needleScene(F, t);
     if (nd) this._drawFar(g, F, nd, 'back', t);
@@ -515,7 +518,7 @@ export class RoundView {
     const S = w._strand;
     w._strandDrawn = S;
     if (S && !w.finished) drawStrand(g, S, w.nextYarn, F.cp, Math.exp(-(t - w.anim.twitch) / 120) * Math.sin((t - w.anim.twitch) / 22) * F.cp * 0.35);
-    g.drawImage(this.bufs[1], 0, 0, w.vw, w.vh);
+    blit(g, 1, bb2);
     this.drawCalls++;
     let busy = false;
     if (this.w.lightsOut) w._drawLightsOut(g, G);
