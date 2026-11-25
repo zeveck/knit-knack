@@ -1,0 +1,236 @@
+{
+ "v": 2,
+ "settings": {
+  "music": 0.55,
+  "sfx": 0.85,
+  "vibrate": true,
+  "hold": false,
+  "big": false,
+  "musicMuted": false,
+  "sfxMuted": false,
+  "unlockAll": false
+ },
+ "lifetimeStitches": 1051,
+ "piecesFinished": 3,
+ "finishedPatterns": [
+  "rolled-brim-beanie",
+  "cozy-sock",
+  "chunky-mitten"
+ ],
+ "seenUnlocks": [
+  "doll:pip"
+ ],
+ "bagSeen": [],
+ "tips": [
+  "hint",
+  "follow",
+  "display",
+  "doll",
+  "bag",
+  "pick"
+ ],
+ "equipped": {
+  "needles": "bamboo",
+  "marker": "ring",
+  "counter": "brass",
+  "holder": "floor",
+  "decor": [],
+  "purl": []
+ },
+ "outfits": {
+  "pip": {
+   "head": "g1"
+  }
+ },
+ "lastDoll": "pip",
+ "pieces": {
+  "w-cozy-sock": {
+   "id": "w-cozy-sock",
+   "pattern": "cozy-sock",
+   "yarns": {
+    "table": [
+     {
+      "color": "#efe4cf",
+      "type": "wool"
+     },
+     {
+      "color": "#8db8d8",
+      "type": "wool"
+     }
+    ],
+    "data": "AAAAAAEAAQABAAEAAQABAAEAAQAAAAAAAAAAAAAAAQABAAEAAQABAAEAAQABAAAAAAAAAAAAAAAAAAEAAQABAAEAAQABAAEAAQAAAAAAAAAAAAAAAAABAAEAAQABAAEAAQABAAEAAAAAAAAAAAAAAAAAAQABAAEAAQABAAEAAQABAAAAAAAAAAAAAAAAAAEAAQABAAEAAQABAAEAAQAAAAAAAAAAAAAAAAABAAEAAQABAAEAAQABAAEAAAAAAAAAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEA"
+   },
+   "slots": {
+    "A": {
+     "color": "#8db8d8",
+     "type": "wool"
+    },
+    "B": {
+     "color": "#efe4cf",
+     "type": "wool"
+    }
+   },
+   "follow": true,
+   "free": null,
+   "castOn": {
+    "color": "#8db8d8",
+    "type": "wool"
+   },
+   "started": 1795572160096,
+   "updated": 1795572160236
+  }
+ },
+ "gallery": [
+  {
+   "id": "g1",
+   "pattern": "rolled-brim-beanie",
+   "name": "Rolled-Brim Beanie",
+   "yarns": {
+    "table": [
+     {
+      "color": "#efe4cf",
+      "type": "wool"
+     },
+     {
+      "color": "#8fa77f",
+      "type": "wool"
+     }
+    ],
+    "data": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQA="
+   },
+   "slots": {
+    "A": {
+     "color": "#8fa77f",
+     "type": "wool"
+    },
+    "B": {
+     "color": "#6f8f6a",
+     "type": "wool"
+    }
+   },
+   "castOn": {
+    "color": "#8fa77f",
+    "type": "wool"
+   },
+   "finished": 1795572156167,
+   "hung": false,
+   "pending": false
+  },
+  {
+   "id": "g2",
+   "pattern": "cozy-sock",
+   "name": "Cozy Sock",
+   "yarns": {
+    "table": [
+     {
+      "color": "#efe4cf",
+      "type": "wool"
+     },
+     {
+      "color": "#8db8d8",
+      "type": "wool"
+     }
+    ],
+    "data": "AAAAAAEAAQABAAEAAQABAAEAAQAAAAAAAAAAAAAAAQABAAEAAQABAAEAAQABAAAAAAAAAAAAAAAAAAEAAQABAAEAAQABAAEAAQAAAAAAAAAAAAAAAAABAAEAAQABAAEAAQABAAEAAAAAAAAAAAAAAAAAAQABAAEAAQABAAEAAQABAAAAAAAAAAAAAAAAAAEAAQABAAEAAQABAAEAAQAAAAAAAAAAAAAAAAABAAEAAQABAAEAAQABAAEAAAAAAAAAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEA"
+   },
+   "slots": {
+    "A": {
+     "color": "#8db8d8",
+     "type": "wool"
+    },
+    "B": {
+     "color": "#8db8d8",
+     "type": "wool"
+    }
+   },
+   "castOn": {
+    "color": "#8db8d8",
+    "type": "wool"
+   },
+   "finished": 1795572157539,
+   "hung": false,
+   "pending": false
+  },
+  {
+   "id": "g3",
+   "pattern": "chunky-mitten",
+   "name": "Chunky Mitten",
+   "yarns": {
+    "table": [
+     {
+      "color": "#efe4cf",
+      "type": "chunky"
+     },
+     {
+      "color": "#2f7f7f",
+      "type": "chunky"
+     }
+    ],
+    "data": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEAAQABAAEA"
+   },
+   "slots": {
+    "A": {
+     "color": "#2f7f7f",
+     "type": "chunky"
+    },
+    "B": {
+     "color": "#3f8a8a",
+     "type": "wool"
+    }
+   },
+   "castOn": {
+    "color": "#2f7f7f",
+    "type": "chunky"
+   },
+   "finished": 1795572158939,
+   "hung": false,
+   "pending": false
+  }
+ ],
+ "serial": 3,
+ "recent": [
+  {
+   "color": "#3f8a8a",
+   "type": "wool"
+  },
+  {
+   "color": "#8db8d8",
+   "type": "wool"
+  },
+  {
+   "color": "#6f8f6a",
+   "type": "wool"
+  },
+  {
+   "color": "#8fa77f",
+   "type": "wool"
+  },
+  {
+   "color": "#efe4cf",
+   "type": "wool"
+  }
+ ],
+ "custom": [],
+ "lastPiece": "cozy-sock",
+ "scarf": {
+  "rows": 0,
+  "stitches": 0,
+  "cm": 0,
+  "best": 0
+ },
+ "bookComplete": false,
+ "bookCompleteShown": false,
+ "seenPatterns": [
+  "garter-dishcloth",
+  "stockinette-coaster",
+  "seed-bookmark",
+  "ribbed-wristwarmer",
+  "striped-headband",
+  "basketweave-mug-cozy"
+ ],
+ "started": false,
+ "cat": {
+  "coat": "cream",
+  "name": "Noodle"
+ }
+}

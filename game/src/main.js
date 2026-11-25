@@ -20,6 +20,7 @@ import * as gallery from './gallery.js';
 import { openMenu, setMenuHooks } from './menu.js';
 import * as features from './features.js';
 import { initHistory, tick as historyTick } from './history.js';
+import { bakeGallery, pieceLayer } from './worn.js';
 
 // ---------------------------------------------------------------- the frame log (web-target.md)
 const frameLog = [];
@@ -243,7 +244,17 @@ window.__game = {
   cat: () => S.cat(),
   setCat: (c) => { const r = S.setCat(c || {}); window.dispatchEvent(new Event('kk-cat')); return r; },
   pets: () => petCount(),
+  // pixel hashes for the migration replay (tools/fixtures): a gallery piece's flat bake at W px a stitch,
+  // and its worn layer on a doll at scale k
+  bakeHash: (gid, W = 8) => { const g = S.galleryById(gid); const b = g && bakeGallery(g, W); return b ? canvasHash(b.canvas) : null; },
+  wornHash: (gid, dollId = 'pip', k = 0.5) => { const L = pieceLayer(gid, dollId, k); return L ? canvasHash(L.canvas) : null; },
 };
+function canvasHash(c) {
+  const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+  let h = 2166136261;
+  for (let i = 0; i < d.length; i++) { h ^= d[i]; h = Math.imul(h, 16777619); }
+  return `${c.width}x${c.height}:${(h >>> 0).toString(16)}`;
+}
 
 // hooks for the other helpers' screens
 export { go, registerScreen, previewCard };

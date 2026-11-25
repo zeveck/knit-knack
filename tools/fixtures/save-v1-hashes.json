@@ -1,0 +1,37 @@
+{
+ "gallery": {
+  "g1": {
+   "pattern": "rolled-brim-beanie",
+   "piece": "4aa04559",
+   "count": 334,
+   "bake": "169x149:bf2054cf"
+  },
+  "g2": {
+   "pattern": "cozy-sock",
+   "piece": "346b887e",
+   "count": 273,
+   "bake": "137x173:2a982b3f"
+  },
+  "g3": {
+   "pattern": "chunky-mitten",
+   "piece": "4d46fdc4",
+   "count": 294,
+   "bake": "161x161:70e9138f"
+  }
+ },
+ "inProgress": {
+  "id": "w-cozy-sock",
+  "pattern": "cozy-sock",
+  "count": 150,
+  "total": 273,
+  "piece": "3ea80f0f"
+ },
+ "worn": {
+  "doll": "pip",
+  "gid": "g1",
+  "layer": "113x74:c7572e1d",
+  "outfit": {
+   "head": "g1"
+  }
+ }
+}
