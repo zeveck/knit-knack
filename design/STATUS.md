@@ -6,6 +6,9 @@
 2. `yes` (to adding the plan to the plans page)
 3. `--art-sheet --budget 50 --out knit-knack --feedback it's critical they be real patterns, real knits, and tapping produces good looking knit animations that track and help you feel like you're making the thing and it looks right and reflects your colors and yarn. you should be able to unlock needles and accessories and such. maybe small dolls to put your knits on.` (interrupted by the person and re-sent as 4)
 4. `--art-sheet --budget 50 --out knit-knack --feedback it's critical they be real patterns, real knits, and tapping produces good looking knit animations that track and help you feel like you're making the thing and it looks right and reflects your colors and yarn. you should be able to unlock needles and accessories and such. maybe small dolls to put your knits on. --publish --no-confirm`
+5. `--change knit hats, socks, mittens, mitts, cowls, headbands and the sweater's body in the round as real knitters do: show the work as a tube on circular needles (or double-pointed needles for socks and mittens), word their patterns by round ("Rnd", every round from the right side, garter as knit and purl rounds), and finish them without seams (crown gathered, heel turned, toe grafted), so they wear on the dolls as true tubes. Keep flat what's really knit flat (dishcloths, coasters, blankets, scarves, the toys' pieces). Fix anything else we knit flat that shouldn't be. Playability and a strong feel of really knitting matter more than proving every rule: loosen the pattern checks where they get in the way, but keep the written patterns honest. Also give the cables a more raised, rope-like look.`
+6. `--change let finished toys and dolls sit together in a little cozy room scene you can arrange: drag them onto a rug, an armchair, shelves and a window seat, dressed in what you knit, with the arrangement saved; unlock a few room pieces as you knit`
+7. `--fix all --publish --no-confirm` — #1: Swipe back (https://github.com/zeveck/knit-knack/issues/1); #2: Cat (https://github.com/zeveck/knit-knack/issues/2); #3: Menu location (https://github.com/zeveck/knit-knack/issues/3); #4: Unlock all toggle (https://github.com/zeveck/knit-knack/issues/4)
 
 ## Settings
 
@@ -56,3 +59,25 @@ openai (imagegen2, anim8gen), gemini (nanogen), elevenlabs (audiogen), node, pyt
 
 - Note: bulk design/screenshots (~580 MB) are kept out of git; a curated set (pattern sheets, doll sheet, stitch lab) is committed. Earlier committed verification screenshots were removed from the unpublished history before the first push.
 - Spending: about $12.33 of $50 (design/ASSETS.md).
+
+## Change 2 (request 5): knitting in the round
+
+- [ ] Design change + one review round
+- [ ] Build (tube view, circular/DPN needles, round wording, seamless finishing, round patterns, worn tubes, raised cables)
+- [ ] Play-test changed parts + all 47 replays
+- [ ] Final check, README/design page/plans update (publish only when asked)
+Budget for this change: $20 (default).
+
+## Change 3 (request 6): the cozy room
+
+- [ ] Design change + one review round (queued after change 2's review)
+- [ ] Assets (room backdrop, furniture pieces), within its own $20
+- [ ] Build after change 2 lands (room screen, drag and drop, unlocks, save)
+- [ ] Play-test changed parts + all replays
+
+## Fixes (request 7): issues #1–#4, then publish
+
+- [ ] #1 swipe back (history), #3 menu top-right / rip back top-left — small, own commits, second check
+- [ ] #2 cat coat/name/petting, #4 unlock-all setting
+- [ ] Replays, live publish
+Order: these land before changes 2 and 3 are built.

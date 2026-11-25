@@ -52,3 +52,15 @@ bg/nook-land.webp (anchor) + nook-land.json; bg/nook-port.webp + nook-port.json 
 | **Total** | | **$2.39** |
 
 **Running total: about $12.33 of $50**
+
+## Change 3: room art
+
+| ID | File | Tool | Tries | Est. cost | Verdict |
+|---|---|---|---|---|---|
+| room-land | game/assets/bg/room-land.webp (1536×1024) + room-land.json | nanogen pro 3:2 2K, nook-land as style ref only | 3 (kept t2) | $0.40 | Accepted. No throw/table/lamp/teacup; window seat (2 cushions) left, bare armchair right, apart; 2 empty boards between them; braided rug in front. Shelf gap only ~140 px, so shelf scale is 0.125 (1/8, target 1/5); rug 0.22 (1/4.5). |
+| room-port | game/assets/bg/room-port.webp (1024×1536) + room-port.json | nanogen pro 2:3 2K, edit of room-land (t3 = shelf edit of t2) | 3 (t1 cropped the seat; t3 an edit of t2) | $0.40 | Accepted. Same furniture, all whole. Rug 0.143 (1/7), shelves 0.10 (1/10), window seat 0.112, chair 0.09–0.10, back floor 0.08 (narrow gap between seat and chair). |
+| room fronts | game/assets/bg/room-{land,port}-front-{shelf-top,shelf-low,window-seat,chair}.png | Pillow (tools/cut-room-fronts.py, 2 px feather) | – | $0 | Accepted; checked with a doll/Purl fill in both pictures (.gamegen/candidates/room/check-*-fill.png). |
+| room-pieces | game/assets/items/room-{table,plant,books,chest,teaset,garland,lamp}.png (sheet: .gamegen/candidates/room/room-pieces-t1.png) | imagegen2 gpt-image-2.6-flare, 1536×1024 medium, native alpha, 6 refs | 1 | $0.06 | Accepted. Clean alpha; lamp and table match the nook's; garland is the sheet's upper strand. |
+| room frame | items/decor-frame.png (reused) | – | – | $0 | Reused on frame-hook. |
+
+Change 3 art total: 6 nanogen pro calls ($0.80) + 1 imagegen2 sheet (≈ $0.06) ≈ $0.86 of the $2.50 cap.
