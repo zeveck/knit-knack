@@ -69,9 +69,10 @@ export function pump() {
   const use = el('button', { text: 'Use it' });
   const iconSpan = el('span', { class: 'icw', html: ICON.star });
   const t = el('div', { class: 'toast', role: 'status' }, iconSpan, el('span', { class: 't', text: S.toastTitle(u) }));
-  const usable = ['needles', 'marker', 'counter', 'holder', 'decor', 'purl', 'doll'].includes(u.kind);
+  const usable = ['needles', 'marker', 'counter', 'holder', 'decor', 'purl', 'doll', 'room'].includes(u.kind);
   if (usable) t.append(use);
-  onRelease(use, () => { S.useUnlock(u); audio.play('ui'); listeners.forEach((f) => f(u)); close(); });
+  // (Change 3) a room piece: the room opens with it in hand, ready to place
+  onRelease(use, () => { audio.play('ui'); close(); if (u.kind === 'room') { go('room', { hold: `piece:${u.item}` }); return; } S.useUnlock(u); listeners.forEach((f) => f(u)); });
   t.addEventListener('pointerdown', (e) => e.stopPropagation());
   host().append(t);
   showing = { t, u, timer: setTimeout(close, 4000) };

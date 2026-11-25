@@ -14,8 +14,9 @@ import { pet } from './pet.js';
 import { EYES } from './catCoat.js';
 import { loadDolls, dressedDoll, composeDoll, outfitOf, dollSilhouette, dollBounds, dollSize, DOLLS, DOLL_NAMES, DOLL_ABOUT, SLOTS, SLOT_NAMES, slotsOf, itemSlot, dollFor } from './worn.js';
 import { store as scarfStore } from './scarfStore.js';
+import { galTabs } from './galTabs.js';
 
-let root = null, mode = 'shelf', page = 0, doll = 'pip', fromFinished = null, anim = null, menuFn = () => {}, arrivingToy = null;
+let root = null, mode = 'shelf', page = 0, doll = 'pip', fromFinished = null, fromRoom = false, anim = null, menuFn = () => {}, arrivingToy = null;
 export const setMenu = (fn) => { menuFn = fn; };
 const here = () => ['dolls', 'dress'].includes(currentScreen());
 const dpr = () => Math.min(3, window.devicePixelRatio || 1);
@@ -41,16 +42,12 @@ function header() {
   const menu = el('button', { class: 'icon-btn', 'aria-label': 'Menu', title: 'Menu' }); menu.innerHTML = ICON.menu;
   menu.addEventListener('click', () => menuFn());
   const top = el('div', { class: 'gal-top' }, back, el('h2', { text: mode === 'dress' ? `Dressing ${DOLL_NAMES[doll]}` : 'Gallery' }), menu);
-  const tabs = el('div', { class: 'gal-tabs' });
-  for (const [id, label] of [['wall', 'Wall'], ['basket', `Basket${S.basket().length ? ` (${S.basket().length})` : ''}`], ['dolls', 'Doll Shelf']]) {
-    const t = el('button', { class: 'tab' + (id === 'dolls' ? ' on' : ''), text: label });
-    t.addEventListener('click', () => { if (id === 'dolls') { if (mode !== 'shelf') { mode = 'shelf'; render(); } return; } audio.play('card'); go('gallery', { tab: id }); });
-    tabs.append(t);
-  }
+  const tabs = galTabs('dolls', (id) => { if (id !== 'dolls') return false; fromRoom = false; if (mode !== 'shelf') { mode = 'shelf'; render(); } return true; });
   return [top, tabs];
 }
 function backOut() {
   if (mode === 'dress') {
+    if (fromRoom) { fromRoom = false; go('room'); return; } // (Change 3) Dress Pip from the room's Look closer
     if (fromFinished) { const gid = fromFinished; fromFinished = null; go('gallery', { display: gid }); return; }
     mode = 'shelf'; render(); return;
   }
@@ -331,7 +328,7 @@ function render() {
 function enter(arg, prev) {
   root = document.querySelector('[data-screen="dolls"]');
   root.className = 'screen gallery-screen dolls-screen';
-  fromFinished = null;
+  fromFinished = null; fromRoom = !!(arg && arg.from === 'room');
   if (typeof arg === 'string' && arg.startsWith('g')) {
     // "Put it on a doll": the last-dressed doll that has its slot, else Pip
     const slot = itemSlot({ gid: arg });
@@ -362,7 +359,7 @@ function enter(arg, prev) {
   toasts.pump();
 }
 registerScreen('dolls', { enter, leave() { setKeyHandler(null); anim = null; } });
-registerScreen('dress', { el: 'dolls', enter: (arg, prev) => enter({ doll: (arg && arg.doll) || arg || S.get().lastDoll || 'pip' }, prev), leave() { setKeyHandler(null); anim = null; } });
+registerScreen('dress', { el: 'dolls', enter: (arg, prev) => enter({ doll: (arg && arg.doll) || (typeof arg === 'string' ? arg : null) || S.get().lastDoll || 'pip', from: arg && arg.from }, prev), leave() { setKeyHandler(null); anim = null; } });
 window.addEventListener('resize', () => { if (here()) render(); });
 for (const ev of ['kk-unlocks', 'kk-cat']) window.addEventListener(ev, () => { if (!here()) return; if (mode === 'dress' && !unlocked(doll)) { fromFinished = null; mode = 'shelf'; } render(); });
 export const dollsState = () => ({ mode, doll, page });
@@ -371,5 +368,6 @@ void SLOTS; void onTap;
 export const isDressing = () => currentScreen() === 'dolls' || currentScreen() === 'dress' ? mode === 'dress' : false;
 export function backToShelf() {
   if (!isDressing()) return false;
+  if (fromRoom) { fromRoom = false; go('room'); return true; }
   fromFinished = null; mode = 'shelf'; render(); return true;
 }

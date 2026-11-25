@@ -1,0 +1,581 @@
+{
+ "_note": "Fractions of the picture. line: where feet rest, [x0,y0]->[x1,y1]; scale: height of 1 ru there as a fraction of the image height; capacity/maxH in ru. hook box: [x, y, w, h]. drape parts: two quads [[x,y]x4] (TL, TR, BR, BL), over says whether the part is drawn over the layer front. fronts: polygons cut from the picture by tools/cut-room-fronts.py into bg/<file>, drawn at offset (top-left) and size, after the layer's things. Draw order: wall, shelf-top, shelf-low, floor-back, window-seat, chair, rug. Toys on the chair arms only if footprint <= maxFoot.",
+ "image": "room-land.webp",
+ "size": [
+  1536,
+  1024
+ ],
+ "layers": [
+  "wall",
+  "shelf-top",
+  "shelf-low",
+  "floor-back",
+  "window-seat",
+  "chair",
+  "rug"
+ ],
+ "surfaces": {
+  "frame-hook": {
+   "kind": "hook",
+   "capacity": 1,
+   "layer": "wall",
+   "accepts": [
+    "piece:frame"
+   ],
+   "box": [
+    0.362,
+    0.1914,
+    0.0677,
+    0.1025
+   ]
+  },
+  "garland-hook": {
+   "kind": "hook",
+   "capacity": 1,
+   "layer": "wall",
+   "accepts": [
+    "piece:garland"
+   ],
+   "box": [
+    0.1042,
+    0.0078,
+    0.1953,
+    0.1113
+   ]
+  },
+  "shelf-top": {
+   "kind": "line",
+   "line": [
+    [
+     0.4557,
+     0.1523
+    ],
+    [
+     0.6641,
+     0.1523
+    ]
+   ],
+   "scale": 0.125,
+   "capacity": 2.5,
+   "maxH": 1.15,
+   "accepts": [
+    "doll",
+    "purl",
+    "toy",
+    "piece:plant",
+    "piece:books"
+   ],
+   "layer": "shelf-top",
+   "front": "shelf-top"
+  },
+  "shelf-low": {
+   "kind": "line",
+   "line": [
+    [
+     0.4557,
+     0.3037
+    ],
+    [
+     0.6641,
+     0.3037
+    ]
+   ],
+   "scale": 0.125,
+   "capacity": 2.5,
+   "maxH": 1.15,
+   "accepts": [
+    "doll",
+    "purl",
+    "toy",
+    "piece:plant",
+    "piece:books"
+   ],
+   "layer": "shelf-low",
+   "front": "shelf-low"
+  },
+  "floor-back": {
+   "kind": "line",
+   "line": [
+    [
+     0.4089,
+     0.6953
+    ],
+    [
+     0.5391,
+     0.6953
+    ]
+   ],
+   "scale": 0.13,
+   "capacity": 1.5,
+   "maxH": 2.4,
+   "accepts": [
+    "doll",
+    "purl",
+    "toy",
+    "piece:table",
+    "piece:plant",
+    "piece:books",
+    "piece:chest",
+    "piece:lamp"
+   ],
+   "layer": "floor-back",
+   "front": null
+  },
+  "seat-drape": {
+   "kind": "drape",
+   "capacity": 1,
+   "layer": "window-seat",
+   "accepts": [
+    "blanket"
+   ],
+   "parts": [
+    [
+     [
+      0.127,
+      0.5117
+     ],
+     [
+      0.2962,
+      0.5117
+     ],
+     [
+      0.3008,
+      0.5469
+     ],
+     [
+      0.1224,
+      0.5469
+     ]
+    ],
+    [
+     [
+      0.1224,
+      0.5449
+     ],
+     [
+      0.3008,
+      0.5449
+     ],
+     [
+      0.3021,
+      0.5957
+     ],
+     [
+      0.1211,
+      0.5957
+     ]
+    ]
+   ],
+   "over": [
+    false,
+    true
+   ]
+  },
+  "window-seat": {
+   "kind": "line",
+   "line": [
+    [
+     0.1237,
+     0.5469
+    ],
+    [
+     0.2995,
+     0.5469
+    ]
+   ],
+   "scale": 0.132,
+   "capacity": 2.0,
+   "maxH": 1.6,
+   "accepts": [
+    "doll",
+    "purl",
+    "toy",
+    "pillow",
+    "piece:plant",
+    "piece:books",
+    "piece:teaset"
+   ],
+   "layer": "window-seat",
+   "front": "window-seat"
+  },
+  "chair-drape": {
+   "kind": "drape",
+   "capacity": 1,
+   "layer": "chair",
+   "accepts": [
+    "blanket"
+   ],
+   "parts": [
+    [
+     [
+      0.7096,
+      0.3438
+     ],
+     [
+      0.8581,
+      0.3389
+     ],
+     [
+      0.8932,
+      0.4121
+     ],
+     [
+      0.6745,
+      0.4297
+     ]
+    ],
+    [
+     [
+      0.6745,
+      0.4297
+     ],
+     [
+      0.8932,
+      0.4121
+     ],
+     [
+      0.8464,
+      0.5762
+     ],
+     [
+      0.6823,
+      0.5898
+     ]
+    ]
+   ],
+   "over": [
+    false,
+    false
+   ]
+  },
+  "chair-arm-l": {
+   "kind": "line",
+   "line": [
+    [
+     0.5534,
+     0.5557
+    ],
+    [
+     0.6133,
+     0.542
+    ]
+   ],
+   "scale": 0.18,
+   "capacity": 0.5,
+   "maxH": 1.5,
+   "accepts": [
+    "toy",
+    "piece:plant",
+    "piece:books"
+   ],
+   "layer": "chair",
+   "front": "chair",
+   "maxFoot": 0.5
+  },
+  "chair-arm-r": {
+   "kind": "line",
+   "line": [
+    [
+     0.7812,
+     0.5967
+    ],
+    [
+     0.8398,
+     0.5811
+    ]
+   ],
+   "scale": 0.18,
+   "capacity": 0.5,
+   "maxH": 1.5,
+   "accepts": [
+    "toy",
+    "piece:plant",
+    "piece:books"
+   ],
+   "layer": "chair",
+   "front": "chair",
+   "maxFoot": 0.5
+  },
+  "chair-seat": {
+   "kind": "line",
+   "line": [
+    [
+     0.6029,
+     0.6523
+    ],
+    [
+     0.7409,
+     0.6836
+    ]
+   ],
+   "scale": 0.175,
+   "capacity": 1.2,
+   "maxH": 2.0,
+   "accepts": [
+    "doll",
+    "purl",
+    "toy",
+    "pillow",
+    "piece:books"
+   ],
+   "layer": "chair",
+   "front": "chair"
+  },
+  "rug": {
+   "kind": "line",
+   "line": [
+    [
+     0.1471,
+     0.8838
+    ],
+    [
+     0.6602,
+     0.8838
+    ]
+   ],
+   "scale": 0.22,
+   "capacity": 3.5,
+   "maxH": 3.0,
+   "accepts": [
+    "doll",
+    "purl",
+    "toy",
+    "pillow",
+    "piece:table",
+    "piece:plant",
+    "piece:books",
+    "piece:chest",
+    "piece:teaset",
+    "piece:lamp"
+   ],
+   "layer": "rug",
+   "front": null
+  }
+ },
+ "fronts": {
+  "shelf-top": {
+   "file": "room-land-front-shelf-top.png",
+   "polygons": [
+    [
+     [
+      0.4349,
+      0.1475
+     ],
+     [
+      0.6836,
+      0.1455
+     ],
+     [
+      0.6836,
+      0.167
+     ],
+     [
+      0.4362,
+      0.1689
+     ]
+    ]
+   ],
+   "offset": [
+    0.43099,
+    0.13965
+   ],
+   "size": [
+    0.25651,
+    0.03516
+   ]
+  },
+  "shelf-low": {
+   "file": "room-land-front-shelf-low.png",
+   "polygons": [
+    [
+     [
+      0.4349,
+      0.2988
+     ],
+     [
+      0.6836,
+      0.2969
+     ],
+     [
+      0.6836,
+      0.3184
+     ],
+     [
+      0.4362,
+      0.3203
+     ]
+    ]
+   ],
+   "offset": [
+    0.43099,
+    0.29102
+   ],
+   "size": [
+    0.25651,
+    0.03516
+   ]
+  },
+  "window-seat": {
+   "file": "room-land-front-window-seat.png",
+   "polygons": [
+    [
+     [
+      0.0391,
+      0.5439
+     ],
+     [
+      0.3984,
+      0.5439
+     ],
+     [
+      0.3997,
+      0.582
+     ],
+     [
+      0.0378,
+      0.582
+     ]
+    ]
+   ],
+   "offset": [
+    0.03385,
+    0.53809
+   ],
+   "size": [
+    0.36979,
+    0.0498
+   ]
+  },
+  "chair": {
+   "file": "room-land-front-chair.png",
+   "polygons": [
+    [
+     [
+      0.5228,
+      0.5859
+     ],
+     [
+      0.5286,
+      0.5645
+     ],
+     [
+      0.5436,
+      0.5527
+     ],
+     [
+      0.5664,
+      0.5488
+     ],
+     [
+      0.5938,
+      0.543
+     ],
+     [
+      0.5964,
+      0.5762
+     ],
+     [
+      0.5892,
+      0.6006
+     ],
+     [
+      0.5853,
+      0.6543
+     ],
+     [
+      0.584,
+      0.7227
+     ],
+     [
+      0.5872,
+      0.7568
+     ],
+     [
+      0.5501,
+      0.7568
+     ],
+     [
+      0.5443,
+      0.6836
+     ],
+     [
+      0.526,
+      0.6348
+     ]
+    ],
+    [
+     [
+      0.5879,
+      0.6602
+     ],
+     [
+      0.651,
+      0.6738
+     ],
+     [
+      0.7402,
+      0.6953
+     ],
+     [
+      0.7402,
+      0.7568
+     ],
+     [
+      0.5879,
+      0.7568
+     ]
+    ],
+    [
+     [
+      0.7467,
+      0.6133
+     ],
+     [
+      0.7585,
+      0.6016
+     ],
+     [
+      0.7845,
+      0.5977
+     ],
+     [
+      0.8398,
+      0.582
+     ],
+     [
+      0.9017,
+      0.5586
+     ],
+     [
+      0.9102,
+      0.5859
+     ],
+     [
+      0.9082,
+      0.6836
+     ],
+     [
+      0.8464,
+      0.7422
+     ],
+     [
+      0.791,
+      0.7715
+     ],
+     [
+      0.7487,
+      0.7715
+     ]
+    ]
+   ],
+   "offset": [
+    0.51888,
+    0.53711
+   ],
+   "size": [
+    0.39518,
+    0.24023
+   ]
+  }
+ }
+}

@@ -21,6 +21,8 @@ import { openMenu, setMenuHooks } from './menu.js';
 import * as features from './features.js';
 import { initHistory, tick as historyTick } from './history.js';
 import { bakeGallery, pieceLayer } from './worn.js';
+import * as room from './room.js';
+import { cleanRoom } from './roomRules.js';
 
 // ---------------------------------------------------------------- the frame log (web-target.md)
 const frameLog = [];
@@ -77,7 +79,7 @@ setMenuHooks({
   // "Unlock everything" switched: the open screen redraws (switching off may put back equipped things)
   onUnlocks: () => { audio.setNeedles(S.get().equipped.needles); knit.onEquipChange(); window.dispatchEvent(new Event('kk-unlocks')); },
 });
-knit.setMenu(openMenu); book.setMenu(openMenu); gallery.setMenu(openMenu);
+knit.setMenu(openMenu); book.setMenu(openMenu); gallery.setMenu(openMenu); room.setMenu(openMenu);
 features.init({ menu: openMenu });
 toasts.onUse(() => { knit.onEquipChange(); });
 
@@ -96,6 +98,8 @@ async function boot() {
     document.fonts ? Promise.race([document.fonts.load('600 20px Fredoka'), new Promise((r) => setTimeout(r, 2500))]).then(() => document.fonts.load('24px Caveat')) : null,
   ]);
   S.setBook(book);
+  // (Change 3) the saved room, cleaned against the book (unknown things dropped, surfaces packed); not saved until a change
+  try { cleanRoom(); } catch (e) { console.warn('room', e); }
   // (Change 2) pieces saved before the round editions need the flat edition 1 of their patterns: fetched
   // only then, and the title waits for it a little (it's small); if it can't load they show plain swatches
   const old = [...Object.values(sv.pieces), ...sv.gallery].some((r) => isOldEdition(r, S.patternById(r.pattern)));
@@ -213,9 +217,15 @@ window.__game = {
       previewCard: k.previewCard || { doll: null, visible: false, rect: null }, fitBox: k.fitBox || null, needle: k.needle || null,
       round: k.round ?? null, section: k.section ?? null, step: k.step ?? null, stepTap: k.stepTap ?? null, needles: k.needles ?? null, frontPos: k.frontPos ?? null, ring: k.ring ?? null, edition: k.edition ?? null, drawCalls: k.drawCalls ?? null,
       tips: s.tips,
+      room: room.debug.state(),
     };
   },
   frames: () => frameLog,
+  // (Change 3) the cozy room
+  room: () => room.debug.room(),
+  place: (ref, surface, t) => room.debug.place(ref, surface, t),
+  roomLayout: () => room.debug.roomLayout(),
+  clearRoom: () => room.debug.clearRoom(),
   audioState: () => { const a = audio.audioState(); return { context: a.context, musicMuted: a.musicMuted, sfxMuted: a.sfxMuted, family: a.family, ticks: a.ticks, music: a.music, voices: a.voices, deck: a.deck }; },
   musicSeekEnd: (n) => audio.musicSeekEnd(n),
   knit: (n = 1, { fast = false } = {}) => { if (currentScreen() !== 'knit') return null; return knit.knitMany(n, { fast }); },

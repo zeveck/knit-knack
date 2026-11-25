@@ -80,6 +80,7 @@ export const ICON = {
   frame: '<svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><rect class="stroke" x="4" y="6" width="16" height="14" rx="1.5"/><path class="stroke" d="M9 6l3-3 3 3M7.5 16.5l3.5-4 3 3 2-2 2.5 3"/></svg>',
   bag: '<svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><path class="stroke" d="M5 9h14l-1.2 11H6.2zM9 9V7a3 3 0 0 1 6 0v2"/></svg>',
   info: '<svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><circle class="stroke" cx="12" cy="12" r="8.5"/><path class="stroke" d="M12 11v6"/><circle class="fill" cx="12" cy="7.8" r="1.2"/></svg>',
+  room: '<svg viewBox="0 0 24 24" class="ic" aria-hidden="true"><path class="stroke" d="M6 11V8.5a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3V11M4.5 11a1.5 1.5 0 0 1 1.5 1.5V15h12v-2.5a1.5 1.5 0 0 1 3 0V18H3v-5.5A1.5 1.5 0 0 1 4.5 11zM5.5 18v2M18.5 18v2"/></svg>',
   moon: P('M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z', 'class="ic stroke"'),
 };
 export const icon = (name) => { const s = document.createElement('span'); s.className = 'icw'; s.innerHTML = ICON[name] || ''; return s; };

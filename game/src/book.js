@@ -60,6 +60,7 @@ function renderBook() {
   btns.append(
     big('scarf', 'Infinite Scarf', cm ? `${fmtLen(cm)} long` : 'It never ends', () => go('scarf'), false, last ? 'wide' : ''),
     big('frame', 'Gallery', `${S.wall().length} on the wall`, () => go('gallery')),
+    big('room', 'Cozy Room', 'Your friends', () => go('room')),
     big('bag', 'Knitting Bag', 'Your tools', () => go('bag'), bagHasNew()),
   );
   page.append(btns);
@@ -100,7 +101,7 @@ function renderBook() {
 }
 function bagHasNew() {
   const s = S.get();
-  return S.UNLOCK_RULES.some((u) => !u.rule.start && ['needles', 'marker', 'counter', 'holder', 'decor', 'purl'].includes(u.kind) && S.ruleMet(u.rule) && !s.bagSeen.includes(u.id));
+  return S.UNLOCK_RULES.some((u) => !u.rule.start && ['needles', 'marker', 'counter', 'holder', 'decor', 'purl', 'room'].includes(u.kind) && S.ruleMet(u.rule) && !s.bagSeen.includes(u.id));
 }
 
 function card(p, i, unlockedN) {

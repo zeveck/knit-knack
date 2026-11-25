@@ -9,6 +9,7 @@ import * as toasts from './toasts.js';
 import { objectRender, fitCanvas, cellFor, trimmed, recordChart } from './render.js';
 import { shapeOf } from './tube.js';
 import { isToy } from './plush.js';
+import { galTabs } from './galTabs.js';
 
 let root, tab = 'wall', page = 0, arriving = null, afterDisplay = false, lightsOut = false;
 let menuFn = () => {};
@@ -31,12 +32,7 @@ function render() {
     top.append(lo);
   }
   top.append(menu);
-  const tabs = el('div', { class: 'gal-tabs' });
-  for (const [id, label] of [['wall', 'Wall'], ['basket', `Basket${S.basket().length ? ` (${S.basket().length})` : ''}`], ['dolls', 'Doll Shelf']]) {
-    const t = el('button', { class: 'tab' + (tab === id ? ' on' : ''), text: label });
-    t.addEventListener('click', () => { if (id === 'dolls') { go('dolls'); return; } if (tab !== id) { tab = id; page = 0; audio.play('card'); render(); } });
-    tabs.append(t);
-  }
+  const tabs = galTabs(tab, (id) => { if (id !== 'wall' && id !== 'basket') return false; if (tab !== id) { tab = id; page = 0; audio.play('card'); render(); } return true; });
   root.replaceChildren(top, tabs);
   root.classList.toggle('night', lightsOut);
   if (tab === 'wall') renderWall(); else renderBasket();
@@ -128,7 +124,8 @@ function renderBasket() {
   });
 }
 
-function detail(id) {
+// the piece close-up (also the room's Look closer)
+export function detail(id) {
   const g = S.galleryById(id); const p = g && S.patternById(g.pattern);
   if (!g || !p) return;
   audio.play('card');

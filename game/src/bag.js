@@ -13,9 +13,10 @@ import { parseChart } from './chart.js';
 import { drawNook, drawStack, nookFit, image as sceneImage } from './scene.js';
 import { drawBall } from './yarn.js';
 import { loadDolls, dressedDoll, dollSilhouette, dollBounds, dollSize, DOLL_NAMES } from './worn.js';
+import { loadRoomArt, drawRoomPreview, pieceImage } from './room.js';
 
 const TABS = [
-  ['needles', 'Needles'], ['marker', 'Markers'], ['counter', 'Counter'], ['holder', 'Holder'], ['decor', 'Decor'], ['purl', 'Purl'], ['doll', 'Doll Shelf'],
+  ['needles', 'Needles'], ['marker', 'Markers'], ['counter', 'Counter'], ['holder', 'Holder'], ['decor', 'Decor'], ['purl', 'Purl'], ['doll', 'Doll Shelf'], ['room', 'Room'],
 ];
 let root = null, tab = 'needles', menuFn = () => {}, work = null, workCanvas = null, prevScreen = null;
 export const setMenu = (fn) => { menuFn = fn; };
@@ -29,6 +30,7 @@ function equipped(u) {
   const e = S.get().equipped;
   if (u.kind === 'decor' || u.kind === 'purl') return e[u.kind].includes(u.item);
   if (u.kind === 'doll') return (S.get().lastDoll || 'pip') === u.item;
+  if (u.kind === 'room') return S.get().room.some((x) => x.ref === `piece:${u.item}`);
   return e[u.kind] === u.item;
 }
 const yarnNow = () => {
@@ -87,6 +89,7 @@ function render() {
 function subText(u, on) {
   if (u.kind === 'decor' || u.kind === 'purl') return on ? 'On (tap to take away)' : 'Off (tap to put out)';
   if (u.kind === 'doll') return on ? 'Models your knitting' : 'Tap to model';
+  if (u.kind === 'room') return on ? 'In the room (tap to move it)' : 'Place it';
   return on ? 'In use' : 'Tap to use';
 }
 function lockText(u) {
@@ -102,9 +105,12 @@ function previewLabel() {
   if (tab === 'holder') return nm('holder', e.holder);
   if (tab === 'decor') return e.decor.length ? `In the nook: ${e.decor.map((d) => nm('decor', d).toLowerCase()).join(', ')}` : 'The nook (nothing put out yet)';
   if (tab === 'purl') return e.purl.length ? `${S.catName()} with the ${e.purl.map((d) => nm('purl', d).toLowerCase()).join(', ').replace(/, ([^,]*)$/, ' and $1')}` : `${S.catName()}, asleep in the basket`;
+  if (tab === 'room') { const n = S.get().room.filter((x) => x.ref.startsWith('piece:')).length; return n ? `In the cozy room: ${n} piece${n === 1 ? '' : 's'}` : 'The cozy room (no pieces placed yet)'; }
   return `${DOLL_NAMES[S.get().lastDoll || 'pip']} models your knitting`;
 }
 function use(u) {
+  // (Change 3) a room piece: Place it opens the room with it in hand
+  if (u.kind === 'room') { audio.play('ui'); go('room', { hold: `piece:${u.item}` }); return; }
   const was = equipped(u);
   if (u.kind === 'doll') { S.get().lastDoll = u.item; S.saveSoon(); }
   else S.equip(u.kind, u.item);
@@ -114,7 +120,7 @@ function use(u) {
   render();
 }
 function leaveBag() {
-  if (prevScreen && ['knit', 'scarf', 'gallery', 'dolls'].includes(prevScreen)) {
+  if (prevScreen && ['knit', 'scarf', 'gallery', 'dolls', 'room'].includes(prevScreen)) {
     if (prevScreen === 'knit' && S.get().lastPiece) go('knit', S.get().lastPiece); else go(prevScreen === 'knit' ? 'book' : prevScreen);
   } else go('book');
 }
@@ -140,6 +146,7 @@ function drawPreview() {
   const g = c.getContext('2d'); g.setTransform(d, 0, 0, d, 0, 0);
   const w = r.width, h = r.height;
   if (tab === 'decor') { drawNook(g, w, h, { decor: e.decor, photo: newestPhoto() }); return; }
+  if (tab === 'room') { loadRoomArt().then(() => { if (tab === 'room' && c.isConnected) { g.setTransform(d, 0, 0, d, 0, 0); drawRoomPreview(g, w, h); } }); return; }
   if (tab === 'holder' || tab === 'purl') {
     // the nook's floor along the bottom of the strip (not its middle: the basket stands on the boards,
     // to the left of the side table and its teacup)
@@ -183,6 +190,7 @@ function drawThumbs(grid) {
     const g = cv.getContext('2d'); g.setTransform(d, 0, 0, d, 0, 0);
     const w = r.width, h = r.height;
     if (u.kind === 'doll') { loadDolls().then(() => thumb(g, u, w, h, d, cv)); continue; }
+    if (u.kind === 'room') { loadRoomArt().then(() => thumb(g, u, w, h, d, cv)); continue; }
     thumb(g, u, w, h, d, cv);
   }
 }
@@ -216,6 +224,9 @@ function thumb(g, u, w, h, d, cv) {
     const b = { x: w / 2 - bw / 2, y: h - bh * 0.62, w: bw, h: bh };
     g.beginPath(); g.rect(0, 0, b.x + b.w * 1.02, h); g.clip(); // Purl's things only, not the ball beside her
     drawStack(g, b, { things: [u.item], holder: 'floor', purl: 'sleep', dpr: d });
+  } else if (u.kind === 'room') {
+    const im = pieceImage(u.item);
+    if (im) { const k = Math.min((w * 0.86) / im.width, (h * 0.9) / im.height); g.drawImage(im, (w - im.width * k) / 2, (h - im.height * k) / 2, im.width * k, im.height * k); }
   } else if (u.kind === 'doll') {
     g.setTransform(1, 0, 0, 1, 0, 0);
     const b = dollBounds(u.item); const k = Math.min((h * d * 0.92) / (b.y1 - b.y0 + 30), (w * d * 1.1) / (b.x1 - b.x0));
@@ -227,7 +238,9 @@ function thumb(g, u, w, h, d, cv) {
   if (!owned && u.kind !== 'doll') {
     // a soft silhouette of what's to come
     g.save(); g.setTransform(1, 0, 0, 1, 0, 0);
-    g.globalCompositeOperation = 'source-in'; g.fillStyle = 'rgba(70,44,78,0.55)'; g.fillRect(0, 0, cv.width, cv.height);
+    g.globalCompositeOperation = 'source-in';
+    if (u.kind === 'room') { const gr = g.createLinearGradient(0, 0, 0, cv.height); gr.addColorStop(0, 'rgba(70,44,78,0.88)'); gr.addColorStop(1, 'rgba(40,22,46,0.92)'); g.fillStyle = gr; } else g.fillStyle = 'rgba(70,44,78,0.55)';
+    g.fillRect(0, 0, cv.width, cv.height);
     g.restore();
   }
 }

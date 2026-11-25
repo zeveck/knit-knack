@@ -83,9 +83,18 @@ export const UNLOCK_RULES = [
   { id: 'doll:basil', kind: 'doll', item: 'basil', name: 'Basil', rule: { chapter: 4 } },
   { id: 'doll:mabel', kind: 'doll', item: 'mabel', name: 'Mabel', rule: { chapter: 7 } },
   { id: 'doll:purl', kind: 'doll', item: 'purl', get name() { return catName(); }, rule: { pattern: 'Bobble Hat' } },
+  // (Change 3) pieces for the cozy room (placed as `piece:<item>`)
+  { id: 'room:table', kind: 'room', item: 'table', name: 'Side table with a teacup', rule: { start: true } },
+  { id: 'room:plant', kind: 'room', item: 'plant', name: 'Potted plant', rule: { pieces: 4 } },
+  { id: 'room:books', kind: 'room', item: 'books', name: 'Stack of storybooks', rule: { stitches: 3000 } },
+  { id: 'room:chest', kind: 'room', item: 'chest', name: 'Toy chest', rule: { chapter: 3 } },
+  { id: 'room:teaset', kind: 'room', item: 'teaset', name: 'Tiny tea set', rule: { pieces: 12 } },
+  { id: 'room:garland', kind: 'room', item: 'garland', name: 'Star garland', rule: { stitches: 8000 } },
+  { id: 'room:lamp', kind: 'room', item: 'lamp', name: 'Floor lamp', rule: { chapter: 5 } },
+  { id: 'room:frame', kind: 'room', item: 'frame', name: 'Framed picture', rule: { pieces: 20 } },
 ];
 export const ruleById = (id) => UNLOCK_RULES.find((u) => u.id === id) || null;
-const KIND_TOAST = { yarn: 'New yarn', scarf: 'New scarf stitch', needles: 'New needles', marker: 'New stitch markers', counter: 'New row counter', holder: 'New yarn holder', decor: 'New for the nook', get purl() { return `New for ${catName()}`; }, doll: 'New doll' };
+const KIND_TOAST = { yarn: 'New yarn', scarf: 'New scarf stitch', needles: 'New needles', marker: 'New stitch markers', counter: 'New row counter', holder: 'New yarn holder', decor: 'New for the nook', get purl() { return `New for ${catName()}`; }, doll: 'New doll', room: 'New for the room' };
 export const toastTitle = (u) => `${KIND_TOAST[u.kind] || 'New'}: ${u.name}!`;
 
 // ---------------------------------------------------------------- the cat
@@ -133,7 +142,22 @@ function fresh() {
     bookComplete: false, bookCompleteShown: false, seenPatterns: [],
     started: false,
     cat: { coat: pickOne(CAT_COATS), name: randomCatName() },
+    // (Change 3) the cozy room: [{ref, surface, t, flip, z}], seeded with the cat on the armchair
+    room: freshRoom(),
   };
+}
+export const freshRoom = () => [{ ref: 'doll:purl', surface: 'chair-seat', t: 0.6, flip: false, z: 0 }];
+// the room's entries as saved: well-formed ones only, each ref once (the rest of its cleaning, which needs
+// the book, is roomRules.cleanRoom at boot)
+function migrateRoom(raw) {
+  if (!Array.isArray(raw)) return freshRoom();
+  const seen = new Set(), out = [];
+  for (const e of raw) {
+    if (!e || typeof e !== 'object' || typeof e.ref !== 'string' || !e.ref || seen.has(e.ref)) continue;
+    seen.add(e.ref);
+    out.push({ ref: e.ref, surface: typeof e.surface === 'string' ? e.surface : 'rug', t: Number.isFinite(+e.t) ? +e.t : 0, flip: !!e.flip, z: Number.isFinite(+e.z) ? +e.z : 0 });
+  }
+  return out;
 }
 
 const encYarns = (yarns) => {
@@ -211,6 +235,7 @@ function migrate(raw) {
   // the cat: a save from before her coat and name could change keeps the cream Purl she was
   const rc = raw.cat && typeof raw.cat === 'object' ? raw.cat : {};
   s.cat = { coat: CAT_COATS.includes(rc.coat) ? rc.coat : 'cream', name: cleanName(rc.name) || 'Purl' };
+  s.room = migrateRoom(raw.room);
   if (!Array.isArray(raw.finishedPatterns)) s.finishedPatterns = [...new Set(s.gallery.map((g) => g.pattern))];
   s.v = VERSION;
   return s;
@@ -350,7 +375,7 @@ export function equip(kind, item) {
     saveSoon(); return true;
   }
   if (kind === 'doll') { get().lastDoll = item; saveSoon(); return true; }
-  if (kind === 'yarn' || kind === 'scarf') return true;
+  if (kind === 'yarn' || kind === 'scarf' || kind === 'room') return true; // room pieces are placed in the room, not equipped
   return false;
 }
 // "Use it" equips without toggling decor off
