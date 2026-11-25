@@ -11,7 +11,8 @@ import * as S from './state.js';
 import * as audio from './audio.js';
 import * as toasts from './toasts.js';
 import { yarnName, paintBallInto, sameYarn, normYarn } from './yarn.js';
-import { drawNook, drawStack, stackLayout } from './scene.js';
+import { drawNook, drawStack, stackLayout, catHit } from './scene.js';
+import { pet, noteKnitTap } from './pet.js';
 import { openPicker } from './sheets.js';
 import { renderSwatch } from './work.js';
 import { store, scarfChart, segmentChart, scarfRowSpec, SCARF_PATTERNS, WIDTH, SCARF_W_CM, CHUNK } from './scarfStore.js';
@@ -114,7 +115,10 @@ function build() {
     if (currentScreen() !== 'scarf' || openSheetName() || how) return;
     if (e.target.closest('button, input, a, .toast, .chip, .howlong, .scarf-pop .card')) return;
     e.preventDefault();
+    // the cat in her basket pets, never knits
+    if (catHit(dom.basketCanvas, e.clientX, e.clientY)) { pet(e.clientX, e.clientY); return; }
     knitOne();
+    noteKnitTap();
     if (S.get().settings.hold) holds.pointerDown(e.pointerId, root);
   });
   const endHold = (e) => holds.pointerUp(e.pointerId);
@@ -754,10 +758,10 @@ function howCards(cm, last, next) {
   const box = how.cards;
   const out = [];
   const pic = (m) => el('img', { src: `assets/cmp/${m.img}.webp`, alt: '' });
-  if (last) out.push(el('div', { class: 'hcard passed' }, pic(last), el('div', {}, el('h3', { text: `Taller than ${last.name}` }), el('p', { text: last.fact }))));
+  if (last) out.push(el('div', { class: 'hcard passed' }, pic(last), el('div', {}, el('h3', { text: `Taller than ${last.name}` }), el('p', { text: S.catText(last.fact) }))));
   if (next) {
     const sv = next.img ? pic(next) : silCanvas(next);
-    out.push(el('div', { class: 'hcard next' }, sv, el('div', {}, el('h3', { text: `Next: ${goalText(next)}` }), el('small', { text: `${fmtLen(Math.max(1, Math.ceil(next.cm - cm)))} to go` }), el('p', { text: next.fact }))));
+    out.push(el('div', { class: 'hcard next' }, sv, el('div', {}, el('h3', { text: `Next: ${goalText(next)}` }), el('small', { text: `${fmtLen(Math.max(1, Math.ceil(next.cm - cm)))} to go` }), el('p', { text: S.catText(next.fact) }))));
   }
   const slots = factSlots(cm + 1).map((c, j) => ({ c, j })).filter((x) => x.c <= cm);
   const facts = slots.filter((x) => x.j < FACTS.length), stats = slots.filter((x) => x.j >= FACTS.length);
@@ -770,7 +774,7 @@ function howCards(cm, last, next) {
     for (const x of stats.slice(-8).reverse()) out.push(el('div', { class: 'hcard stat' }, el('span', { class: 'at', text: fmtLen(x.c) }), el('p', { text: statText(x.j - FACTS.length) })));
   }
   out.push(el('h3', { class: 'hsec', text: 'Someday…' }));
-  for (const m of SOMEDAY) out.push(el('div', { class: 'hcard someday' + (m.cm <= cm ? ' passed' : '') }, silCanvas(m), el('div', {}, el('h3', { text: `${goalText(m)[0].toUpperCase()}${goalText(m).slice(1)}` }), el('small', { text: m.cm <= cm ? 'Done!' : `${fmtLen(Math.max(1, Math.ceil(m.cm - cm)))} to go` }), el('p', { text: m.fact }))));
+  for (const m of SOMEDAY) out.push(el('div', { class: 'hcard someday' + (m.cm <= cm ? ' passed' : '') }, silCanvas(m), el('div', {}, el('h3', { text: `${goalText(m)[0].toUpperCase()}${goalText(m).slice(1)}` }), el('small', { text: m.cm <= cm ? 'Done!' : `${fmtLen(Math.max(1, Math.ceil(m.cm - cm)))} to go` }), el('p', { text: S.catText(m.fact) }))));
   box.replaceChildren(...out);
 }
 function silCanvas(m) {

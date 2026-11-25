@@ -9,7 +9,8 @@ import * as toasts from './toasts.js';
 import { pieceRender, cellFor, chartOf } from './render.js';
 import { drawObject, objectReady } from './cardRenderer.js';
 import { isToy } from './plush.js';
-import { drawNook, drawStack, image } from './scene.js';
+import { drawNook, drawStack, image, catHit } from './scene.js';
+import { pet } from './pet.js';
 import { yarnName, yarnKey } from './yarn.js';
 
 let root, canvas, g, ui, t0 = 0, gal = null, pat = null, art = null, confetti = [], steam = [], cheerDone = false;
@@ -27,6 +28,12 @@ function build() {
   // a press that comes hard on the heels of another (thumbs still drumming from the last stitch)
   // doesn't pick: only a tap after a short pause does
   root.addEventListener('pointerdown', (e) => { const now = performance.now(); root._calm = now - (root._lastDown || -1e9) > 700; root._lastDown = now; }, true);
+  // a tap on the cat in her basket pets her
+  root.addEventListener('pointerdown', (e) => {
+    if (e.button > 0 || (window.gameReport && window.gameReport.isOpen())) return;
+    if (e.target.closest && e.target.closest('button, a, input')) return;
+    if (catHit(canvas, e.clientX, e.clientY)) { e.preventDefault(); pet(e.clientX, e.clientY); }
+  });
 }
 const calm = () => root._calm !== false;
 

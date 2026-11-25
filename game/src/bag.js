@@ -47,7 +47,8 @@ function render() {
   const page = el('div', { class: 'page bag-page' });
   page.append(el('div', { class: 'topline' }, back, el('h2', { text: 'Knitting Bag' }), menu));
   const tabs = el('div', { class: 'tabs bag-tabs', role: 'tablist' });
-  for (const [k, label] of TABS) {
+  for (const [k, label0] of TABS) {
+    const label = k === 'purl' ? S.catName() : label0;
     const t = el('button', { class: 'tab' + (tab === k ? ' on' : ''), role: 'tab', 'aria-selected': tab === k ? 'true' : 'false', 'data-tab': k }, label);
     if (tabHasNew(k) && tab !== k) t.append(el('span', { class: 'dot', 'aria-label': 'new' }));
     t.addEventListener('click', () => { if (tab !== k) { tab = k; audio.play('page'); render(); } });
@@ -100,7 +101,7 @@ function previewLabel() {
   if (tab === 'counter') return `${nm('counter', e.counter)} row counter`;
   if (tab === 'holder') return nm('holder', e.holder);
   if (tab === 'decor') return e.decor.length ? `In the nook: ${e.decor.map((d) => nm('decor', d).toLowerCase()).join(', ')}` : 'The nook (nothing put out yet)';
-  if (tab === 'purl') return e.purl.length ? `Purl with her ${e.purl.map((d) => nm('purl', d).toLowerCase()).join(', ')}` : 'Purl, asleep in her basket';
+  if (tab === 'purl') return e.purl.length ? `${S.catName()} with her ${e.purl.map((d) => nm('purl', d).toLowerCase()).join(', ')}` : `${S.catName()}, asleep in her basket`;
   return `${DOLL_NAMES[S.get().lastDoll || 'pip']} models your knitting`;
 }
 function use(u) {
@@ -291,5 +292,5 @@ registerScreen('bag', {
 });
 window.addEventListener('resize', () => { if (currentScreen() === 'bag') render(); });
 // Settings' "Unlock everything" switched: redraw what's open
-window.addEventListener('kk-unlocks', () => { if (currentScreen() === 'bag') render(); });
+for (const ev of ['kk-unlocks', 'kk-cat']) window.addEventListener(ev, () => { if (currentScreen() === 'bag') render(); });
 export const bagState = () => ({ tab });

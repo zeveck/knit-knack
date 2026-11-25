@@ -10,12 +10,13 @@ import { chartOf } from './render.js';
 import { data as sceneData, image as sceneImage } from './scene.js';
 import * as S from './state.js';
 import { fmtLen } from './scarfFacts.js';
+import { catImage, coatNow } from './catCoat.js';
 
 export const DOLLS = ['pip', 'clementine', 'bramble', 'juniper', 'basil', 'mabel', 'purl'];
-export const DOLL_NAMES = { pip: 'Pip', clementine: 'Clementine', bramble: 'Bramble', juniper: 'Juniper', basil: 'Basil', mabel: 'Mabel', purl: 'Purl' };
+export const DOLL_NAMES = { pip: 'Pip', clementine: 'Clementine', bramble: 'Bramble', juniper: 'Juniper', basil: 'Basil', mabel: 'Mabel', get purl() { return S.catName(); } };
 export const DOLL_ABOUT = {
   pip: 'a small jointed wooden doll', clementine: 'a rag doll with yarn hair', bramble: 'a plush bear', juniper: 'a felt bunny',
-  basil: 'a felt fox', mabel: "a tiny wooden artist's mannequin", purl: 'Purl herself',
+  basil: 'a felt fox', mabel: "a tiny wooden artist's mannequin", purl: 'your cat herself',
 };
 export const SLOTS = ['head', 'neck', 'body', 'hands', 'feet', 'shoulders'];
 export const SLOT_NAMES = { head: 'Head', neck: 'Neck', body: 'Body', hands: 'Hands', feet: 'Feet', shoulders: 'Shoulders' };
@@ -59,6 +60,8 @@ export function anchors(dollId) {
 }
 export function dollSize(dollId) { return dollId === 'purl' ? [512, 512] : [512, 768]; }
 export const dollImage = (id) => IMG[id] || null;
+// the doll's picture as drawn: the cat in her coat
+const dollPic = (id) => (id === 'purl' ? catImage(IMG.purl, 'sit') : IMG[id]);
 // the box the visible doll occupies in its frame (for laying out shelves), doll px
 export function dollBounds(dollId) {
   return dollId === 'purl' ? { x0: 92, y0: 4, x1: 444, y1: 496 } : { x0: 34, y0: dollId === 'juniper' ? 8 : 92, x1: 480, y1: 724 };
@@ -543,7 +546,7 @@ function drawTouch(g, ex, k, ox, oy) {
 
 // ---------------------------------------------------------------- the dressed doll
 function overPolys(g, dollId, names, k) {
-  const A = anchors(dollId); const im = IMG[dollId];
+  const A = anchors(dollId); const im = dollPic(dollId);
   if (!A || !A.over || !im) return;
   const [w, h] = dollSize(dollId);
   for (const o of A.over) {
@@ -589,7 +592,7 @@ function drawPurlThings(g, A, k, things) {
 // Draw a doll with its outfit into a fresh canvas of the doll's frame × k.
 // outfit: {slot: item}. opts: {silhouette, things (Purl's), anim: {slot, p 0..1}, maxCell, maxStrips}
 export function composeDoll(dollId, outfit, k, opts = {}) {
-  const im = IMG[dollId];
+  const im = dollPic(dollId);
   const [w, h] = dollSize(dollId);
   const c = mk(w * k, h * k);
   const g = c.getContext('2d');
@@ -665,7 +668,7 @@ const sig = (o) => Object.entries(o).map(([s, v]) => `${s}:${v === 'scarf' ? 'sc
 export function dressedDoll(dollId, k, opts = {}) {
   const outfit = opts.outfit || outfitOf(dollId);
   const sv = outfit.neck === 'scarf' && scarfSource ? scarfSource().version : '';
-  const key = `${dollId}|${Math.round(k * 64)}|${sig(outfit)}|${sv}|${opts.silhouette ? 1 : 0}|${dollId === 'purl' ? S.get().equipped.purl.join('+') : ''}`;
+  const key = `${dollId}|${Math.round(k * 64)}|${sig(outfit)}|${sv}|${opts.silhouette ? 1 : 0}|${dollId === 'purl' ? `${S.get().equipped.purl.join('+')}|${coatNow()}` : ''}`;
   if (composites.has(key)) { const c = composites.get(key); composites.delete(key); composites.set(key, c); return c; }
   const c = composeDoll(dollId, outfit, k, opts);
   composites.set(key, c); if (composites.size > 16) composites.delete(composites.keys().next().value);

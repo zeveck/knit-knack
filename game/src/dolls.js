@@ -10,6 +10,8 @@ import * as S from './state.js';
 import * as audio from './audio.js';
 import * as toasts from './toasts.js';
 import { pieceRender, objectRender, fitCanvas, cellFor, trimmed } from './render.js';
+import { pet } from './pet.js';
+import { EYES } from './catCoat.js';
 import { loadDolls, dressedDoll, composeDoll, outfitOf, dollSilhouette, dollBounds, dollSize, DOLLS, DOLL_NAMES, DOLL_ABOUT, SLOTS, SLOT_NAMES, slotsOf, itemSlot, dollFor } from './worn.js';
 import { store as scarfStore } from './scarfStore.js';
 
@@ -68,9 +70,14 @@ function renderShelf() {
     const cv = el('canvas', { class: 'doll-cv' });
     const cell = el('button', { class: 'doll-cell' + (ok ? '' : ' locked'), 'aria-label': ok ? `${DOLL_NAMES[d]}: dress` : `${DOLL_NAMES[d]} (locked)`, 'data-doll': d },
       el('div', { class: 'doll-stage' }, cv), el('div', { class: 'board' }),
-      el('span', { class: 'tag' }, ok ? DOLL_NAMES[d] : '?'),
+      el('span', { class: 'tag' + (ok && d === 'purl' ? ' dress-tag' : '') }, ok ? (d === 'purl' ? `Dress ${DOLL_NAMES[d]}` : DOLL_NAMES[d]) : '?'),
       ok ? null : el('span', { class: 'lock-note' }, el('span', { class: 'icw', html: ICON.lock }), lockText(d)));
-    if (ok) cell.addEventListener('click', () => { audio.play('ui'); doll = d; mode = 'dress'; render(); });
+    if (ok && d === 'purl') {
+      // the cat: a tap on her pets her; a tap on her name tag (or the shelf) dresses her
+      cell.addEventListener('pointerdown', (e) => { if (catHitDoll(cv, e)) { cell._petAt = performance.now(); petDoll(cv, e, (sq) => { const st = cell.querySelector('.doll-stage'); paintDoll(cv, d, st.clientWidth, st.clientHeight, { shelf: true, squint: sq }); }); } });
+      cell.setAttribute('aria-label', `${DOLL_NAMES[d]}: tap her to pet her, or her name to dress her`);
+    }
+    if (ok) cell.addEventListener('click', () => { if (performance.now() - (cell._petAt || -1e9) < 800) return; audio.play('ui'); doll = d; mode = 'dress'; render(); });
     else cell.addEventListener('click', () => audio.play('ui', { gain: 0.5 }));
     row.append(cell);
   }
@@ -131,7 +138,7 @@ async function drawShelf(row) {
   }
 }
 // draw a doll (cropped to its visible box, standing on the bottom edge) into a canvas of w×h CSS px
-function paintDoll(cv, d, w, h, { silhouette = false, anim: an = null, shelf = false } = {}) {
+function paintDoll(cv, d, w, h, { silhouette = false, anim: an = null, shelf = false, squint = false } = {}) {
   const r = dpr();
   const wide = shelf ? 1.7 : 1;
   const cellW = w;
@@ -152,7 +159,46 @@ function paintDoll(cv, d, w, h, { silhouette = false, anim: an = null, shelf = f
   g.save(); g.fillStyle = 'rgba(30,12,20,0.35)'; g.filter = 'blur(3px)';
   g.beginPath(); g.ellipse(cv.width / 2, cv.height - 6 * r, (b.x1 - b.x0) * k * 0.36, 7 * r, 0, 0, Math.PI * 2); g.fill(); g.restore();
   g.drawImage(c, x, y);
+  // the cat: where she is (for petting), and her happy squint while she's petted
+  if (d === 'purl' && !silhouette) {
+    cv._cat = { x: x + b.x0 * k, y: y + b.y0 * k, w: (b.x1 - b.x0) * k, h: (b.y1 - b.y0) * 0.9 * k };
+    if (squint) drawSquint(g, c, x, y, k);
+  } else cv._cat = null;
   void fh;
+}
+function drawSquint(g, c, x, y, k) {
+  const q = c.getContext('2d');
+  for (const [ex, ey] of EYES.sit) {
+    // her fur color just above the eye covers the open eye, then a happy closed-eye arc
+    // (the median, by lightness, of the fur around the eye: a brow mark or a whisker doesn't win)
+    let col = 'rgb(240,228,206)';
+    try {
+      const got = [[0, -46], [0, 44], [-42, 4], [42, 4], [-30, -34], [30, -34], [0, -60]].map(([dx, dy]) => q.getImageData(Math.round((ex + dx) * k), Math.round((ey + dy) * k), 1, 1).data).filter((p) => p[3] > 200);
+      got.sort((a, b) => (a[0] + a[1] + a[2]) - (b[0] + b[1] + b[2]));
+      const p = got[Math.floor(got.length / 2)]; if (p) col = `rgb(${p[0]},${p[1]},${p[2]})`;
+    } catch { /* */ }
+    const cx = x + ex * k, cy = y + ey * k, r = 19 * k;
+    g.save();
+    g.fillStyle = col; g.filter = `blur(${Math.max(0.5, 2 * k)}px)`;
+    g.beginPath(); g.ellipse(cx, cy, r * 1.2, r * 1.05, 0, 0, Math.PI * 2); g.fill();
+    g.filter = 'none';
+    g.strokeStyle = 'rgba(52,30,30,0.92)'; g.lineWidth = Math.max(1.2, 4.2 * k); g.lineCap = 'round';
+    g.beginPath(); g.arc(cx, cy + r * 0.45, r * 0.8, Math.PI * 1.18, Math.PI * 1.82); g.stroke();
+    g.restore();
+  }
+}
+const catHitDoll = (cv, e) => {
+  const b = cv._cat; if (!b) return false;
+  const r = cv.getBoundingClientRect(); if (!r.width) return false;
+  const x = ((e.clientX - r.left) * cv.width) / r.width, y = ((e.clientY - r.top) * cv.height) / r.height;
+  return x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
+};
+// pet her: purr and hearts (pet.js), a wiggle (CSS), the squint for a moment
+function petDoll(cv, e, repaint) {
+  if (!pet(e.clientX, e.clientY)) return;
+  cv.classList.remove('pet-wiggle'); void cv.offsetWidth; cv.classList.add('pet-wiggle');
+  repaint(true);
+  clearTimeout(cv._petT); cv._petT = setTimeout(() => { if (cv.isConnected) repaint(false); }, 900);
 }
 
 // ---------------------------------------------------------------- the dressing view
@@ -161,6 +207,8 @@ function renderDress() {
   const stage = el('div', { class: 'dress-stage' });
   const cv = el('canvas', { class: 'doll-cv' });
   stage.append(cv);
+  // dressing the cat: a tap on her pets her
+  if (doll === 'purl') cv.addEventListener('pointerdown', (e) => { if (!anim && catHitDoll(cv, e)) petDoll(cv, e, (sq) => { if (mode === 'dress' && doll === 'purl') paintDoll(cv, 'purl', stage.clientWidth, stage.clientHeight - 6, { squint: sq }); }); });
   const unl = DOLLS.filter(unlocked);
   if (unl.length > 1) {
     const i = unl.indexOf(doll);
@@ -316,7 +364,7 @@ function enter(arg, prev) {
 registerScreen('dolls', { enter, leave() { setKeyHandler(null); anim = null; } });
 registerScreen('dress', { el: 'dolls', enter: (arg, prev) => enter({ doll: (arg && arg.doll) || arg || S.get().lastDoll || 'pip' }, prev), leave() { setKeyHandler(null); anim = null; } });
 window.addEventListener('resize', () => { if (here()) render(); });
-window.addEventListener('kk-unlocks', () => { if (!here()) return; if (mode === 'dress' && !unlocked(doll)) { fromFinished = null; mode = 'shelf'; } render(); });
+for (const ev of ['kk-unlocks', 'kk-cat']) window.addEventListener(ev, () => { if (!here()) return; if (mode === 'dress' && !unlocked(doll)) { fromFinished = null; mode = 'shelf'; } render(); });
 export const dollsState = () => ({ mode, doll, page });
 void SLOTS; void onTap;
 // the browser's Back on the dressing view: to the shelf (true if it stepped)

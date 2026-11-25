@@ -4,6 +4,8 @@ import { el, ICON, go, openSheet, closeSheet, registerScreen, currentScreen, not
 import { setKeyHandler } from './input.js';
 import * as S from './state.js';
 import * as audio from './audio.js';
+import { image as sceneImage } from './scene.js';
+import { catImage, COAT_LIST } from './catCoat.js';
 
 let hooks = { toggleMute: () => {}, resume: () => {}, onReset: () => {}, onSettings: () => {}, onUnlocks: () => {} };
 export const setMenuHooks = (h) => { hooks = { ...hooks, ...h }; };
@@ -59,6 +61,7 @@ export function openSettings() {
   box.append(toggle('Big buttons', 'big', () => hooks.onSettings()));
   // a view override: everything to play with; the earned progress is kept for when it's switched off
   box.append(toggle('Unlock everything', 'unlockAll', () => { S.setUnlockAll(st.unlockAll); hooks.onUnlocks(); }, 'Every pattern, yarn, needle, doll and more, to play with. Switch it off to go back to what you have earned.'));
+  box.append(catSection());
   if (window.gameReport && window.gameReport.shown()) box.append(item('bug', 'Report a bug', () => openReport()));
   // reset
   const input = el('input', { type: 'text', placeholder: 'Type RESET', 'aria-label': 'Type RESET to confirm' });
@@ -68,6 +71,33 @@ export function openSettings() {
   box.append(el('h3', { text: 'Start over', style: { color: 'var(--plum)', fontSize: '16px', marginTop: '6px' } }),
     el('p', { text: 'This clears every piece, the gallery and the scarf. Type RESET to confirm.', style: { fontSize: '14px', color: 'var(--ink-soft)' } }), el('div', { class: 'reset-box' }, input, reset));
   openSheet('settings', box, { title: 'Settings' });
+}
+
+// "Your cat": her coat (swatches drawn from her own sprite) and her name (a 🎲 for another)
+function catSection() {
+  const c = S.cat();
+  const sec = el('div', { class: 'cat-set' });
+  const row = el('div', { class: 'coat-row', role: 'radiogroup', 'aria-label': 'Her coat' });
+  const changed = () => window.dispatchEvent(new Event('kk-cat'));
+  for (const [id, label] of COAT_LIST) {
+    const cv = el('canvas', { width: 112, height: 112 });
+    const b = el('button', { class: 'coat-sw' + (id === c.coat ? ' on' : ''), role: 'radio', 'aria-checked': id === c.coat ? 'true' : 'false', 'aria-label': `${label} coat`, title: label }, cv, label);
+    const draw = () => { const im = sceneImage('purl'); if (!im) return false; const g = cv.getContext('2d'); g.clearRect(0, 0, 112, 112); g.drawImage(catImage(im, 'sleep', id), 4, 8, 104, 104); return true; };
+    if (!draw()) setTimeout(draw, 600);
+    b.addEventListener('click', () => {
+      S.setCat({ coat: id }); audio.play('ui');
+      for (const x of row.children) { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-checked', on ? 'true' : 'false'); }
+      changed();
+    });
+    row.append(b);
+  }
+  const input = el('input', { type: 'text', value: c.name, maxlength: 16, 'aria-label': 'Her name', autocomplete: 'off', spellcheck: 'false' });
+  input.addEventListener('input', () => { if (input.value.trim()) { S.setCat({ name: input.value }); changed(); } });
+  input.addEventListener('change', () => { if (!input.value.trim()) input.value = S.catName(); });
+  const dice = el('button', { class: 'btn small dice', 'aria-label': 'Another name', title: 'Another name' }, '🎲 Another name');
+  dice.addEventListener('click', () => { const n = S.randomCatName(S.catName()); S.setCat({ name: n }); input.value = n; audio.play('ui'); changed(); });
+  sec.append(el('h3', { text: 'Your cat', style: { color: 'var(--plum)', fontSize: '16px', marginTop: '6px' } }), row, el('div', { class: 'name-row' }, input, dice));
+  return sec;
 }
 
 export function openHowTo() {

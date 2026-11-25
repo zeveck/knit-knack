@@ -9,7 +9,8 @@ import * as audio from './audio.js';
 import * as toasts from './toasts.js';
 import { chartOf, suggestedSlots, pieceRender } from './render.js';
 import { yarnName, paintBallInto, sameYarn, normYarn } from './yarn.js';
-import { drawNook, drawStack, stackLayout } from './scene.js';
+import { drawNook, drawStack, stackLayout, catHit } from './scene.js';
+import { pet, noteKnitTap } from './pet.js';
 import { openPicker, openPattern, openGlossary } from './sheets.js';
 import { previewCard } from './previewCard.js';
 
@@ -99,7 +100,10 @@ function build() {
     if (currentScreen() !== 'knit' || openSheetName()) return;
     if (e.target.closest('button, input, a, .toast, .chip')) return;
     e.preventDefault();
+    // the cat in her basket is like a button: a tap that starts on her pets her, never knits
+    if (catHit(dom.basketCanvas, e.clientX, e.clientY)) { pet(e.clientX, e.clientY); return; }
     const r = knitOne();
+    noteKnitTap();
     if (r) { const b = root.getBoundingClientRect(); flyers.push({ x: e.clientX - b.left, y: e.clientY - b.top, t0: performance.now(), color: (piece && piece.yarns[r.index] || currentYarn()).color }); }
     if (S.get().settings.hold) holds.pointerDown(e.pointerId, root);
   });
@@ -489,7 +493,7 @@ export function knitOne({ animate = true } = {}) {
       setTimeout(() => { audio.play('row'); audio.play('counter', { gain: 0.8 }); }, 130);
       if (res.r % 10 === 0) sparkleRow = { r: res.r, t0: performance.now() + 120 };
       if (res.r === 1) tip('turn', 'The work turns. Now you knit back the other way.');
-      if (res.r === 3 && !S.get().tips.includes('purl-hello')) tip('purl-hello', "That's Purl in the basket. She loves yarn.");
+      if (res.r === 3 && !S.get().tips.includes('purl-hello')) tip('purl-hello', `That's ${S.catName()} in the basket. She loves yarn. Tap her to pet her.`);
       if (res.r === 2) tip('yarn', `Tap a yarn ${layout === 'port' ? 'below' : 'on the right'} to change color, any time, on any stitch.`);
       if (res.finished) S.checkUnlocks(); else afterCounts(); // unlock toasts wait for the celebration
     }

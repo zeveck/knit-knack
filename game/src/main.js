@@ -4,7 +4,8 @@ import { initInput, setKeyHandler, releaseHolds } from './input.js';
 import * as S from './state.js';
 import * as audio from './audio.js';
 import * as toasts from './toasts.js';
-import { loadScene, loadSceneRest, loadExtras } from './scene.js';
+import { loadScene, loadSceneRest, loadExtras, catHit } from './scene.js';
+import { pet, petCount } from './pet.js';
 import { loadYarnImages, normYarn, registerColorNames } from './yarn.js';
 import { setFibreTexture } from './stitches.js';
 import { writtenPattern } from './chart.js';
@@ -112,6 +113,8 @@ async function boot() {
     if (window.gameReport && window.gameReport.isOpen()) return;
     if (e && e.target && e.target.closest && e.target.closest('.title-link')) return;
     if (e && e.preventDefault) e.preventDefault();
+    // a tap on the cat asleep in her basket pets her instead of starting
+    if (e && e.clientX != null && catHit(document.getElementById('title-canvas'), e.clientX, e.clientY)) { audio.unlock(); applySettings(); pet(e.clientX, e.clientY); return; }
     audio.unlock();
     applySettings();
     const s = S.get();
@@ -236,6 +239,10 @@ window.__game = {
   resetSave: () => { S.resetSave(); features.resetScarf().finally(() => location.reload()); return true; },
   toggleMute,
   previewCard,
+  // the cat: {coat, name}; setCat({coat, name}) changes either (a coat from the eight, a name up to 16 letters)
+  cat: () => S.cat(),
+  setCat: (c) => { const r = S.setCat(c || {}); window.dispatchEvent(new Event('kk-cat')); return r; },
+  pets: () => petCount(),
 };
 
 // hooks for the other helpers' screens

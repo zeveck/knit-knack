@@ -82,11 +82,35 @@ export const UNLOCK_RULES = [
   { id: 'doll:juniper', kind: 'doll', item: 'juniper', name: 'Juniper', rule: { stitches: 10000 } },
   { id: 'doll:basil', kind: 'doll', item: 'basil', name: 'Basil', rule: { chapter: 4 } },
   { id: 'doll:mabel', kind: 'doll', item: 'mabel', name: 'Mabel', rule: { chapter: 7 } },
-  { id: 'doll:purl', kind: 'doll', item: 'purl', name: 'Purl', rule: { pattern: 'Bobble Hat' } },
+  { id: 'doll:purl', kind: 'doll', item: 'purl', get name() { return catName(); }, rule: { pattern: 'Bobble Hat' } },
 ];
 export const ruleById = (id) => UNLOCK_RULES.find((u) => u.id === id) || null;
-const KIND_TOAST = { yarn: 'New yarn', scarf: 'New scarf stitch', needles: 'New needles', marker: 'New stitch markers', counter: 'New row counter', holder: 'New yarn holder', decor: 'New for the nook', purl: 'New for Purl', doll: 'New doll' };
+const KIND_TOAST = { yarn: 'New yarn', scarf: 'New scarf stitch', needles: 'New needles', marker: 'New stitch markers', counter: 'New row counter', holder: 'New yarn holder', decor: 'New for the nook', get purl() { return `New for ${catName()}`; }, doll: 'New doll' };
 export const toastTitle = (u) => `${KIND_TOAST[u.kind] || 'New'}: ${u.name}!`;
+
+// ---------------------------------------------------------------- the cat
+// A new game (a fresh save, or Reset progress) gets a random coat and a random name from this list;
+// a save from before the cat could change keeps the cream Purl she always was.
+export const CAT_NAMES = [
+  'Purl', 'Skein', 'Bobbin', 'Tweed', 'Pompom', 'Merino', 'Noodle', 'Cable', 'Fuzz', 'Mittens',
+  'Picot', 'Ravel', 'Alpaca', 'Tassel', 'Bouclé', 'Cashmere', 'Angora', 'Mohair', 'Stitch', 'Toggle',
+  'Button', 'Marl', 'Fleece', 'Woolly', 'Ribbon', 'Thimble', 'Garter', 'Moss', 'Bobble', 'Loopy',
+];
+export const CAT_COATS = ['cream', 'ginger', 'grey', 'charcoal', 'chocolate', 'silver', 'calico', 'tuxedo'];
+const pickOne = (a, not) => { const l = a.filter((x) => x !== not); return l[Math.floor(Math.random() * l.length)]; };
+export const randomCatName = (not) => pickOne(CAT_NAMES, not);
+const cleanName = (n) => (typeof n === 'string' ? n.replace(/\s+/g, ' ').trim().slice(0, 16) : '');
+export const catName = () => (S && S.cat && S.cat.name) || 'Purl';
+export const cat = () => ({ coat: get().cat.coat, name: get().cat.name });
+export function setCat({ coat, name } = {}) {
+  const c = get().cat;
+  if (coat != null && CAT_COATS.includes(coat)) c.coat = coat;
+  if (name != null && cleanName(name)) c.name = cleanName(name);
+  saveSoon();
+  return cat();
+}
+// visible text written with "Purl" in it, said with the cat's own name
+export const catText = (t) => String(t).replace(/\bPurl\b/g, catName());
 
 // ---------------------------------------------------------------- the save
 let S = null;
@@ -108,6 +132,7 @@ function fresh() {
     lastPiece: null, scarf: { rows: 0, stitches: 0, cm: 0 },
     bookComplete: false, bookCompleteShown: false, seenPatterns: [],
     started: false,
+    cat: { coat: pickOne(CAT_COATS), name: randomCatName() },
   };
 }
 
@@ -180,6 +205,9 @@ function migrate(raw) {
     s.lifetimeStitches = s.gallery.reduce((t, g) => t + g.yarns.length, 0) + Object.values(s.pieces).reduce((t, p) => t + p.yarns.length, 0) + (s.scarf.stitches || 0);
   }
   if (typeof raw.piecesFinished !== 'number') s.piecesFinished = s.gallery.length;
+  // the cat: a save from before her coat and name could change keeps the cream Purl she was
+  const rc = raw.cat && typeof raw.cat === 'object' ? raw.cat : {};
+  s.cat = { coat: CAT_COATS.includes(rc.coat) ? rc.coat : 'cream', name: cleanName(rc.name) || 'Purl' };
   if (!Array.isArray(raw.finishedPatterns)) s.finishedPatterns = [...new Set(s.gallery.map((g) => g.pattern))];
   s.v = VERSION;
   return s;

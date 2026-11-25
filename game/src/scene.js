@@ -1,6 +1,8 @@
 // scene.js — the nook pictures and the basket stack (basket back, cushion, Purl, basket front, and the
 // yarn holder with the tinted ball beside it), shared by the title, the knitting screen and Finished.
 import { drawBall } from './yarn.js';
+import { catImage } from './catCoat.js';
+import { petPose } from './pet.js';
 
 const IMG = {};
 const JSON_ = {};
@@ -158,15 +160,23 @@ export function drawStack(g, b, opts = {}) {
     g.fillStyle = gr; g.beginPath(); g.ellipse(cx, cy, b.w * 0.4, b.h * 0.14, 0, 0, Math.PI * 2); g.fill();
   }
   // Purl (breathing in code while asleep: 1.5% vertical scale anchored at her base, on a 3 s sine)
-  const frame = opts.purl === undefined || opts.purl === 'sleep' ? null : opts.purl;
-  const pim = frame === null ? IMG.purl : IMG[`cheer${frame}`] || IMG.purl;
+  // petted, she squints happily (the sleeping sprite's closed eyes) and wiggles (pet.js)
+  const pp = petPose();
+  let frame = opts.purl === undefined || opts.purl === 'sleep' ? null : opts.purl;
+  if (pp.k > 0) frame = null;
+  const src = frame === null ? IMG.purl : IMG[`cheer${frame}`] || IMG.purl;
+  const pim = catImage(src, frame === null || !IMG[`cheer${frame}`] ? 'sleep' : `cheer${frame}`);
   if (pim && opts.purl !== 'none') {
     const ps = PURL.s * s;
     const px = bx + PURL.x * s, py = by + PURL.y * s, pw = 512 * ps;
     const base = py + 454 * ps;
-    const br = frame === null && opts.t != null ? 1 + 0.015 * Math.sin((opts.t / 3000) * Math.PI * 2) : 1;
+    const br = (frame === null && opts.t != null ? 1 + 0.015 * Math.sin((opts.t / 3000) * Math.PI * 2) : 1) * pp.squash;
+    // where she is, for taps (her head and back above the basket rim), in this canvas's device px
+    const hx0 = px + 70 * ps, hw = 410 * ps, hx = opts.mirror ? 2 * (px + pw / 2) - hx0 - hw : hx0;
+    const m = g.getTransform();
+    catBoxes.set(g.canvas, { x: m.a * hx + m.e, y: m.d * (py + 40 * ps) + m.f, w: m.a * hw, h: m.d * 300 * ps });
     g.save();
-    g.translate(px + pw / 2, base); g.scale(opts.mirror ? -1 : 1, br); g.translate(-(px + pw / 2), -base);
+    g.translate(px + pw / 2, base); g.rotate(pp.wig); g.scale(opts.mirror ? -1 : 1, br); g.translate(-(px + pw / 2), -base);
     if (opts.hop) g.translate(0, -opts.hop * b.h * 0.12);
     g.drawImage(pim, px, py, pw, pw);
     if (things.includes('collar') || things.includes('bell')) drawPurlThings(g, px, py, ps, things);
@@ -176,6 +186,17 @@ export function drawStack(g, b, opts = {}) {
   // the holder and the ball
   drawHolderBall(g, L, opts);
   return L;
+}
+
+// the cat's box on each canvas she was last drawn on (device px), and the hit test for a tap
+const catBoxes = new WeakMap();
+export function catHit(canvas, clientX, clientY) {
+  const b = canvas && catBoxes.get(canvas);
+  if (!b || !canvas.width) return false;
+  const r = canvas.getBoundingClientRect();
+  if (!r.width) return false;
+  const x = ((clientX - r.left) * canvas.width) / r.width, y = ((clientY - r.top) * canvas.height) / r.height;
+  return x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
 }
 
 function drawPurlThings(g, px, py, ps, things) {
