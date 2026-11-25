@@ -245,9 +245,10 @@ const R_UNIT = () => (ART[pic] && ART[pic].json ? ART[pic].json.surfaces.rug.sca
 const aspect = () => { const s = ART[pic] && ART[pic].json && ART[pic].json.size; return s ? s[0] / s[1] : 1.5; };
 const U_RUG = () => R_UNIT() * box.h;
 
-function say(text, ms = 2600) {
+function say(text, ms = 2600, high = false) {
   if (!dom) return;
-  dom.msg.textContent = text; dom.msg.classList.add('show');
+  // (high: at the top of the room, clear of the dolls standing on the rug)
+  dom.msg.textContent = text; dom.msg.classList.add('show'); dom.msg.classList.toggle('high', !!high);
   clearTimeout(dom.msg._t); dom.msg._t = setTimeout(() => dom && dom.msg.classList.remove('show'), ms);
 }
 function speak(text) { if (dom) { dom.live.textContent = ''; requestAnimationFrame(() => { if (dom) dom.live.textContent = text; }); } }
@@ -768,7 +769,10 @@ function arm(ref) {
   root.classList.add('armed');
   for (const b of dom.list.querySelectorAll('.ti')) b.classList.toggle('lifted', b.dataset.tref === ref);
   const T = things.get(ref); if (T) T.btn.classList.add('held');
-  say('Tap a place in the room', 4000); speak('Tap a place in the room');
+  // the lifted thing in Your things scrolls into sight (it may be far along the strip on a phone)
+  const tb = dom.list.querySelector(`.ti[data-tref="${CSS.escape(ref)}"]`);
+  if (tb) requestAnimationFrame(() => { if (tb.isConnected) tb.scrollIntoView({ inline: 'center', block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); });
+  say('Tap a place in the room', 4000, true); speak('Tap a place in the room');
   audio.play('dress', { gain: 0.6 });
 }
 function disarm() {
