@@ -1063,7 +1063,7 @@ function stepWording(chart, r) {
   const no = chart.rowNo(r);
   const sec = no.section && no.section.label ? no.section.label.replace(/ \(.*\)$/, '').replace(/:$/, '') : '';
   const name = st.label || STEP_NAMES[st.kind] || st.kind;
-  return { r, rs: R.rs, label: (sec && sec !== name ? sec + ' · ' : '') + name, text: st.text, tokens: [{ text: st.text, from: 0, to: R.map.length, rep: false }], repeat: null,
+  return { r, rs: R.rs, label: (sec && sec !== name && !name.toLowerCase().startsWith(sec.toLowerCase() + ' ') ? sec + ' · ' : '') + name, /* ("Thumb set-up rnd", not "Thumb · Thumb set-up rnd") */ text: st.text, tokens: [{ text: st.text, from: 0, to: R.map.length, rep: false }], repeat: null,
     count: R.ring.length, prevCount: R.prevCols.length, countChanged: false, islands: false, part: -1, slot: null, atoms: [], warnings: [], step: st.kind };
 }
 
@@ -1404,9 +1404,10 @@ function writtenRound(chart, opts = {}) {
   }
   flush();
   if (def.finishing) lines.push({ kind: 'end', label: '', text: def.finishing });
-  used.add('BO');
   if ([...used].some((u) => u === 'k' || u === 'p')) { used.add('k'); used.add('p'); }
   const text = lines.map((l) => (l.label ? `${l.label}: ` : '') + l.text).join('\n');
+  // (the key lists BO only when the pattern binds off: a gathered crown or a grafted toe never does)
+  if (/\bBO\b|\bbind off\b/i.test(text)) used.add('BO');
   const abbreviations = [...used].filter((a) => GLOSSARY[a]).map((a) => ({ abbr: a, meaning: a === 'CO' ? 'cast on (over a gap in a round: a backward-loop or cable cast-on onto the right needle, then carry on with the rnd)' : GLOSSARY[a] }));
   for (const [term, re] of ROUND_TERMS) if (re.test(text) && !abbreviations.some((a) => a.abbr === term)) abbreviations.push({ abbr: term, meaning: ROUND_GLOSSARY[term] });
   const cellsUsed = new Set(); for (let r = 1; r <= H; r++) for (const cl of chart.cells(r)) if (cl) cellsUsed.add(cl.s);

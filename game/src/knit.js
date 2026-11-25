@@ -414,8 +414,11 @@ function refreshBar() {
   dom.follow.classList.toggle('on', !!piece.follow);
   dom.follow.setAttribute('aria-pressed', piece.follow ? 'true' : 'false');
   const rec = S.get().recent;
+  // (a row of six: the recent yarns fill the row the skeins end in, never a lone ball on a row of its own)
+  let cap = 5;
+  if (layout === 'desk' || layout === 'port') { const base = slotsUsed().length + 2, end = Math.ceil(base / 6) * 6; cap = end > base ? end - base : 5; }
   dom.recent.forEach((b, i) => {
-    const y = rec[i];
+    const y = i < cap ? rec[i] : null;
     paintBallInto(b._c, y || null, size);
     b.classList.toggle('empty', !y);
     b.classList.toggle('active-free', !!y && !piece.follow && sameYarn(y, piece.free));
@@ -603,9 +606,11 @@ function hud() {
     const secName = sec && sec.label ? sec.label.replace(/ \(.*\)$/, '') : '';
     const u = no.unit === 'step' ? stripWording(chart, L.r, L.k).label.replace(/^.* · /, '') : `${no.unit} ${no.n}${of ? ` of ${of}` : ''}`;
     const uS = no.unit === 'step' ? u : `${no.unit} ${no.n}${of ? `/${of}` : ''}`;
+    // (a step named after its section, "Thumb set-up rnd" in Thumb, doesn't repeat the section)
+    const secP = secName && !u.toLowerCase().startsWith(secName.toLowerCase() + ' ') ? secName + ' · ' : '';
     forms = [
-      ` · ${secName ? secName + ' · ' : ''}${u} · ${fmt(i)} / ${fmt(chart.total)} stitches`,
-      ` · ${secName ? secName + ' · ' : ''}${uS} · ${fmt(i)}/${fmt(chart.total)} sts`,
+      ` · ${secP}${u} · ${fmt(i)} / ${fmt(chart.total)} stitches`,
+      ` · ${secP}${uS} · ${fmt(i)}/${fmt(chart.total)} sts`,
       ` · ${uS} · ${fmt(i)}/${fmt(chart.total)} sts`,
       ` · ${uS} · ${Math.floor((100 * i) / chart.total)}%`,
     ];

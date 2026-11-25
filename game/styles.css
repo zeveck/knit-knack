@@ -438,7 +438,7 @@ input[type=range] { width: 100%; accent-color: var(--cranberry); height: 32px; t
 .bpiece { background: rgba(251, 244, 230, 0.92); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 6px; align-items: center; border: 0; }
 .bpiece .pv { height: 120px; display: flex; align-items: center; justify-content: center; }
 .bpiece .pv canvas { max-width: 100%; max-height: 100%; }
-.bpiece .nm { font-family: 'Caveat', cursive; font-size: 20px; }
+.bpiece .nm { font-family: 'Caveat', cursive; font-size: 20px; text-wrap: balance; text-align: center; }
 .empty-note { grid-column: 1 / -1; text-align: center; color: var(--cream); background: rgba(34, 22, 46, 0.6); border-radius: 14px; padding: 18px; font-size: 16px; }
 .detail .big { display: flex; justify-content: center; padding: 10px; background: radial-gradient(circle at 40% 30%, #8a6585, #4a2f4d); border-radius: 14px; }
 .detail .big canvas { max-width: 100%; max-height: 50vh; }
@@ -485,7 +485,8 @@ gh-feedback { font-family: 'Fredoka', sans-serif; }
 .pet-wiggle { animation: petwiggle 0.7s ease-out; transform-origin: 50% 92%; }
 @keyframes petwiggle { 0% { transform: rotate(0); } 20% { transform: rotate(-3deg) scaleY(0.97); } 45% { transform: rotate(2.5deg); } 70% { transform: rotate(-1.2deg); } 100% { transform: rotate(0); } }
 .cat-set { display: flex; flex-direction: column; gap: 10px; }
-.coat-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
+.coat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; } /* (eight coats: two even rows, or one) */
+@media (min-width: 600px) { .coat-row { grid-template-columns: repeat(8, 1fr); gap: 5px; } .coat-row .coat-sw { font-size: 11px; } .coat-row .coat-sw canvas { width: 50px; height: 50px; } }
 .coat-sw { border: 0; border-radius: 14px; background: rgba(91, 58, 94, 0.1); padding: 4px 2px 6px; display: flex; flex-direction: column; align-items: center; gap: 2px; font: inherit; font-size: 12px; font-weight: 600; color: var(--ink-soft); }
 .coat-sw canvas { width: 56px; height: 56px; display: block; }
 .coat-sw.on { background: rgba(122, 158, 110, 0.25); box-shadow: 0 0 0 2.5px var(--sage-dk); color: var(--ink); }

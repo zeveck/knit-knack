@@ -34,11 +34,11 @@ export const MAX_THINGS = 40;
 // room pieces: height and footprint in ru, whether Turn shows (hooks never)
 export const PIECES = {
   table: { h: 0.9, foot: 0.7, turns: true, name: 'The side table' },
-  plant: { h: 0.6, foot: 0.4, turns: true, name: 'The plant' },
+  plant: { h: 0.6, foot: 0.4, turns: true, name: 'The potted plant' }, // (the Bag's names: Potted plant, Floor lamp)
   books: { h: 0.35, foot: 0.45, turns: true, name: 'The storybooks' },
   chest: { h: 0.8, foot: 1.1, turns: true, name: 'The toy chest' },
   teaset: { h: 0.3, foot: 0.8, turns: true, name: 'The tea set' },
-  lamp: { h: 2.2, foot: 0.6, turns: true, name: 'The lamp' },
+  lamp: { h: 2.2, foot: 0.6, turns: true, name: 'The floor lamp' },
   garland: { hook: 'garland-hook', turns: false, name: 'The star garland' },
   frame: { hook: 'frame-hook', turns: false, name: 'The framed picture' },
 };
@@ -157,7 +157,7 @@ export function fitReason(list, ref, sid) {
 export function reasonText(reason, ref, sid) {
   const where = SURFACES[sid] ? SURFACES[sid].name : 'there';
   if (reason === 'not-here') {
-    if (ref === 'piece:lamp') return 'The lamp stands on the floor';
+    if (ref === 'piece:lamp') return 'The floor lamp goes on the floor';
     if (ref === 'piece:chest' || ref === 'piece:table') return `${nameOf(ref)} stands on the floor`;
     if (kindOf(ref) === 'blanket') return 'Blankets go over the armchair or the window seat';
     if (ref === 'piece:garland') return 'The garland hangs in the window';

@@ -78,7 +78,7 @@
 .bag-card .thumb { width: 100%; height: 84px; display: block; }
 .bag-grid.dolls .bag-card .thumb { height: 130px; }
 .bag-card .nm { font-weight: 600; color: var(--ink); font-size: 15px; line-height: 1.15; }
-.bag-card .sub { font-size: 12px; color: var(--ink-soft); }
+.bag-card .sub { font-size: 12px; color: var(--ink-soft); text-wrap: balance; }
 .bag-card .lock { text-wrap: pretty; font-size: 12.5px; color: var(--plum); font-weight: 600; display: flex; gap: 4px; align-items: flex-start; line-height: 1.25; text-align: left; }
 .bag-card .lock .ic { width: 14px; height: 14px; flex: none; margin-top: 1px; }
 .bag-card.locked { background: rgba(251, 244, 230, 0.6); }

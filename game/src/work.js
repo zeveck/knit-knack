@@ -966,13 +966,13 @@ export class Work {
     const markers = this.chart.markers(ns.r).filter((b) => !tube || (ns.left.includes(b) && ns.left.includes(b - 1)) || (ns.right.includes(b) && ns.right.includes(b - 1)));
     const drawLeft = () => {
       for (const L of loopsL) drawLoop(g, L, rad, G.cp, 'back');
-      drawNeedle(g, lTip, lEnd, rad, style, G.cp, t);
+      drawNeedle(g, lTip, lEnd, rad, style, G.cp, t, !!(tube && tube.dpn));
       for (const L of loopsL) drawLoop(g, L, rad, G.cp, 'front');
       for (const b of markers) if (!onRight(b, ns)) drawMarker(g, G.colL(b), lay.yL, rad, G.cp, MARKER_STYLES[this.markerStyle]);
     };
     const drawRight = () => {
       for (const L of loopsR) drawLoop(g, L, rad, G.cp, 'back');
-      drawNeedle(g, tip, rEnd, rad, style, G.cp, t);
+      drawNeedle(g, tip, rEnd, rad, style, G.cp, t, !!(tube && tube.dpn));
       for (const L of loopsR) drawLoop(g, L, rad, G.cp, 'front');
       for (const b of markers) if (onRight(b, ns)) { const x = G.colL(b); drawMarker(g, x, rY(x), rad, G.cp, MARKER_STYLES[this.markerStyle]); }
       // row counter near the needle's end
@@ -988,7 +988,7 @@ export class Work {
     else {
       // knit: the tip goes behind the front of the working loop
       for (const L of loopsL) drawLoop(g, L, rad, G.cp, 'back');
-      drawNeedle(g, lTip, lEnd, rad, style, G.cp, t);
+      drawNeedle(g, lTip, lEnd, rad, style, G.cp, t, !!(tube && tube.dpn));
       drawRight();
       for (const L of loopsL) drawLoop(g, L, rad, G.cp, 'front');
       for (const b of markers) if (!onRight(b, ns)) drawMarker(g, G.colL(b), lay.yL, rad, G.cp, MARKER_STYLES[this.markerStyle]);
@@ -1086,8 +1086,8 @@ function lamp(g, w, h) {
 const mixc = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 function hexRgb(h) { const n = parseInt(h.replace('#', ''), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
 
-// a needle from its tip a to its end b (end cap at b)
-export function drawNeedle(g, a, b, rad, st, cp, t = 0) {
+// a needle from its tip a to its end b (end cap at b; a double-pointed needle (dpn) is pointed at both)
+export function drawNeedle(g, a, b, rad, st, cp, t = 0, dpn = false) {
   const len = Math.hypot(b.x - a.x, b.y - a.y);
   const ang = Math.atan2(b.y - a.y, b.x - a.x);
   const tipLen = Math.min(len * 0.3, cp * 1.1 + rad * 3);
@@ -1099,7 +1099,8 @@ export function drawNeedle(g, a, b, rad, st, cp, t = 0) {
     g.beginPath();
     g.moveTo(0, 0);
     g.quadraticCurveTo(tipLen * 0.35, -rad * 0.7, tipLen, -rad);
-    g.lineTo(len, -rad); g.lineTo(len, rad); g.lineTo(tipLen, rad);
+    if (dpn) { g.lineTo(len - tipLen, -rad); g.quadraticCurveTo(len - tipLen * 0.35, -rad * 0.7, len, 0); g.quadraticCurveTo(len - tipLen * 0.35, rad * 0.7, len - tipLen, rad); } else { g.lineTo(len, -rad); g.lineTo(len, rad); }
+    g.lineTo(tipLen, rad);
     g.quadraticCurveTo(tipLen * 0.35, rad * 0.7, 0, 0);
     g.closePath();
   };
@@ -1176,7 +1177,7 @@ export function drawNeedle(g, a, b, rad, st, cp, t = 0) {
   }
   // end cap
   const capCols = st.capColor || st.body;
-  if (st.cap === 'knob' || st.cap === 'ball' || st.cap === 'carved') {
+  if (dpn) { /* (pointed: no cap) */ } else if (st.cap === 'knob' || st.cap === 'ball' || st.cap === 'carved') {
     const R = rad * (st.cap === 'ball' ? 2.2 : 1.9);
     const [d, m, l] = capCols.map(hexRgb);
     const gr = g.createRadialGradient(len + R * 0.6, up * R * 0.45, R * 0.1, len + R * 0.8, 0, R * 1.1);

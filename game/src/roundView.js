@@ -817,7 +817,7 @@ export class RoundView {
     }
     const G2 = this._localG(F, r, rowOf, scene);
     scene.G2 = G2;
-    scene.tube = { map: mapNs, G2, rowOf, counterNo: ch.rowNo(r).unit === 'step' ? ch.rowNo(Math.max(1, r - 1)).n : ch.rowNo(r).n, dyS: (c, side) => G2.dyS(c, side), near: true };
+    scene.tube = { map: mapNs, G2, rowOf, counterNo: ch.rowNo(r).unit === 'step' ? ch.rowNo(Math.max(1, r - 1)).n : ch.rowNo(r).n, dyS: (c, side) => G2.dyS(c, side), near: true, dpn: kind === 'dpn' };
     if (o.step === 'join') scene.tube.join = true;
     // the needles' far ends stay put just outside the tube (only the working tip travels as the tube
     // turns under it): the right needle rises to the right past the rim, the left lies along the rim
@@ -1006,7 +1006,7 @@ export class RoundView {
     const p0 = { x: a.x - ux * ext, y: a.yN - uy * ext }, p1 = { x: z.x + ux * ext, y: z.yN + uy * ext };
     for (const L of loops) drawLoop(g, L, rad, F.cp * Math.max(0.35, Math.abs(L.cos)), 'back');
     g.save(); if (pass === 'back') g.globalAlpha = 0.8;
-    drawNeedle(g, p0, p1, rad * (pass === 'back' ? 0.85 : 1), style, F.cp, t);
+    drawNeedle(g, p0, p1, rad * (pass === 'back' ? 0.85 : 1), style, F.cp, t, true);
     g.restore();
     // the loops sit on the needle: snap their tops to its line
     for (const L of loops) { const q = (L.x - a.x) / (dx || 1); L.yN = lerp(a.yN, z.yN, clamp(q, 0, 1)); }
