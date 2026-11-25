@@ -3,9 +3,11 @@
 *Tap, tap, tap: knit anything, one real stitch at a time.*
 
 Every tap knits exactly one stitch. Watch a hat, a mitten, a cable cowl or a little knitted fox
-grow on the needles, stitch by stitch, in the colors and yarns you pick. Work through a book of
-47 real patterns, hang what you make in your gallery, dress a shelf of little dolls in it, and
-keep coming back to the Infinite Scarf, which never ends.
+grow on the needles, stitch by stitch, in the colors and yarns you pick. Hats, socks and
+mittens go round and round as real tubes, the way knitters really make them. Work through a
+book of 47 real patterns, hang what you make in your gallery, dress a shelf of little dolls in
+it, arrange them all in a cozy room, and keep coming back to the Infinite Scarf, which never
+ends.
 
 **[▶ Play Knit Knack](https://knitknack.synapticnoise.com/)** in your browser. No install, works
 on desktop and on phones.
@@ -15,13 +17,25 @@ on desktop and on phones.
 ## Knitting
 
 Each stitch is drawn the way real knitting looks: knit Vs, purl bumps, cables crossing, lace
-eyelets, colorwork in your own colors. The needles really work the loops, the work turns at
+eyelets, colorwork in your own colors. The needles really work the loops, flat work turns at
 the end of every row, and the strip below shows the row in real pattern wording
 (`k5 A, k3 B, k6 A`). Change yarn any time, even on a single stitch.
 
 | | |
 |---|---|
 | ![Knitting the Snowflake Mitten halfway, zoomed in: navy and cream stitches on cherry needles](media/screenshots/knitting.jpg) | ![The same mitten on a phone](media/screenshots/knitting-phone.jpg) |
+
+## Knitting in the round
+
+Hats, headbands, cowls, socks, mittens, mitts and the sweaters' bodies are knit in the round,
+as real knitters make them: the work is a tube that turns as you go, on a circular needle or a
+set of double-pointed needles. The patterns read by round ("Rnd 4: *k4, k2tog; rep from *
+around"), a hat's crown narrows and gathers, a sock's heel is turned and its toe grafted, and
+nothing has a seam. Cables now stand out like little twisted ropes.
+
+| | |
+|---|---|
+| ![A Bobble Hat on four double-pointed needles: cream and cranberry stripes, the crown starting to narrow, with Pip wearing it in the preview](media/screenshots/knitting-hat-round.jpg) | ![A Cozy Sock after its heel is turned: the cream heel cup on the tube, and the blue gusset stitches picked up on the needles](media/screenshots/knitting-sock-heel.jpg) |
 
 ## The Pattern Book
 
@@ -58,11 +72,24 @@ you hang it on your gallery wall.
 ## The dolls
 
 Meet Pip, Clementine, Bramble, Juniper, Basil, Mabel and Purl herself, and dress them in the hats,
-cowls, sweaters, mittens and socks you knit, stitch for stitch as you made them.
+cowls, sweaters, mittens and socks you knit, stitch for stitch as you made them. The round
+pieces wear as true tubes: a hat wraps the head, a cowl circles the neck, socks hug the feet.
 
 | | |
 |---|---|
-| ![The Doll Shelf: seven dolls in knitted hats, sweaters, cowls, mittens and socks](media/screenshots/doll-shelf.jpg) | ![Dressing Pip on a phone: a bobble hat, a yoke sweater, snowflake mittens and socks](media/screenshots/dressing-phone.jpg) |
+| ![The Doll Shelf: Pip in a bobble hat, yoke sweater, snowflake mittens and socks; Clementine, Bramble, Juniper, Basil and Mabel in beanies, cowls, mitts, headbands and argyle and lace socks; and Purl](media/screenshots/dolls-round.jpg) | ![Dressing Pip on a phone: a bobble hat, a yoke sweater, snowflake mittens and socks](media/screenshots/dressing-phone.jpg) |
+
+## The cozy room
+
+Bring everyone together in a little painted room. Drag your dolls, Purl, the toys you knit,
+your pillows and blankets onto the rug, the armchair, the shelves and the window seat, dressed
+in whatever they wear. Unlock room pieces as you knit (a side table, a plant, storybooks, a toy
+chest, a tea set, a star garland, a floor lamp and a frame that shows your newest piece). The
+room stays just as you left it.
+
+| | |
+|---|---|
+| ![The cozy room: dolls and knitted toys on a braided rug, Purl in the armchair under a patchwork blanket, a star garland in the snowy window and a bunny and a penguin on the shelves](media/screenshots/room.jpg) | ![The same room on a phone, with the fox doll selected and its Move, Look closer and Put away buttons showing](media/screenshots/room-phone.jpg) |
 
 ## The Knitting Bag
 
@@ -91,6 +118,11 @@ the Leaning Tower of Pisa and, someday, the Moon, with a knitting fact every so 
   yarns, Y for the whole basket, and C to follow the chart again.
 - **Zoom:** − and + (0 fits the work), or the scroll wheel on a computer.
 - **Preview card:** tap it or press V. **Pattern glossary:** the "?" button or G.
+- **The cozy room:** drag a thing from Your things into the room, or tap it and then tap a
+  spot. Tap something in the room for **Move**, **Turn**, **Look closer** and **Put away**, or
+  drag it back to the tray. **Tidy up** puts everything away. With a keyboard: Tab to a thing,
+  Enter to pick it up, the arrow keys to move it (Up and Down change places), Enter to set it
+  down, Delete to put it away.
 - **Menu:** the button at the top right, or Escape or P. **Mute:** M.
 - **Your cat:** tap the cat in the basket to give it a pet. Each new game brings a cat with its own coat and knitting name; change both in Settings.
 - **Unlock everything:** a switch in Settings opens every pattern, yarn, needle, accessory and doll, if you'd rather just knit. Your earned progress is kept.
@@ -98,8 +130,8 @@ the Leaning Tower of Pisa and, someday, the Moon, with a knitting fact every so 
   the bottom, and Rip back is at the top left, out of the way of your thumbs. Your phone's back gesture steps back inside the game. You can install it
   from your browser's menu to play full screen, even offline.
 
-There's no losing and no timer. Your pieces in progress, your gallery, your dolls and your scarf
-are all saved in your browser.
+There's no losing and no timer. Your pieces in progress, your gallery, your dolls, your room and
+your scarf are all saved in your browser.
 
 Found a bug? Pause and pick "Report a bug", or press Ctrl+Shift+F (you'll need a GitHub account).
 
@@ -116,7 +148,17 @@ and the doll shelf:
 
 > --art-sheet --budget 50 --out knit-knack --feedback it's critical they be real patterns, real knits, and tapping produces good looking knit animations that track and help you feel like you're making the thing and it looks right and reflects your colors and yarn. you should be able to unlock needles and accessories and such. maybe small dolls to put your knits on. --publish --no-confirm
 
-Then four reports filed with the game's own "Report a bug" button (going back with a swipe, the menu's place, a cat of your own, and an unlock-everything switch) were fixed with:
+Then two changes. This one put hats, socks, mittens and the rest on circular and
+double-pointed needles as turning tubes, rewrote 19 patterns by round, and gave the cables
+their rope-like look:
+
+> --change knit hats, socks, mittens, mitts, cowls, headbands and the sweater's body in the round as real knitters do: show the work as a tube on circular needles (or double-pointed needles for socks and mittens), word their patterns by round ("Rnd", every round from the right side, garter as knit and purl rounds), and finish them without seams (crown gathered, heel turned, toe grafted), so they wear on the dolls as true tubes. Keep flat what's really knit flat (dishcloths, coasters, blankets, scarves, the toys' pieces). Fix anything else we knit flat that shouldn't be. Playability and a strong feel of really knitting matter more than proving every rule: loosen the pattern checks where they get in the way, but keep the written patterns honest. Also give the cables a more raised, rope-like look.
+
+And this one added the cozy room, with its eight room pieces to unlock:
+
+> --change let finished toys and dolls sit together in a little cozy room scene you can arrange: drag them onto a rug, an armchair, shelves and a window seat, dressed in what you knit, with the arrangement saved; unlock a few room pieces as you knit
+
+Meanwhile, four reports filed with the game's own "Report a bug" button (going back with a swipe, the menu's place, a cat of your own, and an unlock-everything switch) were fixed with:
 
 > --fix all --publish --no-confirm
 
@@ -125,12 +167,12 @@ and sound with these plugins, built it, and play-tested it:
 
 | | |
 |---|---|
-| <img src="media/made-with/nanogen-nook.jpg" width="180" alt="The painted knitting nook"> | [nanogen](https://github.com/zeveck/nanogen): the knitting nook backgrounds (landscape and portrait), the wood, paper and yarn-fibre textures, and the knitted swatches the stitch drawing was tuned against. |
-| <img src="media/made-with/imagegen2-cast.png" width="180" alt="Purl, a teacup yarn bowl, and the dolls Pip, Clementine, Bramble and Basil, and a giraffe"> | [imagegen2](https://github.com/zeveck/imagegen2): Purl, her basket, the yarn balls, the six dolls, the 20 scarf comparisons (mug to redwood), the yarn holders, nook decor and finishing touches, the props and the app icon. |
+| <img src="media/made-with/nanogen-nook.jpg" width="180" alt="The painted knitting nook"> | [nanogen](https://github.com/zeveck/nanogen): the knitting nook and the cozy room (landscape and portrait), the wood, paper and yarn-fibre textures, and the knitted swatches the stitch drawing was tuned against. |
+| <img src="media/made-with/imagegen2-cast.png" width="180" alt="Purl, a teacup yarn bowl, and the dolls Pip, Clementine, Bramble and Basil, and a giraffe"> | [imagegen2](https://github.com/zeveck/imagegen2): Purl, her basket, the yarn balls, the six dolls, the 20 scarf comparisons (mug to redwood), the yarn holders, nook decor and finishing touches, the props, the room pieces (table, plant, storybooks, toy chest, tea set, garland and lamp) and the app icon. |
 | <img src="media/made-with/anim8gen-purl-cheer.gif" width="120" alt="Purl waking up in her basket and waving a paw"> | [anim8gen](https://github.com/zeveck/anim8gen): Purl's cheer when you finish a piece. |
-| <img src="media/made-with/audiogen-wave.png" width="180" alt="The waveform of one of the nook songs"> | [audiogen](https://github.com/zeveck/audiogen): 5 songs (three for the nook, one for the gallery, one for the scarf) and 22 sounds, from wooden, metal and glass needle clicks to Purl's mew and purr. |
+| <img src="media/made-with/audiogen-wave.png" width="180" alt="The waveform of one of the nook songs"> | [audiogen](https://github.com/zeveck/audiogen): 5 songs (three for the nook, one for the gallery, one for the scarf) and 23 sounds, from wooden, metal and glass needle clicks to Purl's mew and purr, and the soft click of a round being joined. |
 
-The stitches, needles, dolls' outfits, scarf sky and everything else are drawn in code, so
+The stitches, the turning tubes, needles, dolls' outfits, Purl's coats, scarf sky and everything else are drawn in code, so
 every piece shows exactly the yarns you chose. A knitting tech editor reviewed all 47 written
 patterns, and every problem it found was fixed.
 
