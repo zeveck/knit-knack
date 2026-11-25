@@ -306,7 +306,8 @@ export class RoundView {
     const u = jf / P.n;
     if (P.phi >= 0.999 && P.gap === 0) return TAU * wrapS(u - P.uf);
     const s = u - 0.5; // the piece's middle (a leg, an unjoined cast-on) is position n/2
-    return TAU * s * P.phiE * (1 - P.gap) + clamp((P.phi - 0.3) / 0.5, 0, 1) * TAU * wrapS(0.5 - P.uf);
+    const th = TAU * s * P.phiE * (1 - P.gap) + clamp((P.phi - 0.3) / 0.5, 0, 1) * TAU * wrapS(0.5 - P.uf);
+    return P.phi > 0.5 ? TAU * wrapS(th / TAU) : th; // (−π, π] once it is a ring
   }
   xc(P, th) { return P.axis + P.Rc * Math.sin(th); }
   liftOf(P, j) {
@@ -421,7 +422,7 @@ export class RoundView {
         for (let j = 0; j < b.cols.length; j++) {
           const c = b.cols[j], jj = b.pos.get(c);
           const ta = this.theta(P, jj);
-          const tb = P.phi >= 0.999 && P.gap === 0 ? ta + TAU / P.n : this.theta(P, jj + 1);
+          const tb = P.phi >= 0.999 && P.gap === 0 ? ta + TAU / P.n : ta + TAU * wrapS((this.theta(P, jj + 1) - ta) / TAU);
           let fa = 0, fb = 1;
           if (P.phi > 0.6) {
             // keep the front half (cos > 0) or the back half (cos < 0), clipping a strip at ±90°
