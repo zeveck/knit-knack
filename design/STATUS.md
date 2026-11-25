@@ -63,7 +63,7 @@ openai (imagegen2, anim8gen), gemini (nanogen), elevenlabs (audiogen), node, pyt
 ## Change 2 (request 5): knitting in the round
 
 - [ ] Design change + one review round
-- [ ] Build (tube view, circular/DPN needles, round wording, seamless finishing, round patterns, worn tubes, raised cables)
+- [ ] Build (tube view, circular/DPN needles, round wording, seamless finishing, round patterns, worn tubes, raised cables) — part A (engine, patterns, migration) started
 - [ ] Play-test changed parts + all 47 replays
 - [ ] Final check, README/design page/plans update (publish only when asked)
 Budget for this change: $20 (default).
@@ -79,5 +79,5 @@ Budget for this change: $20 (default).
 
 - [x] #1 swipe back (cdcba51 + 60fb57f), #3 menu top-right / rip back top-left (a67bb0d) — second check done
 - [x] #2 cat coat/name/petting (ef81f17 + 4bd9a8b neutral captions), #4 unlock-all setting (e117309)
-- [ ] Replays 47/47 ✓, live publish
+- [x] Replays 47/47 ✓; published 2026-11-25 (deploy c985fa3), issues #1–#4 closed, live check on iPhone 15 OK
 Order: these land before changes 2 and 3 are built.
