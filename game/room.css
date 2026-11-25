@@ -71,6 +71,9 @@
 .tidy-sheet .acts { display: flex; gap: 10px; flex-wrap: wrap; }
 .closer-big { display: flex; justify-content: center; align-items: flex-end; padding: 8px; background: radial-gradient(circle at 45% 35%, #f3e1bd, #b98d62); border-radius: 14px; min-height: 120px; }
 .closer .acts { display: flex; gap: 8px; justify-content: center; margin-top: 10px; }
+.closer.side { display: flex; gap: 14px; align-items: center; }
+.closer.side .closer-big { flex: 1; min-width: 0; }
+.closer.side .acts { flex-direction: column; margin-top: 0; }
 
 /* phones upright: a slimmer tray and tab row so the room can fill the width; a smaller button bar */
 @media (max-width: 560px) and (orientation: portrait) {

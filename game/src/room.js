@@ -993,11 +993,13 @@ function lookCloser(ref) {
     d.addEventListener('click', () => { audio.play('ui'); closeSheet(); go('dress', { doll: id, from: 'room' }); });
     acts.append(d);
   }
-  openSheet('closer', el('div', { class: 'detail closer' }, big, acts), { title: DOLL_NAMES[id], cls: 'closer-sheet' });
+  // (a short landscape screen: the button beside the doll, and the doll as tall as the sheet allows)
+  const side = shortLand();
+  openSheet('closer', el('div', { class: 'detail closer' + (side ? ' side' : '') }, big, acts), { title: DOLL_NAMES[id], cls: 'closer-sheet' });
   audio.play('card');
   requestAnimationFrame(() => {
     const d = Math.min(3, window.devicePixelRatio || 1);
-    const H = Math.max(200, Math.min(560, innerHeight - 250)), Wd = Math.max(200, big.clientWidth - 12);
+    const H = side ? Math.max(140, innerHeight - 168) : Math.max(200, Math.min(560, innerHeight - 250)), Wd = Math.max(200, big.clientWidth - 12);
     // the doll's visible box in its own px
     const vb = id === 'purl' ? [80, 0, 456, 504] : [24, id === 'juniper' ? 2 : 40, 490, 734];
     const k = Math.min((H * d) / (vb[3] - vb[1]), (Wd * d) / (vb[2] - vb[0]));
