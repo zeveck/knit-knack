@@ -249,6 +249,9 @@ function setupKind(S) {
       S.uFrontRow.set(R.r, uf);
     }
     S.yokeY = S.yJoin ?? P.y1;
+    // the neck: above the yoke's last decrease round
+    let prevN = null;
+    for (const R of rows) { if (!R || !(R.h > 0) || R.part !== 'main' || !R.n) continue; if (S.yJoin != null && prevN != null && R.n < prevN && R.yBot >= S.yJoin) S.yNeck = R.yTop; prevN = R.n; }
   } else {
     S.uFront = 0.5;
   }
@@ -274,7 +277,16 @@ function F(S, u, y, part, pose, row) {
   let r = rho, s = at(P, 'S', y);
   // a yoke's extra width is the sleeves' tops, which go off along the arms: the yoke itself only just
   // spreads over the shoulders
-  if (S.kind === 'body' && r > S.rho0) r = S.rho0;
+  // (Change 2 fix) ...but it does lie over them: past the joining round the yoke spreads a little onto the
+  // sleeve tops and tips toward the viewer as a cone round the neck, so its band and decreases curve round the
+  // shoulder line (down at the front centre, up over the shoulders) instead of crossing the chest flat
+  let yk = 0;
+  if (S.kind === 'body' && S.yJoin != null && y > S.yJoin - 0.5) {
+    const sm = (t) => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+    const sp = sm((y - S.yJoin) / 2.5);
+    yk = sp * (1 - sm((y - (S.yNeck ?? P.y1) + 0.5) / 1.5)); // the neck's rib stands up again
+    if (r > S.rho0) r = S.rho0 + (r - S.rho0) * 0.55 * sp;
+  } else if (S.kind === 'body' && r > S.rho0) r = S.rho0;
   if (S.roll && y < S.roll) { const t = 1 - y / S.roll; r *= 1 + 0.07 * t; s -= 0.25 * t; }
   // the ear warmer's cinch: gathered narrow at the front centre
   let half = 0;
@@ -286,7 +298,7 @@ function F(S, u, y, part, pose, row) {
   const ds = Math.max(0.05, at(P, 'S', y + 0.5) - at(P, 'S', y - 0.5));
   const al = Math.atan2(-dr, ds);
   const ca = Math.cos(al), sa = Math.sin(al);
-  let yy = -s + tilt * r * cs;
+  let yy = -s + (tilt + (0.42 - tilt) * yk) * r * cs;
   // a cowl slouches: its front dips onto the chest
   if (pose === 'cowl') yy += 0.22 * r * Math.max(0, cs) ** 2 * (1 - 0.5 * (s / Math.max(1, P.S[P.S.length - 1])));
   return [r * sn, yy, cs, lit(sn * ca, -sa, cs * ca)];
@@ -431,6 +443,33 @@ export function bounds(S, pl) {
 let scratch = null;
 const mk = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(1, Math.ceil(w)); c.height = Math.max(1, Math.ceil(h)); return c; };
 
+// (Change 2 fix) a bake seen small (a doll, the wall, a card) reads darker than the same yarn on the needles:
+// the troughs between the Vs win once a stitch is a few pixels. A lifted copy (a gamma lift on the mid-tones,
+// a touch more colour) keeps light yarns light (cream stays cream) and keeps the darks, so cables still read.
+const liftCache = new WeakMap();
+const LIFT = (() => { const t = new Uint8ClampedArray(256); for (let i = 0; i < 256; i++) t[i] = Math.round(255 * Math.pow(i / 255, 0.78)); return t; })();
+function lifted(baked) {
+  const src = baked.canvas;
+  let c = liftCache.get(baked);
+  if (c && c.width === src.width && c.height === src.height) return c;
+  try {
+    c = mk(src.width, src.height);
+    const g = c.getContext('2d');
+    g.drawImage(src, 0, 0);
+    const im = g.getImageData(0, 0, c.width, c.height), d = im.data;
+    for (let i = 0; i < d.length; i += 4) {
+      if (!d[i + 3]) continue;
+      const r = LIFT[d[i]], gg = LIFT[d[i + 1]], b = LIFT[d[i + 2]];
+      const l = (r * 3 + gg * 6 + b) / 10;
+      const k = l > 110 ? 1.12 : 1; // more colour in the light Vs only (the shadows keep their tone)
+      d[i] = l + (r - l) * k; d[i + 1] = l + (gg - l) * k; d[i + 2] = l + (b - l) * k;
+    }
+    g.putImageData(im, 0, 0);
+  } catch { c = src; }
+  liftCache.set(baked, c);
+  return c;
+}
+
 // Draw one half of the piece. ctx is drawn into as is (any transform on it is kept): the half is composed on a
 // scratch canvas first (so its shading lands on the piece only), then drawn over whatever ctx holds.
 export function drawTube(ctx, baked, S, pl, opts = {}) {
@@ -449,7 +488,7 @@ export function drawTube(ctx, baked, S, pl, opts = {}) {
   g.setTransform(1, 0, 0, 1, 0, 0);
   g.clearRect(0, 0, w, h);
   g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
-  const src = baked.canvas, W = baked.W, Hc = baked.H;
+  const src = lifted(baked), W = baked.W, Hc = baked.H;
   const cw = src.width, chh = src.height;
   const sc = (p) => { const q = toScreen(pl, p); return [q[0] - X0, q[1] - Y0]; };
   const sp = pl.spin || 0; // turned round its axis (the gallery close-up)

@@ -486,34 +486,52 @@ export function cableRole(type, i) {
 }
 function drawCablePiece(g, x, y, W, H, P, T, R, v, type, i) {
   // A cable cell owns its column on the cross row and the row below it (the renderer leaves that plain
-  // V out once the cross is knit). Its stitch travels from `shift` columns away up to this column, drawn
-  // as two ordinary knit Vs leaning along the travel: so the strand stays a column of Vs, leaning across.
-  // Back strands are darkened about 25%; front strands come last, with a soft drop shadow.
+  // V out once the cross is knit). Its stitch travels from `shift` columns away up to this column.
+  // (Change 2 fix) The front strand is an S over the two rows: three overlapping Vs, upright near its source,
+  // leaning hard in the middle, upright again at the top, so it reads as a rope turning over, with a deep
+  // shadow cast along its whole length on what lies under it. The back strands sink: darker and narrower,
+  // drawn first (the renderer draws every back strand before the front ones).
   const { front, shift } = cableRole(type, i);
   const lean = Math.sign(shift) * Math.min(Math.abs(shift) * W * 0.42 / H, 0.62); // shear along the travel, capped near 32 degrees
-  // (Change 2) raised: the back strands sink further into shadow, the front strands are plumper, with a
-  // contact shadow on the back ones and a highlight along their crown, so the rope reads as standing proud
-  const tone = front ? 0 : 0.72;
-  for (const [vy, f] of [[y + H, 0.96], [y, 0.04]]) { // lower V near its source column, upper V near this one
+  if (!front) {
+    for (const [vy, f] of [[y + H, 0.96], [y, 0.04]]) { // lower V near its source column, upper V near this one
+      const cy = vy + H * 0.65;
+      g.save();
+      g.translate(shift * W * f, 0);
+      g.transform(1, 0, lean * 0.8, 1, -lean * 0.8 * cy, 0);
+      drawKnitV(g, x, vy, W, H, P, T, R, v + (f > 0.5 ? 1 : 0), { tone: 0.8, thin: 0.84, spread: 0.84, noNotch: true });
+      g.restore();
+    }
+    return;
+  }
+  // the shadow the front strand casts: a soft dark band along its path, a little below and to the side
+  const sx0 = x + W * 0.5 + shift * W, sy0 = y + H * 1.95, sx1 = x + W * 0.5, sy1 = y + H * 0.35;
+  // (drawn as the blurred shadow of a stroke far off the canvas, so only the soft shadow lands)
+  const OFF = 4096;
+  g.save();
+  g.lineCap = 'round';
+  g.shadowColor = css(mix(P.troughDeep, [24, 10, 20], 0.4), 0.7); g.shadowBlur = Math.max(1.5, W * 0.32); g.shadowOffsetX = OFF; g.shadowOffsetY = 0;
+  g.strokeStyle = '#000'; g.lineWidth = W * 0.9;
+  g.beginPath(); g.moveTo(sx0 + W * 0.1 - OFF, sy0);
+  g.bezierCurveTo(sx0 + W * 0.1 - OFF, sy0 - H * 0.6, sx1 + W * 0.1 - OFF, sy1 + H * 0.75, sx1 + W * 0.1 - OFF, sy1 + H * 0.15);
+  g.stroke();
+  g.restore();
+  // the S: [vertical place, share of the travel still to go, lean]
+  const steps = [[y + H, 0.9, 0.42], [y + H * 0.5, 0.5, 1], [y, 0.1, 0.42]];
+  steps.forEach(([vy, f, k], q) => {
     const cy = vy + H * 0.65;
     g.save();
     g.translate(shift * W * f, 0);
-    g.transform(1, 0, lean, 1, -lean * cy, 0);
-    if (front) {
-      // the contact shadow the front strand casts on what lies under it
-      const sh = g.createRadialGradient(x + W * 0.62, vy + H * 0.95, W * 0.05, x + W * 0.62, vy + H * 0.95, W * 0.8);
-      sh.addColorStop(0, 'rgba(24,8,24,0.42)'); sh.addColorStop(1, 'rgba(24,8,24,0)');
-      g.fillStyle = sh; g.fillRect(x - W * 0.4, vy, W * 2, H * 1.9);
-    }
-    drawKnitV(g, x, vy, W, H, P, T, R, v + (f > 0.5 ? 1 : 0), { tone, shadow: front ? 2 : false, thin: front ? 1.2 : 0.88, spread: front ? 1.08 : 0.9 });
-    if (front && W >= 8) {
-      // a soft highlight along the strand's crown (the lamp is up and to the left)
-      const hl = g.createRadialGradient(x + W * 0.38, vy + H * 0.5, 0, x + W * 0.38, vy + H * 0.5, W * 0.55);
-      hl.addColorStop(0, css(P.hi, 0.32)); hl.addColorStop(1, css(P.hi, 0));
+    g.transform(1, 0, lean * k, 1, -lean * k * cy, 0);
+    drawKnitV(g, x, vy, W, H, P, T, R, v + q, { shadow: 2, thin: 1.12, spread: 1.0 });
+    if (W >= 6) {
+      // a highlight along the strand's crown (the lamp is up and to the left)
+      const hl = g.createRadialGradient(x + W * 0.4, vy + H * 0.55, 0, x + W * 0.4, vy + H * 0.55, W * 0.6);
+      hl.addColorStop(0, css(P.hi, 0.42)); hl.addColorStop(1, css(P.hi, 0));
       g.save(); g.globalCompositeOperation = 'source-atop'; g.fillStyle = hl; g.fillRect(x - W * 0.3, vy - H * 0.3, W * 1.6, H * 1.8); g.restore();
     }
     g.restore();
-  }
+  });
 }
 
 function drawSprite(kind, type, color, W, variant) {

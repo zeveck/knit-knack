@@ -662,7 +662,9 @@ function roundLayer(item, g, Sh, pat, slot, dollId, A, T, kq, opts) {
     if (!g) return null;
     slots = g.slots;
     // doll px per stitch -> output px per stitch: the bake's cell is about one stitch on the doll
-    const W = clamp(Math.ceil(pls[0].s * kq * 1.05), 4, opts.maxCell || 16);
+    // (Change 2 fix) baked at ~1.8x and drawn down: a stitch a few px across keeps its light Vs and its
+    // cable twists, where a bake at 1x is mostly outline and trough (light yarns went grey)
+    const W = clamp(Math.ceil(pls[0].s * kq * 1.8), 6, Math.max(16, (opts.maxCell || 16) * 1.5));
     bake = bakeGallery(g, W);
   }
   if (!bake) return null;
@@ -722,7 +724,7 @@ export function roundObject(rec, pattern, cell, opts = {}) {
   const chart = rec.preview ? rec.preview.chart : recordChart(rec, pattern);
   const Sh = shapeOf(chart, pattern);
   if (!Sh) return null;
-  const W = clamp(Math.round(cell * 1.05), 3, 28);
+  const W = clamp(Math.round(cell * 1.8), 6, 32); // (Change 2 fix) supersampled, as roundLayer
   const bake = rec.preview ? rec.preview.bake : bakeGallery(rec, W);
   if (!bake) return null;
   const slots = rec.preview ? rec.preview.slots : rec.slots;

@@ -324,9 +324,10 @@ class Fabric {
         // (Change 2) a raised rope: dark grooves at its sides, a lit crown up and to the left of its middle
         const xL = x - mk.i * W, xR = xL + mk.n * W;
         const gr = g.createLinearGradient(xL - W * 0.1, 0, xR + W * 0.1, 0);
-        gr.addColorStop(0, rgba(sc, 0.62)); gr.addColorStop(0.1, rgba(sc, 0.22)); gr.addColorStop(0.22, rgba(sc, 0));
-        gr.addColorStop(0.36, rgba(P.hi, 0.2)); gr.addColorStop(0.5, rgba(P.hi, 0.06)); gr.addColorStop(0.72, rgba(sc, 0.04));
-        gr.addColorStop(0.9, rgba(sc, 0.3)); gr.addColorStop(1, rgba(sc, 0.7));
+        // (a rounded rope: deep at both sides, a broad lit crown, shadow rolling round the right side)
+        gr.addColorStop(0, rgba(sc, 0.85)); gr.addColorStop(0.07, rgba(sc, 0.5)); gr.addColorStop(0.18, rgba(sc, 0.1));
+        gr.addColorStop(0.3, rgba(P.hi, 0.34)); gr.addColorStop(0.42, rgba(P.hi, 0.3)); gr.addColorStop(0.55, rgba(P.hi, 0.08));
+        gr.addColorStop(0.68, rgba(sc, 0.06)); gr.addColorStop(0.84, rgba(sc, 0.36)); gr.addColorStop(0.94, rgba(sc, 0.62)); gr.addColorStop(1, rgba(sc, 0.9));
         g.fillStyle = gr; g.fillRect(x - 1, y - H * 0.12, W + 2, H * 1.42);
       }
       for (const dx of [-1, 1]) {
