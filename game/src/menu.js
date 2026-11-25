@@ -77,7 +77,7 @@ export function openSettings() {
 function catSection() {
   const c = S.cat();
   const sec = el('div', { class: 'cat-set' });
-  const row = el('div', { class: 'coat-row', role: 'radiogroup', 'aria-label': 'Her coat' });
+  const row = el('div', { class: 'coat-row', role: 'radiogroup', 'aria-label': 'Cat coat' });
   const changed = () => window.dispatchEvent(new Event('kk-cat'));
   for (const [id, label] of COAT_LIST) {
     const cv = el('canvas', { width: 112, height: 112 });
@@ -91,7 +91,7 @@ function catSection() {
     });
     row.append(b);
   }
-  const input = el('input', { type: 'text', value: c.name, maxlength: 16, 'aria-label': 'Her name', autocomplete: 'off', spellcheck: 'false' });
+  const input = el('input', { type: 'text', value: c.name, maxlength: 16, 'aria-label': 'Cat name', autocomplete: 'off', spellcheck: 'false' });
   input.addEventListener('input', () => { if (input.value.trim()) { S.setCat({ name: input.value }); changed(); } });
   input.addEventListener('change', () => { if (!input.value.trim()) input.value = S.catName(); });
   const dice = el('button', { class: 'btn small dice', 'aria-label': 'Another name', title: 'Another name' }, '🎲 Another name');
@@ -166,7 +166,7 @@ function placeholder(name, title, text, music) {
     leave() { setKeyHandler(null); },
   });
 }
-placeholder('bag', 'Knitting Bag', 'Needles, stitch markers, row counters, yarn holders, nook decor and Purl\'s things will live here.', 'nook');
+placeholder('bag', 'Knitting Bag', 'Needles, stitch markers, row counters, yarn holders, nook decor and things for your cat will live here.', 'nook');
 placeholder('dolls', 'Doll Shelf', 'The dolls will stand here, ready to wear what you knit.', 'gallery');
 placeholder('scarf', 'Infinite Scarf', 'The scarf that never ends will be knit here.', 'scarf');
 export { notice };

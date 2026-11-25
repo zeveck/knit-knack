@@ -101,7 +101,7 @@ function previewLabel() {
   if (tab === 'counter') return `${nm('counter', e.counter)} row counter`;
   if (tab === 'holder') return nm('holder', e.holder);
   if (tab === 'decor') return e.decor.length ? `In the nook: ${e.decor.map((d) => nm('decor', d).toLowerCase()).join(', ')}` : 'The nook (nothing put out yet)';
-  if (tab === 'purl') return e.purl.length ? `${S.catName()} with her ${e.purl.map((d) => nm('purl', d).toLowerCase()).join(', ')}` : `${S.catName()}, asleep in her basket`;
+  if (tab === 'purl') return e.purl.length ? `${S.catName()} with the ${e.purl.map((d) => nm('purl', d).toLowerCase()).join(', ').replace(/, ([^,]*)$/, ' and $1')}` : `${S.catName()}, asleep in the basket`;
   return `${DOLL_NAMES[S.get().lastDoll || 'pip']} models your knitting`;
 }
 function use(u) {

@@ -16,7 +16,7 @@ export const DOLLS = ['pip', 'clementine', 'bramble', 'juniper', 'basil', 'mabel
 export const DOLL_NAMES = { pip: 'Pip', clementine: 'Clementine', bramble: 'Bramble', juniper: 'Juniper', basil: 'Basil', mabel: 'Mabel', get purl() { return S.catName(); } };
 export const DOLL_ABOUT = {
   pip: 'a small jointed wooden doll', clementine: 'a rag doll with yarn hair', bramble: 'a plush bear', juniper: 'a felt bunny',
-  basil: 'a felt fox', mabel: "a tiny wooden artist's mannequin", purl: 'your cat herself',
+  basil: 'a felt fox', mabel: "a tiny wooden artist's mannequin", purl: 'your very own cat',
 };
 export const SLOTS = ['head', 'neck', 'body', 'hands', 'feet', 'shoulders'];
 export const SLOT_NAMES = { head: 'Head', neck: 'Neck', body: 'Body', hands: 'Hands', feet: 'Feet', shoulders: 'Shoulders' };

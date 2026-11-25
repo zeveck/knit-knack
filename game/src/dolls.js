@@ -75,7 +75,7 @@ function renderShelf() {
     if (ok && d === 'purl') {
       // the cat: a tap on her pets her; a tap on her name tag (or the shelf) dresses her
       cell.addEventListener('pointerdown', (e) => { if (catHitDoll(cv, e)) { cell._petAt = performance.now(); petDoll(cv, e, (sq) => { const st = cell.querySelector('.doll-stage'); paintDoll(cv, d, st.clientWidth, st.clientHeight, { shelf: true, squint: sq }); }); } });
-      cell.setAttribute('aria-label', `${DOLL_NAMES[d]}: tap her to pet her, or her name to dress her`);
+      cell.setAttribute('aria-label', `${DOLL_NAMES[d]}: tap the cat to pet, or the name tag to dress up`);
     }
     if (ok) cell.addEventListener('click', () => { if (performance.now() - (cell._petAt || -1e9) < 800) return; audio.play('ui'); doll = d; mode = 'dress'; render(); });
     else cell.addEventListener('click', () => audio.play('ui', { gain: 0.5 }));
