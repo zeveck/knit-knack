@@ -18,6 +18,7 @@ import * as finished from './finished.js';
 import * as gallery from './gallery.js';
 import { openMenu, setMenuHooks } from './menu.js';
 import * as features from './features.js';
+import { initHistory, tick as historyTick } from './history.js';
 
 // ---------------------------------------------------------------- the frame log (web-target.md)
 const frameLog = [];
@@ -34,6 +35,7 @@ function visibleName() {
 // a tiny always-on loop: logs the frame, and draws the small always-moving things (title, basket slot, finish)
 function loop(t) {
   logFrame(visibleName());
+  try { historyTick(); } catch (e) { console.error(e); }
   try {
     const sc = currentScreen();
     if (sc === 'title') title.frame(t);
@@ -98,6 +100,8 @@ async function boot() {
   loadSceneRest().then(() => loadYarnImages()).then(() => loadExtras()).catch(() => {}).then(() => { audio.prefetch(); registerSW(); });
   // a save from before Pip etc: queue nothing yet; checked as play goes on
   S.get().seenPatterns.length || S.get().seenPatterns.push(...S.BOOK.slice(0, S.patternsUnlocked()).map((p) => p.id));
+  // the phone's Back steps back inside the game (history.js)
+  initHistory({ overlayOpen: features.overlayOpen, closeOverlay: features.closeOverlay, busy: () => currentScreen() === 'knit' && knit.isFinishing() });
   go('title');
   requestAnimationFrame(loop);
   requestAnimationFrame(() => requestAnimationFrame(() => titleEl.classList.remove('booting')));

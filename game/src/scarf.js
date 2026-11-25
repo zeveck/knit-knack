@@ -783,3 +783,6 @@ function silCanvas(m) {
   return c;
 }
 void MILESTONES; void GOALS; void CHUNK; void scarfRowSpec; void parseChart; void fmtLen;
+// the browser's Back closes "How long is it?" (true if it was open)
+export const howOpen = () => !!how && currentScreen() === 'scarf';
+export function closeHowBack() { if (!howOpen()) return false; closeHow(); return true; }

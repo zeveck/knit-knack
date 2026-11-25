@@ -21,3 +21,6 @@ export const dress = (dollId, gid) => dolls.dress(dollId, gid, { quiet: false })
 export const applySettings = () => scarf.applySettings();
 export const resetScarf = () => scarf.resetAll();
 export const scarfAddRows = (n, yarn, pattern) => scarf.addRows(n, yarn, pattern);
+// for the browser's Back (history.js): the dressing view and "How long is it?" are a step of their own
+export const overlayOpen = () => dolls.isDressing() || scarf.howOpen();
+export const closeOverlay = () => scarf.closeHowBack() || dolls.backToShelf();

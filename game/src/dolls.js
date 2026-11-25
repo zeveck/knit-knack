@@ -318,3 +318,9 @@ registerScreen('dress', { el: 'dolls', enter: (arg, prev) => enter({ doll: (arg 
 window.addEventListener('resize', () => { if (here()) render(); });
 export const dollsState = () => ({ mode, doll, page });
 void SLOTS; void onTap;
+// the browser's Back on the dressing view: to the shelf (true if it stepped)
+export const isDressing = () => currentScreen() === 'dolls' || currentScreen() === 'dress' ? mode === 'dress' : false;
+export function backToShelf() {
+  if (!isDressing()) return false;
+  fromFinished = null; mode = 'shelf'; render(); return true;
+}

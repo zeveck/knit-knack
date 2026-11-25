@@ -350,6 +350,7 @@ function drawFx(t) {
     }
   }
 }
+export const isFinishing = () => finishing;
 export function castOnAnim() { castAnim = { t0: performance.now() }; }
 
 export function frame(t) {
