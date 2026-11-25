@@ -307,6 +307,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 /* ---------- toasts (over the progress line on the knitting screen; top centre elsewhere) */
 #toasts { position: fixed; z-index: 40; left: 50%; top: max(calc(8px + var(--sat)), var(--tb, 8px)); transform: translateX(-50%); width: min(94vw, 440px); pointer-events: none; }
 #toasts.over { left: var(--tl); top: var(--tt); width: var(--tw); transform: none; }
+#toasts.low { top: auto; bottom: calc(6px + var(--sab)); }
 /* a sheet or modal is open: the toast waits until it closes */
 #toasts.wait { visibility: hidden; }
 .toast {

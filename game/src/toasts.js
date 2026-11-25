@@ -25,6 +25,8 @@ function place() {
     return;
   }
   h.classList.remove('over');
+  // (on the gallery wall the newest piece hangs top left: the toasts sit at the bottom, over the plaque)
+  h.classList.toggle('low', !!(scr && scr.dataset.screen === 'gallery' && scr.querySelector('.wall')));
   // clear of the header, its Back / Menu buttons and the tabs under it: just below them
   const bars = scr ? [...scr.querySelectorAll(how ? '.how-top' : '.gal-top, .gal-tabs, .topline, .bag-tabs, .topbar')].filter(visible) : [];
   const top = bars.reduce((m, b) => Math.max(m, b.getBoundingClientRect().bottom + 8), 8);

@@ -262,10 +262,11 @@ function tinted(g, key, color, x, y, size) {
 
 registerScreen('finished', {
   enter,
-  leave() {
+  leave(next) {
     setKeyHandler(null);
     // a piece left undecided waits in the Basket
     if (gal && gal.pending) { gal.pending = false; S.saveSoon(); }
-    toasts.hold(false);
+    // (to the wall, the toasts wait until the piece has been hung: the gallery lets them go)
+    if (next !== 'gallery') toasts.hold(false);
   },
 });

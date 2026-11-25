@@ -192,6 +192,8 @@ registerScreen('gallery', {
       return false;
     });
     audio.music('gallery'); audio.ambience(false);
+    // a piece just hung: unlock toasts wait until it has swung onto its peg, so none covers it
+    if (arg && arg.display) { toasts.hold(true); setTimeout(() => toasts.hold(false), 1100); } else toasts.hold(false);
     toasts.pump();
   },
   leave() { setKeyHandler(null); },
