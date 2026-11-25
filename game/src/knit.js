@@ -132,6 +132,7 @@ function build() {
     background: (g, w, h) => drawBackdrop(g, w, h),
   });
   window.addEventListener('resize', () => { if (currentScreen() === 'knit') relayout(); });
+  window.__work = work; // the knitting view, for tools and play-tests (read only)
 }
 
 
@@ -175,8 +176,10 @@ function fitBox() {
   const box = { x: r.x + p, y: r.y + p, w: Math.max(40, r.w - p * 2), h: Math.max(40, r.h - p * 2) };
   // on a phone held upright a wide, short piece sits low, just above the basket band, not adrift mid-screen
   if (layout === 'port' && chart && !chart.endless && !(work && work.zoomIndex > 0)) {
-    const cp = Math.max(8, Math.min(28, box.w / (chart.width + 5), box.h / ((chart.height + 3.2) * 0.72)));
-    const need = (chart.height + 3.2) * 0.72 * cp;
+    // (Change 2) a tube shows about n/π stitches across, and its height is the row table's
+    const vw = work && work.rv ? work._visW() : chart.width, vh = chart.round ? chart.heightY ?? chart.height : chart.height;
+    const cp = Math.max(8, Math.min(28, box.w / (vw + 5), box.h / ((vh + 3.2) * 0.72)));
+    const need = (vh + 3.2) * 0.72 * cp;
     if (need < box.h) { box.y += box.h - need; box.h = need; }
   }
   return box;
@@ -260,6 +263,7 @@ function ghostOutline() {
 function drawGhost(g) {
   const G = chart && work ? work.geometry() : null;
   if (!G) return;
+  if (G.round) { G.drawGhost(g); return; } // (Change 2) the tube's shape ahead, through the projection
   const lineY = (b) => G.rowT(b + 1) + G.ch; // top of row b+1 == bottom of row b... line b sits under row b+1
   // a drape (chevron, Old Shale) shifts each column of the finished piece up or down
   const dp = drapeOf(chart);
@@ -315,7 +319,8 @@ function drawFx(t) {
     if (p >= 1) castAnim = null;
     else {
       // cover the cast-on row and its needle, then uncover it right to left: loops appear along the needle
-      const x0 = G.colL(-3), x1 = G.colL(chart.width + 3), y0 = G.rowT(1) - G.ch * 1.4, y1 = G.rowT(1) + G.ch * 1.9;
+      const yc = G.round ? G.rowT(chart.firstRow || 1) + G.ch : G.rowT(1);
+      const x0 = G.round ? 0 : G.colL(-3), x1 = G.round ? w : G.colL(chart.width + 3), y0 = yc - G.ch * (G.round ? 3.2 : 1.4), y1 = yc + G.ch * (G.round ? 2.4 : 1.9);
       const edge = x1 - (x1 - x0) * Math.min(1, p * 1.1);
       const sx = backdrop.width / w, sy = backdrop.height / h;
       const cw = edge - x0;
@@ -324,7 +329,7 @@ function drawFx(t) {
         g.save(); g.beginPath(); g.rect(x0, y0, cw, y1 - y0); g.clip(); drawGhost(g); g.restore();
       }
       g.fillStyle = 'rgba(255,240,200,0.8)';
-      g.beginPath(); g.arc(edge, G.rowT(1) + G.ch * 0.2, G.cp * 0.18, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.arc(edge, yc + G.ch * 0.2, G.cp * 0.18, 0, Math.PI * 2); g.fill();
     }
   }
   for (let i = flyers.length - 1; i >= 0; i--) {
@@ -346,7 +351,9 @@ function drawFx(t) {
       for (const col of R.cols) {
         const ph = (p * 3 + col * 0.37) % 1;
         const a = Math.sin(ph * Math.PI) * (1 - p);
-        const x = G.colC(col), y = G.rowT(sparkleRow.r) + G.ch * 0.3, s = G.cp * 0.22 * a + 0.5;
+        let x = G.colC(col), y = G.rowT(sparkleRow.r) + G.ch * 0.3;
+        if (G.round) { const q = G.cellRect(sparkleRow.r, col); if (!q) continue; x = q.x + q.w / 2; y = q.y + G.ch * 0.3; }
+        const s = G.cp * 0.22 * a + 0.5;
         g.fillStyle = `rgba(255,246,210,${a})`;
         g.beginPath(); g.moveTo(x, y - s * 2); g.lineTo(x + s * 0.5, y); g.lineTo(x, y + s * 2); g.lineTo(x - s * 0.5, y); g.closePath(); g.fill();
         g.beginPath(); g.moveTo(x - s * 2, y); g.lineTo(x, y + s * 0.5); g.lineTo(x + s * 2, y); g.lineTo(x, y - s * 0.5); g.closePath(); g.fill();
@@ -488,9 +495,13 @@ export function knitOne({ animate = true } = {}) {
     if (taps === 3) dom.hint.classList.add('fade');
     hud();
   }
+  if (animate && res.step) stepBeat(res);
   if (res.rowEnd) {
     if (animate) {
-      setTimeout(() => { audio.play('row'); audio.play('counter', { gain: 0.8 }); }, 130);
+      // (Change 2) a round ends with a softer swish as the marker passes; a flat row's work turns
+      if (res.roundEnd) setTimeout(() => { audio.play('row', { gain: 0.6, rate: 0.9 }); audio.play('counter', { gain: 0.7 }); }, 130);
+      else setTimeout(() => { audio.play('row'); audio.play('counter', { gain: 0.8 }); }, 130);
+      if (res.roundEnd && !res.step && !res.finished) tip('round', 'Knitting in the round: no turning, just keep going round. Each round is one turn of the tube.');
       if (res.r % 10 === 0) sparkleRow = { r: res.r, t0: performance.now() + 120 };
       if (res.r === 1 && !chart.round) tip('turn', 'The work turns. Now you knit back the other way.');
       if (res.r === 3 && !S.get().tips.includes('purl-hello')) tip('purl-hello', `That's ${S.catName()} in the basket, a big fan of yarn. Tap the cat for a pet.`);
@@ -501,6 +512,19 @@ export function knitOne({ animate = true } = {}) {
   } else if (animate) S.saveSoon();
   if (res.finished && animate) finishPiece();
   return res;
+}
+// (Change 2) a step's tap: the join's caution and click, the hold, the last tap of a seam, gather or graft
+function stepBeat(res) {
+  const R = chart.row(res.r);
+  const last = res.index === chart.rowStart(res.r) + R.map.length - 1;
+  if (res.step === 'join') { audio.play('join'); noteChip('Careful not to twist the stitches'); }
+  else if ((res.step === 'gather' || res.step === 'graft' || res.step === 'graftUnderarm' || res.step === 'seam') && last) setTimeout(() => audio.play('join'), res.step === 'gather' ? 160 : 60);
+  else if (res.step === 'hold') audio.play('yarn', { gain: 0.8, rate: 1.1 });
+}
+function noteChip(text) {
+  clearTimeout(chipTimer);
+  dom.chips.replaceChildren(el('div', { class: 'chip note' }, el('span', { class: 'icw', html: ICON.info }), el('span', { class: 't', text })));
+  chipTimer = setTimeout(() => { dom.chips.replaceChildren(); }, 3200);
 }
 function afterCounts() {
   if (S.checkUnlocks().length) toasts.pump();
@@ -556,11 +580,26 @@ function hud() {
   const done = i >= chart.total;
   const L = chart.locate(Math.min(i, chart.total - 1));
   // the progress line, shortened rather than cut off on a narrow screen
-  const forms = [
+  let forms = [
     ` · Row ${L.r} of ${chart.height} · ${fmt(i)} / ${fmt(chart.total)} stitches`,
     ` · Row ${L.r}/${chart.height} · ${fmt(i)}/${fmt(chart.total)} sts`,
     ` · Row ${L.r}/${chart.height} · ${Math.floor((100 * i) / chart.total)}%`,
   ];
+  if (chart.round) {
+    // (Change 2) round pieces count rounds (or rows, in a flat section) in their section, as patterns do
+    const no = chart.rowNo(L.r), sec = no.section;
+    let of = 0;
+    if (sec) for (let r = sec.from; r <= sec.to; r++) if (chart.rowNo(r).unit === no.unit) of++;
+    const secName = sec && sec.label ? sec.label.replace(/ \(.*\)$/, '') : '';
+    const u = no.unit === 'step' ? stripWording(chart, L.r, L.k).label.replace(/^.* · /, '') : `${no.unit} ${no.n}${of ? ` of ${of}` : ''}`;
+    const uS = no.unit === 'step' ? u : `${no.unit} ${no.n}${of ? `/${of}` : ''}`;
+    forms = [
+      ` · ${secName ? secName + ' · ' : ''}${u} · ${fmt(i)} / ${fmt(chart.total)} stitches`,
+      ` · ${secName ? secName + ' · ' : ''}${uS} · ${fmt(i)}/${fmt(chart.total)} sts`,
+      ` · ${uS} · ${fmt(i)}/${fmt(chart.total)} sts`,
+      ` · ${uS} · ${Math.floor((100 * i) / chart.total)}%`,
+    ];
+  }
   for (const f of forms) {
     dom.progLine.replaceChildren(el('b', { text: pattern.name }), f);
     if (dom.progLine.scrollWidth <= dom.progLine.clientWidth + 1) break;
@@ -569,7 +608,7 @@ function hud() {
   // wording strip (rebuilt only when its row or cursor changes)
   const w = stripWording(chart, L.r, L.k);
   const cur = done ? { token: -1 } : wordingCursor(w, L.k);
-  const key = `${L.r}|${w.part}|${cur.token}|${cur.rep}|${cur.st}|${done}`;
+  const key = `${L.r}|${w.part}|${cur.token}|${cur.rep}|${cur.st}|${done}|${chart.round ? L.k : ''}`;
   if (key !== stripKey) {
     stripKey = key;
     const frag = document.createDocumentFragment();
@@ -581,7 +620,13 @@ function hud() {
       frag.append(el('span', { class: 'tok' + (t.rep ? ' rep' : '') + (j === cur.token ? ' cur' : ''), text: nb(t.text) }));
     });
     if (w.countChanged && L.r > 1) frag.append(nb(` (${w.count} sts)`));
-    if (cur.reps) frag.append(el('span', { class: 'cnt', text: `rep ${cur.rep} of ${cur.reps} · st ${cur.st} of ${cur.of}` }));
+    const R = chart.row(L.r);
+    // (Change 2) the needles change on this round ("Change to DPNs")
+    const nd = chart.round && chart.needleAt ? chart.needleAt(L.r) : null;
+    if (nd && nd.from === L.r && L.r > 1 && nd.kind === 'dpn' && chart.needleAt(L.r - 1) && chart.needleAt(L.r - 1).kind !== 'dpn') frag.append(' ', el('span', { class: 'ndl', text: `Change to DPNs${nd.n ? ` (${nd.n})` : ''}` }));
+    if (chart.round && R.round && !R.step && !done) frag.append(el('span', { class: 'cnt', text: `st ${L.k + 1} of ${R.map.length}${cur.reps ? ` · rep ${cur.rep} of ${cur.reps}` : ''}` }));
+    else if (chart.round && R.step && !done && R.map.length > 1) frag.append(el('span', { class: 'cnt', text: `${L.k + 1} of ${R.map.length}` }));
+    else if (cur.reps) frag.append(el('span', { class: 'cnt', text: `rep ${cur.rep} of ${cur.reps} · st ${cur.st} of ${cur.of}` }));
     dom.words.replaceChildren(frag);
     fitWords();
   }
@@ -724,7 +769,8 @@ export function onEquipChange() { if (work) { equipWork(); backdropKey = ''; wor
 function roundState(L) {
   const R = chart.row(L.r), sec = chart.sectionAt ? chart.sectionAt(L.r) : null, nd = chart.needleAt ? chart.needleAt(L.r) : null;
   return { round: !!R.round, section: sec ? sec.label : null, step: R.step ? R.step.kind : null, stepTap: R.step ? L.k : null,
-    needles: nd ? nd.kind : 'straight', frontPos: null, ring: R.round ? (R.prevCols.length - (R.held || []).length) : null, edition: piece.ed || 1 };
+    needles: nd ? nd.kind : 'straight', frontPos: work && work.rv ? work.rv.state().frontPos : null, ring: R.round ? (R.prevCols.length - (R.held || []).length) : null, edition: piece.ed || 1,
+    drawCalls: work ? work.state().drawCalls : null };
 }
 export function knitState() {
   if (!work || !chart || !piece) return { pattern: pattern ? pattern.id : null };

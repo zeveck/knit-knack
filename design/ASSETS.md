@@ -64,3 +64,11 @@ bg/nook-land.webp (anchor) + nook-land.json; bg/nook-port.webp + nook-port.json 
 | room frame | items/decor-frame.png (reused) | – | – | $0 | Reused on frame-hook. |
 
 Change 3 art total: 6 nanogen pro calls ($0.80) + 1 imagegen2 sheet (≈ $0.06) ≈ $0.86 of the $2.50 cap.
+
+## Change 2: sfx-join (round B1, 2026-11-25) — accepted
+
+| ID | File | Tool | Prompt | Tries | Est. cost | Verdict |
+|---|---|---|---|---|---|---|
+| sfx-join | game/assets/audio/sfx/sfx-join.mp3 | audiogen sfx (eleven_text_to_sound_v3), 0.8 s | "the soft click of two wooden knitting needle tips meeting and a loop of wool yarn drawn closed, gentle, close-up, quiet room" | 1 | $0.12 | A soft click and a short pull; quiet (peak −30 dB), so audio.js plays it at +20 dB with the usual onset trim. Plays on the join, and on the last tap of a gather, graft and seam |
+
+**Running total: + $0.12**

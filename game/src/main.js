@@ -211,7 +211,7 @@ window.__game = {
       unlocked: { needles: S.unlockedOf('needles'), accessories: { marker: S.unlockedOf('marker'), counter: S.unlockedOf('counter'), holder: S.unlockedOf('holder'), decor: S.unlockedOf('decor'), purl: S.unlockedOf('purl') }, dolls: S.unlockedOf('doll') },
       equipped: s.equipped, outfits: s.outfits, toasts: toasts.queueState(), seenUnlocks: s.seenUnlocks,
       previewCard: k.previewCard || { doll: null, visible: false, rect: null }, fitBox: k.fitBox || null, needle: k.needle || null,
-      round: k.round ?? null, section: k.section ?? null, step: k.step ?? null, stepTap: k.stepTap ?? null, needles: k.needles ?? null, frontPos: k.frontPos ?? null, ring: k.ring ?? null, edition: k.edition ?? null,
+      round: k.round ?? null, section: k.section ?? null, step: k.step ?? null, stepTap: k.stepTap ?? null, needles: k.needles ?? null, frontPos: k.frontPos ?? null, ring: k.ring ?? null, edition: k.edition ?? null, drawCalls: k.drawCalls ?? null,
       tips: s.tips,
     };
   },

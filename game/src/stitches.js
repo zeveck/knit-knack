@@ -491,13 +491,27 @@ function drawCablePiece(g, x, y, W, H, P, T, R, v, type, i) {
   // Back strands are darkened about 25%; front strands come last, with a soft drop shadow.
   const { front, shift } = cableRole(type, i);
   const lean = Math.sign(shift) * Math.min(Math.abs(shift) * W * 0.42 / H, 0.62); // shear along the travel, capped near 32 degrees
-  const tone = front ? 0 : 0.58;
+  // (Change 2) raised: the back strands sink further into shadow, the front strands are plumper, with a
+  // contact shadow on the back ones and a highlight along their crown, so the rope reads as standing proud
+  const tone = front ? 0 : 0.72;
   for (const [vy, f] of [[y + H, 0.96], [y, 0.04]]) { // lower V near its source column, upper V near this one
     const cy = vy + H * 0.65;
     g.save();
     g.translate(shift * W * f, 0);
     g.transform(1, 0, lean, 1, -lean * cy, 0);
-    drawKnitV(g, x, vy, W, H, P, T, R, v + (f > 0.5 ? 1 : 0), { tone, shadow: front ? 2 : false, thin: front ? 1.12 : 0.9, spread: front ? 1.04 : 0.92 });
+    if (front) {
+      // the contact shadow the front strand casts on what lies under it
+      const sh = g.createRadialGradient(x + W * 0.62, vy + H * 0.95, W * 0.05, x + W * 0.62, vy + H * 0.95, W * 0.8);
+      sh.addColorStop(0, 'rgba(24,8,24,0.42)'); sh.addColorStop(1, 'rgba(24,8,24,0)');
+      g.fillStyle = sh; g.fillRect(x - W * 0.4, vy, W * 2, H * 1.9);
+    }
+    drawKnitV(g, x, vy, W, H, P, T, R, v + (f > 0.5 ? 1 : 0), { tone, shadow: front ? 2 : false, thin: front ? 1.2 : 0.88, spread: front ? 1.08 : 0.9 });
+    if (front && W >= 8) {
+      // a soft highlight along the strand's crown (the lamp is up and to the left)
+      const hl = g.createRadialGradient(x + W * 0.38, vy + H * 0.5, 0, x + W * 0.38, vy + H * 0.5, W * 0.55);
+      hl.addColorStop(0, css(P.hi, 0.32)); hl.addColorStop(1, css(P.hi, 0));
+      g.save(); g.globalCompositeOperation = 'source-atop'; g.fillStyle = hl; g.fillRect(x - W * 0.3, vy - H * 0.3, W * 1.6, H * 1.8); g.restore();
+    }
     g.restore();
   }
 }
@@ -508,7 +522,14 @@ function drawSprite(kind, type, color, W, variant) {
   const H = Math.round(W * CELL_ASPECT);
   const R = rng(hash(W, variant + 1, kind.length * 31 + kind.charCodeAt(0)));
   let f;
-  if (kind.startsWith('cable:')) {
+  if (kind.startsWith('kl:')) {
+    // (Change 2) a plain V inside a cable's rope, leaning along the rope's twist between crossings
+    const q = +kind.slice(3) / 10;
+    f = frame(W, H, 0.22 + Math.max(0, -q), 0.22 + Math.max(0, q), 0.2, 0.45);
+    backing(f.g, f.ox, f.oy, W, H, P);
+    drawKnitV(f.g, f.ox, f.oy, W, H, P, T, R, variant, { lean: q, thin: 1.06, spread: 1.02 });
+    fuzz(f.g, f.ox + W / 2, f.oy + H * 0.68, W * 0.45, H * 0.65, P, T, W, R);
+  } else if (kind.startsWith('cable:')) {
     const [, ctype, si] = kind.split(':');
     const i = +si, { shift } = cableRole(ctype, i);
     const padL = 0.25 + Math.max(0, -shift), padR = 0.25 + Math.max(0, shift);

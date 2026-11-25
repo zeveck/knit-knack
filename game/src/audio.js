@@ -5,7 +5,7 @@
 const SFX = {
   ticks: 0, 'ticks-metal': 0, 'ticks-glass': 0,
   row: 16, yarn: 0, caston: 16, rip: 0, 'rip-loop': 15, finish: -2, steam: -2, unlock: -3, ui: -6,
-  counter: 2, dress: 0, bell: -4, peg: 0, card: 16, milestone: -3, page: -2, mew: -2, purr: 16, 'amb-fire': -16,
+  counter: 2, dress: 0, bell: -4, peg: 0, card: 16, milestone: -3, page: -2, mew: -2, purr: 16, 'amb-fire': -16, join: 20,
 };
 // per-family slicing limits, as in tools/tick-check.html
 export const FAMILIES = {

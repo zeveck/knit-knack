@@ -66,6 +66,14 @@
   <figure><img class="ref" src="../design/mockups/knit-look.jpg" alt="look target"><figcaption>look target (painted)</figcaption></figure>
 </div>
 
+<h2>(d) Raised cables (Change 2): the Cable Headband and Fisherman Beanie ropes, flat at 3 zooms on wool and chunky, and on the tube</h2>
+<div class="swatches" id="cables"></div>
+<div class="swatches" style="margin-top:10px">
+  <figure><img class="ref" src="ref/ref-cable.jpg" alt="cable reference" style="max-width:300px"><figcaption>ref-cable.jpg</figcaption></figure>
+  <figure><img class="ref" src="../design/mockups/knit-look.jpg" alt="look target" style="max-width:300px"><figcaption>knit-look.jpg</figcaption></figure>
+  <figure><canvas id="tube" style="width:520px;height:360px;border-radius:8px"></canvas><figcaption>Fisherman Beanie on the tube (round 13)</figcaption></figure>
+</div>
+
 <h2>(a) Every stitch × every yarn × 3 zooms <select id="aColor"></select></h2>
 <div id="grid"></div>
 
@@ -257,6 +265,46 @@ function drawGrid() {
   }
 }
 $('aColor').onchange = drawGrid;
+
+// ------------------------------------------------ (d) raised cables
+const PATS = (await import('../game/src/patterns.js')).default;
+function cableCrop(id, rows) {
+  // a window of the pattern's chart: its first 12 columns over the cabled rows
+  const p = PATS.find((x) => x.id === id);
+  const full = parseChart(p);
+  const W = 18, r0 = rows[0], r1 = rows[1];
+  const st = [], co = [];
+  for (let r = r1; r >= r0; r--) { let l = ''; for (let c = 0; c < W; c++) { const cl = full.cell(r, c); l += cl && 'kpx'.includes(cl.s) ? cl.s : 'k'; } st.push(l); co.push('A'.repeat(W)); }
+  const cables = (p.cables || []).filter((x) => x.row >= r0 && x.row <= r1 && x.col + +x.type[1] <= W).map((x) => ({ ...x, row: x.row - r0 + 1 }));
+  return { stitch: st, color: co, cables };
+}
+function drawCables() {
+  const box = $('cables'); box.innerHTML = '';
+  for (const [id, rows, label] of [['cable-headband', [2, 11], 'Cable Headband'], ['fisherman-beanie', [5, 13], 'Fisherman Beanie']]) {
+    const def = cableCrop(id, rows);
+    const ch = parseChart(def);
+    if (ch.errors.length) console.warn(label, ch.errors.slice(0, 3));
+    for (const type of ['wool', 'chunky']) for (const z of [12, 24, 40]) {
+      const yarn = { color: COLORS.cream, type };
+      const { canvas } = renderSwatch(ch, { yarnAt: () => yarn, cellPx: z * DPR, background: null, castOnYarn: yarn });
+      canvas.className = 'sw2';
+      canvas.style.width = canvas.width / DPR + 'px'; canvas.style.height = canvas.height / DPR + 'px';
+      const fig = document.createElement('figure'); fig.append(canvas);
+      const cap = document.createElement('figcaption'); cap.textContent = `${label} · ${YARN_LABELS[type]} · ${z}px`; fig.append(cap);
+      fig.style.background = 'linear-gradient(160deg,#9a7088,#6b4a66)'; fig.style.borderRadius = '8px'; fig.style.padding = '4px';
+      box.append(fig);
+    }
+  }
+  // on the tube: the Fisherman Beanie knit to round 13
+  const fb = parseChart(PATS.find((x) => x.id === 'fisherman-beanie'));
+  const tw = new Work($('tube'), { minFit: 8, maxFit: 40, fitBox: (w, h) => ({ x: w * 0.05, y: h * 0.05, w: w * 0.9, h: h * 0.9 }), ballPoint: (w, h) => ({ x: w * 0.03, y: h * 0.98 }) });
+  const yarn = { color: COLORS.cream, type: 'wool' };
+  tw.load(fb, { castOnYarn: yarn, nextYarn: yarn });
+  for (let i = 0; i < fb.rowStart(14) - 10; i++) tw.knit(yarn, { animate: false });
+  tw.setZoom(2);
+  window.__lab.tube = tw;
+}
+drawCables();
 // the painted fibre tiles, when present (procedural fibre until then)
 const loadImg = (src) => new Promise((ok) => { const im = new Image(); im.onload = () => ok(im); im.onerror = () => ok(null); im.src = src; });
 const [tex, texFuzzy] = await Promise.all([loadImg('../game/assets/tex/tex-fibre.png'), loadImg('../game/assets/tex/tex-fibre-fuzzy.png')]);

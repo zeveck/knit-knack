@@ -252,6 +252,10 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .strip .tok.rep { background: rgba(217, 164, 65, 0.3); border-radius: 4px; }
 .strip .tok.cur { text-decoration: underline; text-decoration-color: var(--cranberry); text-decoration-thickness: 2.5px; text-underline-offset: 3px; color: var(--cranberry-dk); font-weight: 700; }
 .strip .cnt { font-family: 'Fredoka', sans-serif; font-size: 12px; color: var(--ink-soft); margin-left: 8px; white-space: nowrap; }
+/* (Change 2) knitting in the round: the needle change on its round, and a step's caution chip */
+.strip .ndl { font-family: 'Fredoka', sans-serif; font-size: 12px; font-weight: 600; color: var(--cream); background: var(--plum); border-radius: 999px; padding: 1px 8px; margin-left: 4px; white-space: nowrap; vertical-align: 2px; }
+.chip.note { pointer-events: none; }
+.chip.note .icw { flex: none; width: 18px; height: 18px; color: var(--plum); }
 .strip abbr { text-decoration: none; }
 .strip .q { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--plum); color: var(--cream); display: flex; align-items: center; justify-content: center; flex: none; }
 .yarnbar { display: grid; grid-template-columns: repeat(6, var(--btn)); gap: 6px; justify-content: center; }
