@@ -454,6 +454,9 @@ export class Work {
     this.finished = false;
     if (nextYarn) this.nextYarn = nextYarn;
     this.castOnYarn = castOnYarn || this.yarns[0] || this.nextYarn;
+    // the last piece's big canvases are let go now, not when the collector gets to them
+    if (this.fabric && this.fabric.canvas) { this.fabric.canvas.width = 0; this.fabric.canvas.height = 0; }
+    if (this.rv) this.rv.dispose();
     this.fabric = new Fabric(chart, { done: () => this.done, yarn: (i) => this.yarns[i] || this.nextYarn, castOnYarn: this.castOnYarn, finished: () => this.finished, liveRow: () => this._needleRow().r });
     this.anim = { tap: null, turn: null, pop: null, twitch: 0, counter: 0 };
     // (Change 2) a round piece is drawn as a turning tube
@@ -584,7 +587,7 @@ export class Work {
     const cols = win.c1 - win.c0, rows = win.rTop - win.r0 + 1;
     const est = (w) => {
       const h = Math.round(w * CELL_ASPECT);
-      return [cols * w + Math.ceil(w * 1.2) * 2, rows * h + Math.ceil(h * 1.0) + Math.ceil(h * 1.6) + Math.ceil(f.dUp * h) * 2 + Math.ceil(f.dDown * h) * 2];
+      return [cols * w + Math.ceil(w * (this.chart.round ? 2.4 : 1.2)) * 2, rows * h + Math.ceil(h * 1.0) + Math.ceil(h * 1.6) + Math.ceil(f.dUp * h) * 2 + Math.ceil(f.dDown * h) * 2];
     };
     for (let k = 0; k < 80; k++) {
       const [a, b] = est(W);
@@ -887,7 +890,10 @@ export class Work {
       }
     }
     // the right needle's line: through the tip and the far point above the new loops
-    const far = { x: lay.farX, y: lay.yR };
+    // (on a tube the far ends are fixed beside the tube: only the working tip travels)
+    const ends = tube && tube.ends;
+    const dE = ends ? Math.max(1, Math.hypot(ends.r.x - tip.x, ends.r.y - tip.y)) : 1, kE = ends ? Math.min(0.5, 2.4 * G.cp / dE) : 0;
+    const far = ends ? { x: ends.r.x - (ends.r.x - tip.x) * kE, y: ends.r.y - (ends.r.y - tip.y) * kE } : { x: lay.farX, y: lay.yR };
     const ux0 = far.x - tip.x, uy0 = far.y - tip.y, ul = Math.hypot(ux0, uy0);
     const ux = ux0 / ul, uy = uy0 / ul;
     // the needles' ends stay inside the work area (never reaching under a side panel): a shorter needle
@@ -902,7 +908,7 @@ export class Work {
     const rY = (x) => tip.y + ((x - tip.x) / ux) * uy;
     // left needle: horizontal through the old loops
     const lTip = { x: lay.lTipX, y: lay.yL - 0.05 * G.ch };
-    const lEnd = keepIn(lTip, { x: lay.lFar + dir * 2.2 * G.cp, y: lay.yL + 0.02 * G.ch }, Math.abs(lay.lFar - lTip.x) + 0.8 * G.cp);
+    const lEnd = keepIn(lTip, { x: ends ? Math.min(ends.l.x, lTip.x - 1.6 * G.cp) : lay.lFar + dir * 2.2 * G.cp, y: lay.yL + 0.02 * G.ch }, ends ? 1.6 * G.cp : Math.abs(lay.lFar - lTip.x) + 0.8 * G.cp);
     const rowL = (c) => (ns.rowOf && ns.rowOf.has(c) ? ns.rowOf.get(c) : ns.leftRow), rowR = (c) => (ns.rowOf && ns.rowOf.has(c) ? ns.rowOf.get(c) : ns.rightRow);
     const firstRow = this.chart.firstRow || 1;
     const yarnL = (c) => {

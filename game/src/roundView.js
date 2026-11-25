@@ -26,7 +26,11 @@ const ease = (t) => 1 - Math.pow(1 - clamp(t, 0, 1), 3);
 const rgba = (c, a = 1) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
 const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 export const reduceMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-const WASTE = '#3fb6c8'; // the bright scrap of waste yarn
+const WASTES = ['#3fb6c8', '#f07a3a', '#e8c547', '#d94f8a']; // bright scraps of waste yarn
+const hexRgb = (h) => { const v = parseInt(String(h).replace('#', '').slice(0, 6), 16); return [(v >> 16) & 255, (v >> 8) & 255, v & 255]; };
+const CUP_S = 0.42; // a folded heel's rows, squashed: the cup curves away from us
+const CUP_BULGE = 0.3; // how far the heel cup stands out from the tube at its middle
+const SHEAR_ROWS = 3; // the rows over which a level bottom edge rises into the helix
 
 // ---------------------------------------------------------------- the geometry (per chart, pure)
 
@@ -74,18 +78,16 @@ export class RoundGeo {
       for (let r = f.from; r <= f.to; r++) for (const c of rows[r].geo) { const a = TAU * (pos.get(c) + 0.5) / frame.length; sx += Math.cos(a); sy += Math.sin(a); }
       const uC = ((Math.atan2(sy, sx) / TAU) + 1) % 1;
       const leg = !!(this.seam && this.seam.from === f.from);
-      // the heel bend: rows the range holds a column for (the instep waits while the flap is knit). Past the
-      // range, the fabric below it rises by that much at that column (smoothed round the ring), so the
-      // work on the needles stays a level ring and the leg angles away behind it, as a sock bends at the heel
-      const held = new Map();
-      for (let r = f.from; r <= f.to; r++) if (!rows[r].zero) for (const c of rows[r].all) if (ch.cell(r, c).s === '-') held.set(c, (held.get(c) || 0) + ch.rowHeight(r));
-      let bend = null;
-      if (held.size && b >= 1) {
-        const ring = rows[b].geo, n = ring.length, raw = ring.map((c) => held.get(c) || 0), sm = [];
-        for (let j = 0; j < n; j++) { let t = 0, wsum = 0; for (let d = -3; d <= 3; d++) { const wq = 4 - Math.abs(d); t += raw[(j + d + n) % n] * wq; wsum += wq; } sm.push(t / wsum); }
-        bend = new Map(ring.map((c, j) => [c, Math.max(raw[j] * 0.5, sm[j])]));
-      }
-      return { ...f, frame, pos, uC, leg, bend, below: b };
+      // the heel cup: a flat range that holds stitches (the instep waits while the flap and turn are knit)
+      // with rounds after it. Once the rounds go on, its rows fold into a cup at the back of the tube
+      // and the rounds above sit straight on the leg (as the instep does), so the tube stays whole
+      let cup = null;
+      let held = false;
+      for (let r = f.from; r <= f.to && !held; r++) if (!rows[r].zero) for (const c of rows[r].all) if (ch.cell(r, c).s === '-') { held = true; break; }
+      let after = false;
+      for (let r = f.to + 1; r <= H; r++) if (!rows[r].zero && !rows[r].flat) { after = true; break; }
+      if (held && after && !leg && b >= 1) { const J = ch.yOf(b); cup = { J, hY: ch.yOf(f.to) - J }; }
+      return { ...f, frame, pos, uC, leg, cup, below: b };
     });
     // bands: consecutive drawn rows with the same group, mode and projection ring
     this.bands = [];
@@ -128,6 +130,14 @@ export class RoundGeo {
     for (let r = 1; r <= H; r++) { if (rows[r].zero) rows[r].band = bi; else bi = rows[r].band; }
     this.groupFirst = new Map();
     for (const b of this.bands) if (!this.groupFirst.has(b.g)) this.groupFirst.set(b.g, b.ra);
+    // a round band over the cast-on, or over a band with no helix (a seamed leg), keeps a level bottom
+    for (const b of this.bands) {
+      b.shear = null;
+      if (b.mode !== 'round') continue;
+      if (this.groupFirst.get(b.g) === b.ra) { b.shear = ch.yOf(b.ra) - 1; continue; }
+      let pb = b.i - 1; while (pb >= 0 && (this.bands[pb].g !== b.g || (this.bands[pb].fl && this.bands[pb].fl.cup))) pb--;
+      if (pb >= 0 && this.bands[pb].mode !== 'round') b.shear = ch.yOf(b.ra) - 1;
+    }
     this.maxN = [0, 0];
     for (const b of this.bands) this.maxN[b.g] = Math.max(this.maxN[b.g], b.n);
     // the thumb's place: beside the hand, its first row on the hold row's top
@@ -141,7 +151,9 @@ export class RoundGeo {
       for (const c of heldCols) { const j = hb.pos.get(c); if (j == null) continue; const a = TAU * (j + 0.5) / hb.n; sx += Math.cos(a); sy += Math.sin(a); }
       th.uGap = ((Math.atan2(sy, sx) / TAU) + 1) % 1;
       th.dy = ch.yOf(base) - (ch.yOf(th.from) - 1);
-      th.axis = (hb.n + this.maxN[1]) / TAU + 0.6;
+      // touching the hand's side at the hold row, overlapping it a little (the pick-ups join them)
+      th.rHand = hb.n / TAU;
+      th.axis = th.rHand + (this.maxN[1] / TAU) * 0.55;
     }
   }
   band(r) {
@@ -182,6 +194,8 @@ export class RoundView {
     this.events = []; // step animations: {kind, t0, ...}
     this.fp = [null, null]; // displayed frontPos per group
   }
+
+  dispose() { for (const c of [...this.bufs, this.small]) if (c) { c.width = 0; c.height = 0; } this.bufs = [null, null, null]; this.small = null; }
 
   // ---- tweens
   _tween(key, target, dur, t, wrapTurns = false) {
@@ -282,7 +296,8 @@ export class RoundView {
       }
     }
     const live = this._liveRow();
-    for (const fl of geo.flats) if (fl.bend) fl.bendK = this._tween('bend' + fl.from, live > fl.to ? 1 : 0, 650, t);
+    for (const fl of geo.flats) if (fl.cup) fl.cupK = this._tween('cup' + fl.from, live > fl.to ? 1 : 0, 650, t);
+    this.knots = [this._knotsOf(0), this._knotsOf(1)];
     const busy = this._tweening(t) || this.events.some((e) => t - e.t0 < (e.dur || 500));
     this.events = this.events.filter((e) => t - e.t0 < (e.dur || 500) + 50);
     return busy;
@@ -310,12 +325,62 @@ export class RoundView {
     return P.phi > 0.5 ? TAU * wrapS(th / TAU) : th; // (−π, π] once it is a ring
   }
   xc(P, th) { return P.axis + P.Rc * Math.sin(th); }
-  liftOf(P, j) {
-    let v = P.lift ? P.phi * (P.n - 1 - j) / P.n : 0;
-    // below a heel: the leg rises at the instep (the heel bend)
+  liftOf(P, j) { return P.lift ? P.phi * (P.n - 1 - j) / P.n : 0; }
+  // the helix lift at fabric height y: a band that starts the tube (over the cast-on) or sits on a band
+  // with no helix (a seamed leg) keeps its bottom edge level, so the jog never steps the hem: the lift
+  // grows over its lowest rows
+  liftAt(P, j, y) {
+    const v = this.liftOf(P, j);
+    if (!v || P.b.shear == null) return v;
+    return v * clamp((y - P.b.shear) / SHEAR_ROWS, 0, 1);
+  }
+
+  // ---- the vertical map (fabric y -> drawn y): a heel's flat rows fold into a cup once the rounds go on
+  isCup(b) { return !!(b.fl && b.fl.cup); }
+  mapY(b, y) {
+    let d = 0;
+    for (const fl of this.geo.flats) {
+      const K = fl.cup ? fl.cupK || 0 : 0;
+      if (!K || b.g !== 0) continue;
+      if (b.fl === fl) return fl.cup.J + (y - fl.cup.J) * lerp(1, CUP_S, K) - K * fl.cup.hY * CUP_S + d; // (hanging below the rounds)
+      if (b.ra > fl.to) d -= K * fl.cup.hY;
+    }
+    return y + d;
+  }
+  // the row a live loop at (r, c) was last knit on: held ('-') and empty cells pass it down
+  lastKnit(r, c) {
+    const ch = this.ch;
+    for (let rr = r; rr >= 1; rr--) { const cl = ch.cell(rr, c); if (cl && cl.s !== '-') return rr; }
+    return r;
+  }
+  // the drawn top of row r (rows below the first: the cast-on edge)
+  wyTop(r) { return this.mapY(this.geo.band(r), this.geo.topY(r)); }
+  // the radius knots of group g: each band's ring at its middle rows (both ends of a taller band), so the
+  // radius runs smoothly from ring to ring and crowns and toes curve as domes and cones
+  _knotsOf(g) {
+    const geo = this.geo, ch = this.ch, K = [];
+    for (const b of geo.bands) {
+      if (b.g !== g || this.isCup(b) || b.mode === 'leg') continue;
+      const P = this.params(b);
+      if (P.phi < 0.999) continue;
+      const y0 = this.mapY(b, ch.yOf(b.ra) - 1), y1 = this.mapY(b, ch.yOf(b.rb));
+      if (y1 - y0 < 0.01) continue;
+      if (y1 - y0 >= 1.5) K.push({ y: y0 + 0.5, R: P.Rc }, { y: y1 - 0.5, R: P.Rc }); else K.push({ y: (y0 + y1) / 2, R: P.Rc });
+    }
+    return K.sort((a, b) => a.y - b.y);
+  }
+  // the tube's radius (stitch widths) for band b at drawn height yD (fabric height yF, for the cup)
+  radiusAt(P, yD, yF) {
     const b = P.b;
-    if (b.mode === 'round' || b.mode === 'leg') for (const fl of this.geo.flats) if (fl.bend && fl.bendK > 0 && b.rb < fl.from) { const c = b.cols[j]; const k = fl.bend.get(c); if (k) v += k * fl.bendK; }
-    return v;
+    if (this.isCup(b)) {
+      const fl = b.fl, K = fl.cupK || 0;
+      return P.Rc * (1 + CUP_BULGE * K * Math.sin(Math.PI * clamp((yF - fl.cup.J) / fl.cup.hY, 0, 1)));
+    }
+    const kn = this.knots && this.knots[b.g];
+    if (b.mode === 'leg' || P.phi < 0.999 || !kn || !kn.length) return P.Rc;
+    if (yD <= kn[0].y) return kn[0].R;
+    for (let i = 1; i < kn.length; i++) if (yD <= kn[i].y) { const a = kn[i - 1], z = kn[i]; return z.y - a.y < 1e-6 ? z.R : lerp(a.R, z.R, (yD - a.y) / (z.y - a.y)); }
+    return kn[kn.length - 1].R;
   }
 
   // the frame's screen mapping
@@ -325,7 +390,7 @@ export class RoundView {
   }
   X(F, xc) { return F.cx + (xc - F.camX) * F.cp; }
   Y(F, wy) { return F.cy + (F.camY - wy) * F.chh; }
-  yE(F, P, th) { return P.phi < 0.05 ? 0 : -ELLIPSE * P.Rc * (1 - Math.cos(th)) * F.cp; }
+  yE(F, P, th, R = P.Rc) { return P.phi < 0.05 ? 0 : -ELLIPSE * R * (1 - Math.cos(th)) * F.cp; }
   _liveRow() { const w = this.w, ch = this.ch; return w.done >= ch.total ? ch.height : ch.locate(w.done).r; }
   // screen point of the top-left (sub 0) .. top-right (sub 1) of the cell (r, c), with its angle
   cellTop(F, r, c, sub = 0.5) {
@@ -333,7 +398,8 @@ export class RoundView {
     const j = b.pos.get(c);
     if (j == null) return null;
     const th = this.theta(P, j + sub);
-    return { x: this.X(F, this.xc(P, th)), y: this.Y(F, geo.topY(r) + this.liftOf(P, j) + P.gdy) + this.yE(F, P, th), th, cos: P.phi > 0.6 ? Math.cos(th) : 1, P, j, w: Math.abs(Math.cos(th)) * F.cp };
+    const yF = geo.topY(r), yD = this.mapY(b, yF), R = this.radiusAt(P, yD, yF);
+    return { x: this.X(F, P.axis + R * Math.sin(th)), y: this.Y(F, yD + this.liftAt(P, j, yF) + P.gdy) + this.yE(F, P, th, R), th, cos: P.phi > 0.6 ? Math.cos(th) : 1, P, j, w: Math.abs(Math.cos(th)) * F.cp, R };
   }
 
   // ---- the camera
@@ -341,15 +407,18 @@ export class RoundView {
     const ch = this.ch, geo = this.geo, cur = this._cur();
     const g = cur.o.g;
     let x = g === 1 ? geo.groups[1].axis : 0;
-    const hY = ch.heightY ?? ch.height;
+    // (the piece's drawn height: a folded heel takes its rows out of the tube)
+    const hY = this.mapY(geo.bands[geo.bands.length - 1] || geo.bands[0], ch.heightY ?? ch.height);
     let y = (hY + 1.8) / 2;
     if (g === 1 && !zoomed) x = geo.groups[1].axis / 2;
+    // the thumb's view keeps the hand in it: the hand's far side stays a stitch inside the left edge
+    if (g === 1) x = Math.min(x, Math.max(geo.groups[1].axis / 2, -geo.groups[1].rHand + visC / 2 - 1.2));
     if (zoomed) {
       const st = cur.o.step;
-      let ry = geo.topY(cur.r) + (cur.o.zero ? 1 : 0);
-      if (st === 'graftUnderarm') ry = geo.topY(geo.rows[cur.r].band >= 0 ? geo.band(cur.r - 1).rb : cur.r);
+      let ry = this.wyTop(cur.r) + (cur.o.zero ? 1 : 0);
+      if (st === 'graftUnderarm') ry = this.wyTop(geo.rows[cur.r].band >= 0 ? geo.band(cur.r - 1).rb : cur.r);
       const P = this.params(geo.band(cur.r));
-      if (P.lift) { const e = cur.R.map[Math.min(cur.k, cur.R.map.length - 1)]; const j = e ? geo.band(cur.r).pos.get(e.col) : null; if (j != null) ry += this.liftOf(P, j); }
+      if (P.lift) { const e = cur.R.map[Math.min(cur.k, cur.R.map.length - 1)]; const j = e ? geo.band(cur.r).pos.get(e.col) : null; if (j != null) ry += this.liftAt(P, j, geo.topY(cur.r)); }
       y = ry - 0.2 + (g === 1 ? geo.groups[1].dy : 0);
       const top = hY + 2;
       y = clamp(y, Math.min(visR * 0.3, top - visR / 2), Math.max(visR * 0.3, top - visR / 2 + 0.5));
@@ -380,102 +449,128 @@ export class RoundView {
   }
 
   // the strips of every band up to the live row: 'front' (the outside, front half) or 'back' (the top
-  // rows' inside, seen over the front's rim). Front bands are drawn one at a time into a scratch canvas,
-  // shaded round there (so a band's shading never darkens the band below), then copied into gb.
+  // rows' inside, seen over the front's rim). Each band is a closed ring of its own live stitches, evenly
+  // round it; its radius runs smoothly from ring to ring (radiusAt), so a band is cut into horizontal
+  // slices where the radius changes (crowns, toes, gussets) and drawn whole elsewhere. A heel's folded
+  // rows (the cup) are drawn last, over the tube.
   _strips(gb, F, pass) {
     const f = this.w.fabric, ch = this.ch, geo = this.geo, live = Math.max(F.live, geo.firstRow);
-    const s = F.cp / f.W, w = this.w, dpr = w.dpr;
     const curG = geo.rows[Math.min(ch.height, live)].g;
-    // (front strips are shaded one by one, right after each is drawn: a solid tone over its own rect)
-    let prevN = 0;
     const bb = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
     const grow = (x0, y0, x1, y1) => { bb.x0 = Math.min(bb.x0, x0); bb.y0 = Math.min(bb.y0, y0); bb.x1 = Math.max(bb.x1, x1); bb.y1 = Math.max(bb.y1, y1); };
-    for (const b of geo.bands) {
-      const nBelow = prevN; prevN = b.n;
-      if (b.ra > live) continue;
-      if (b.g === 1 && curG !== 1) continue; // the thumb shows once it is being knit
+    const cy0 = (wy) => f.padT + (f.yT - wy) * f.H;
+    const tg = gb;
+    const list = geo.bands.filter((b) => b.ra <= live && !(b.g === 1 && curG !== 1));
+    const order = pass === 'front' ? list.filter((b) => !this.isCup(b)).concat(list.filter((b) => this.isCup(b))) : list;
+    for (const b of order) {
       const P = this.params(b);
+      const cup = this.isCup(b) && (b.fl.cupK || 0) > 0.001;
       let rLo = b.ra, rHi = Math.min(b.rb, live);
-      if (pass === 'back') { if (P.phi < 0.6 || b.g !== curG) continue; if (b.mode !== 'leg' || !(this.seamK > 0 && this.seamK < (geo.seam ? geo.seam.taps : 0))) rLo = Math.max(rLo, live - 3); if (rLo > rHi) continue; }
+      if (pass === 'back') { if (cup || P.phi < 0.6 || b.g !== curG) continue; if (b.mode !== 'leg' || !(this.seamK > 0 && this.seamK < (geo.seam ? geo.seam.taps : 0))) rLo = Math.max(rLo, live - 3); if (rLo > rHi) continue; }
       // the top: the live row's loops reach a little above it; under a band that may sit higher (a round
-      // above a flat section: its helix lifts it) a row more fills the gap; otherwise a hair of overlap
-      const nb = geo.bands[b.i + 1];
-      const gapAbove = nb && nb.g === b.g && nb.mode === 'round' && b.mode !== 'round';
-      const topW = geo.topY(rHi) + (rHi >= live ? 0.6 : gapAbove ? 1.0 : 0.06);
+      // above a band with no helix) a row more fills the gap; otherwise a hair of overlap
+      let nb = geo.bands[b.i + 1];
+      while (nb && this.isCup(nb) && (nb.fl.cupK || 0) > 0.001) nb = geo.bands[nb.i + 1];
+      const gapAbove = nb && nb.g === b.g && nb.mode === 'round' && b.mode !== 'round' && nb.shear == null;
+      const topW = geo.topY(rHi) + (rHi >= live ? 0.6 : gapAbove ? 1.0 : cup ? 0 : 0.06);
       const first = geo.groupFirst.get(b.g) === b.ra && rLo === b.ra;
       // the bottom: the cast-on edge below the first band; other bands reach a little down over the band
-      // below (its top row's tops, drawn again at this band's places), so no hairline opens between them
-      const botW = ch.yOf(rLo) - 1 - (first ? 1.6 : pass === 'front' ? 0.3 : 0);
-      // a round that decreases (or increases) by 4 or more narrows across its own height: three slices
-      const segs = [];
-      const taper = false && nBelow; // (slicing a narrowing round at three radii garbles its stitches: off)
-      if (taper) {
-        const y0 = ch.yOf(b.ra) - 1, y1 = ch.yOf(b.ra);
-        for (let k = 0; k < 3; k++) segs.push({ bot: y0 + k / 3, top: k === 2 ? (rHi > b.ra ? y1 : topW) : y0 + (k + 1) / 3, k: lerp(nBelow / b.n, 1, (k + 0.5) / 3) });
-        if (rHi > b.ra) segs.push({ bot: y1, top: topW, k: 1 });
-      } else segs.push({ bot: botW, top: topW, k: 1 });
-      const tg = gb;
-      let minY = Infinity, maxY = -Infinity, maxK = 1;
-      for (const sg of segs) {
-        const cy0 = (wy) => f.padT + (f.yT - wy) * f.H;
-        const sy0 = clamp(cy0(sg.top), 0, f.canvas.height), sy1 = clamp(cy0(sg.bot), 0, f.canvas.height);
-        if (sy1 - sy0 < 0.5) continue;
-        const dh = (sy1 - sy0) * s;
-        maxK = Math.max(maxK, sg.k);
-        for (let j = 0; j < b.cols.length; j++) {
-          const c = b.cols[j], jj = b.pos.get(c);
-          const ta = this.theta(P, jj);
-          const tb = P.phi >= 0.999 && P.gap === 0 ? ta + TAU / P.n : ta + TAU * wrapS((this.theta(P, jj + 1) - ta) / TAU);
-          let fa = 0, fb = 1;
-          if (P.phi > 0.6) {
-            // keep the front half (cos > 0) or the back half (cos < 0), clipping a strip at ±90°
-            const ca = Math.cos(ta), cb = Math.cos(tb);
-            const want = pass === 'front' ? 1 : -1;
-            if (ca * want <= 0 && cb * want <= 0) continue;
-            if (ca * want < 0 || cb * want < 0) {
-              const edge = Math.sin((ta + tb) / 2) > 0 ? Math.PI / 2 : -Math.PI / 2;
-              let te = edge; while (te < Math.min(ta, tb) - 1e-9) te += TAU; while (te > Math.max(ta, tb) + 1e-9) te -= TAU;
-              const fe = clamp((te - ta) / (tb - ta), 0, 1);
-              if (ca * want < 0) fa = fe; else fb = fe;
-              if (fb - fa < 0.02) continue;
-            }
+      // below, so no hairline opens between them
+      const botW = ch.yOf(rLo) - 1 - (first ? 1.6 : pass === 'front' && !cup ? 0.15 : 0);
+      if (topW - botW < 0.02) continue;
+      // the slices, in fabric y: [bot, top, R(top), R(bot)]
+      const slices = this._slices(b, P, botW, topW, F, cup);
+      for (let j = 0; j < b.cols.length; j++) {
+        const c = b.cols[j], jj = b.pos.get(c);
+        const ta = this.theta(P, jj);
+        const tb = P.phi >= 0.999 && P.gap === 0 ? ta + TAU / P.n : ta + TAU * wrapS((this.theta(P, jj + 1) - ta) / TAU);
+        let fa = 0, fb = 1;
+        if (P.phi > 0.6) {
+          // keep the front half (cos > 0) or the back half (cos < 0), clipping a strip at ±90°
+          const ca = Math.cos(ta), cb = Math.cos(tb);
+          const want = pass === 'front' ? 1 : -1;
+          if (ca * want <= 0 && cb * want <= 0) continue;
+          if (ca * want < 0 || cb * want < 0) {
+            const edge = Math.sin((ta + tb) / 2) > 0 ? Math.PI / 2 : -Math.PI / 2;
+            let te = edge; while (te < Math.min(ta, tb) - 1e-9) te += TAU; while (te > Math.max(ta, tb) + 1e-9) te -= TAU;
+            const fe = clamp((te - ta) / (tb - ta), 0, 1);
+            if (ca * want < 0) fa = fe; else fb = fe;
+            if (fb - fa < 0.02) continue;
           }
-          const t0 = lerp(ta, tb, fa), t1 = lerp(ta, tb, fb), tm = (t0 + t1) / 2;
-          const R = P.Rc * sg.k;
-          const x0 = this.X(F, P.axis + R * Math.sin(t0)), x1 = this.X(F, P.axis + R * Math.sin(t1));
-          const dy = this.Y(F, sg.top + this.liftOf(P, j) + P.gdy) + this.yE(F, P, tm) * sg.k;
-          const sx = f.padX + (c - f.c0 + fa) * f.W, sw = (fb - fa) * f.W;
+        }
+        const t0 = lerp(ta, tb, fa), t1 = lerp(ta, tb, fb), tm = (t0 + t1) / 2;
+        const sn0 = Math.sin(t0), sn1 = Math.sin(t1);
+        const sx = f.padX + (c - f.c0 + fa) * f.W, sw = (fb - fa) * f.W;
+        // (no edge fade: a band's slices overlap their neighbours, and a translucent edge would show each
+        // overlap as a ridge; the side shading below darkens the edges instead)
+        const fade = cup ? clamp(b.fl.cupK * 1.5, 0, 1) : 1;
+        // the tube's roundness: darker toward the sides, a soft lamp highlight up and to the left
+        let shade = null;
+        if (pass === 'front' && P.phi >= 0.15) {
+          const sn = Math.sin(tm), cs = Math.max(0, Math.cos(tm));
+          const dark = 0.58 * Math.pow(1 - cs, 0.85) * P.phi;
+          const hl = Math.max(0, 1 - Math.abs(sn + 0.36) / 0.32) * 0.13 * P.phi;
+          if (dark > 0.01 || hl > 0.01) shade = hl > dark ? `rgba(255,236,200,${(hl - dark * 0.5).toFixed(3)})` : `rgba(34,12,34,${dark.toFixed(3)})`;
+        }
+        if (fade < 1) tg.globalAlpha = fade;
+        for (const sl of slices) {
+          const sy0 = clamp(cy0(sl.top), 0, f.canvas.height), sy1 = clamp(cy0(sl.bot), 0, f.canvas.height);
+          if (sy1 - sy0 < 0.3) continue;
+          const R = sl.R;
+          const x0 = this.X(F, P.axis + R * sn0), x1 = this.X(F, P.axis + R * sn1);
           const xl = Math.min(x0, x1), ww = Math.abs(x1 - x0);
           if (ww < 0.05) continue;
-          // just after the marker a round's strips sit a row higher (the jog): they reach down a row more,
-          // so no gap opens where the band below has its cut a little to one side
-          let syB = sy1, dhB = dh;
-          if (P.lift && jj <= 1 && sg === segs[0] && !first && pass === 'front') { syB = clamp(sy1 + this.liftOf(P, jj) * f.H, 0, f.canvas.height); dhB = (syB - sy0) * s; }
-          const fade = P.phi > 0.6 && pass === 'front' ? clamp(Math.cos(tm) / 0.3, 0.15, 1) : 1;
-          if (fade < 1) tg.globalAlpha = fade;
-          tg.drawImage(f.canvas, sx, sy0, sw, syB - sy0, xl, dy, ww + 0.35, dhB);
-          if (fade < 1) tg.globalAlpha = 1;
-          if (pass === 'front' && P.phi >= 0.15) {
-            // the tube's roundness: darker toward the sides, a soft lamp highlight up and to the left
-            const sn = Math.sin(tm), cs = Math.max(0, Math.cos(tm));
-            const dark = 0.58 * Math.pow(1 - cs, 0.85) * P.phi;
-            const hl = Math.max(0, 1 - Math.abs(sn + 0.36) / 0.32) * 0.13 * P.phi;
-            if (dark > 0.01 || hl > 0.01) {
-              tg.globalCompositeOperation = 'source-atop';
-              tg.fillStyle = hl > dark ? `rgba(255,236,200,${(hl - dark * 0.5).toFixed(3)})` : `rgba(34,12,34,${dark.toFixed(3)})`;
-              tg.fillRect(xl, dy, ww + 0.35, dhB);
-              tg.globalCompositeOperation = 'source-over';
-            }
+          const e = this.yE(F, P, tm, R);
+          const yTop = this.Y(F, sl.dTop + this.liftAt(P, jj, sl.top) + P.gdy) + e;
+          const yBot = this.Y(F, sl.dBot + this.liftAt(P, jj, sl.bot) + P.gdy) + e;
+          // (a slice reaches a pixel down over the one below and strips overlap a little, so no
+          // antialiased hairline shows between them)
+          const dh = yBot - yTop + (sl.first && first ? 0 : 1);
+          if (dh < 0.05) continue;
+          tg.drawImage(f.canvas, sx, sy0, sw, sy1 - sy0, xl, yTop, ww + 0.6, dh);
+          if (shade) {
+            tg.globalCompositeOperation = 'source-atop';
+            tg.fillStyle = shade;
+            tg.fillRect(xl, yTop, ww + 0.6, dh);
+            tg.globalCompositeOperation = 'source-over';
           }
           this.drawCalls++;
-          minY = Math.min(minY, dy); maxY = Math.max(maxY, dy + dhB);
-          grow(xl, dy, xl + ww + 1, dy + dhB);
+          grow(xl, yTop, xl + ww + 1, yTop + dh);
         }
+        if (fade < 1) tg.globalAlpha = 1;
       }
     }
     const v = this.w;
     bb.x0 = Math.max(0, Math.floor(bb.x0)); bb.y0 = Math.max(0, Math.floor(bb.y0)); bb.x1 = Math.min(v.vw, Math.ceil(bb.x1)); bb.y1 = Math.min(v.vh, Math.ceil(bb.y1));
     return bb.x1 > bb.x0 && bb.y1 > bb.y0 ? bb : null;
+  }
+  // a band's horizontal slices between fabric heights bot and top: whole where the radius holds, cut
+  // finer where it changes (about 3 px of radius a slice), each with its drawn heights and radius
+  _slices(b, P, bot, top, F, cup) {
+    const cuts = [bot, top];
+    const d0 = this.mapY(b, 0), s = cup ? (this.mapY(b, 1) - d0) : 1;
+    const toF = (yD) => (yD - d0) / s;
+    if (cup) { for (let y = Math.ceil(bot); y < top; y++) if (y > bot) cuts.push(y); }
+    else {
+      const kn = this.knots && this.knots[b.g];
+      if (kn && b.mode !== 'leg' && P.phi >= 0.999) for (const k of kn) { const yF = toF(k.y); if (yF > bot && yF < top) cuts.push(yF); }
+      if (b.shear != null && P.lift) for (const yS of [b.shear, b.shear + SHEAR_ROWS]) if (yS > bot && yS < top) cuts.push(yS);
+    }
+    cuts.sort((a, z) => a - z);
+    const out = [];
+    const Rf = (yF) => this.radiusAt(P, this.mapY(b, yF), yF);
+    for (let i = 0; i < cuts.length - 1; i++) {
+      const a = cuts[i], z = cuts[i + 1];
+      if (z - a < 1e-4) continue;
+      const dR = Math.abs(Rf(z) - Rf(a)) * F.cp;
+      const n = cup ? 1 : clamp(Math.ceil(dR / 3), 1, 5);
+      for (let q = 0; q < n; q++) {
+        const sb = lerp(a, z, q / n), st = lerp(a, z, (q + 1) / n);
+        out.push({ bot: sb, top: st, dBot: this.mapY(b, sb), dTop: this.mapY(b, st), R: Rf((sb + st) / 2) });
+      }
+    }
+    if (out.length) out[0].first = true;
+    return out;
   }
 
   draw(g, G, t) {
@@ -514,12 +609,19 @@ export class RoundView {
     this.drawCalls += 3;
     const nd = this.w.finished ? null : this._needleScene(F, t);
     if (nd) this._drawFar(g, F, nd, 'back', t);
-    // the working yarn hangs behind the work, from the newest loop to the ball
+    this._drawSleeveStubs(g, F);
+    // the working yarn hangs from the newest loop on the right needle's tip: over the tube's side to a
+    // ball on the right; to a ball on the left it drops in behind the work and comes out below it
     const S = w._strand;
     w._strandDrawn = S;
-    if (S && !w.finished) drawStrand(g, S, w.nextYarn, F.cp, Math.exp(-(t - w.anim.twitch) / 120) * Math.sin((t - w.anim.twitch) / 22) * F.cp * 0.35);
+    const tw = Math.exp(-(t - w.anim.twitch) / 120) * Math.sin((t - w.anim.twitch) / 22) * F.cp * 0.35;
+    // (in a step with no needle tip working, a gather or a graft, the strand keeps its route behind)
+    const SO = S && !w.finished ? (nd && nd.tube ? this._strandOut(F, S) : S) : null;
+    if (SO && SO === S) drawStrand(g, S, w.nextYarn, F.cp, tw);
     blit(g, 1, bb2);
     this.drawCalls++;
+    if (SO && SO !== S) drawStrand(g, SO, w.nextYarn, F.cp, tw);
+    else if (SO && nd && nd.tube) { const a = S.pts[0]; drawStrand(g, { ...S, pts: [a, { x: a.x + 0.08 * F.cp, y: a.y + 0.55 * F.chh }, { x: a.x + 0.05 * F.cp, y: a.y + 1.1 * F.chh }] }, w.nextYarn, F.cp, 0); }
     let busy = false;
     if (this.w.lightsOut) w._drawLightsOut(g, G);
     busy = this._drawPop(g, F, t) || busy;
@@ -532,6 +634,66 @@ export class RoundView {
     }
     busy = this._drawSteps(g, F, t, 'over') || busy;
     return busy;
+  }
+
+  // a yoke's sleeves, once joined: a short tube out of each side at the joining round, toward the arm,
+  // turning with the work (behind the body; the part on the near side shows past its edge)
+  _drawSleeveStubs(g, F) {
+    const geo = this.geo, ch = this.ch, w = this.w;
+    if (this._joinRow === undefined) { this._joinRow = null; for (let r = 1; r <= ch.height; r++) if (geo.rows[r].step === 'joining') { this._joinRow = r; break; } }
+    const jr = this._joinRow;
+    if (!jr || F.live <= jr) return;
+    const b = geo.band(jr), P = this.params(b), R0 = ch.row(jr);
+    // the sleeves: runs of 'v' entries in the joining round
+    const runs = [];
+    for (const e of R0.map) { if (e.stitch !== 'v') continue; const last = runs[runs.length - 1]; if (last && last.k1 === e.k - 1) { last.cols.push(e.col); last.k1 = e.k; } else runs.push({ cols: [e.col], k0: e.k, k1: e.k }); }
+    const yF = geo.topY(jr), yD = this.mapY(b, yF), R = this.radiusAt(P, yD, yF);
+    for (const run of runs) {
+      let sx = 0, sy = 0;
+      for (const c of run.cols) { const j = b.pos.get(c); if (j == null) continue; const th = this.theta(P, j + 0.5); sx += Math.cos(th); sy += Math.sin(th); }
+      const th = Math.atan2(sy, sx), sn = Math.sin(th);
+      if (Math.abs(sn) < 0.3) continue;
+      const dir = Math.sign(sn), vis = clamp((Math.abs(sn) - 0.3) / 0.4, 0, 1);
+      const yarn = this._yarnAt(jr, run.cols[0]), Pc = palette(yarnColorAt(yarn, 0), yarn.type);
+      const x0 = this.X(F, P.axis + R * 0.97 * sn), y0 = this.Y(F, yD + P.gdy) + this.yE(F, P, th, R) + 1.5 * F.chh;
+      const ax = dir * Math.cos(0.8), ay = Math.sin(0.8), L = 2.8 * F.cp, rs = 1.45 * F.chh;
+      const px = -ay, py = ax * dir * dir; // the perpendicular
+      const e = { x: x0 + ax * L, y: y0 + ay * L };
+      g.save(); g.globalAlpha = vis;
+      const gr = g.createLinearGradient(x0 + px * rs, y0 + py * rs * dir, x0 - px * rs, y0 - py * rs * dir);
+      gr.addColorStop(0, rgba(Pc.dark)); gr.addColorStop(0.35, rgba(Pc.light)); gr.addColorStop(0.7, rgba(Pc.base)); gr.addColorStop(1, rgba(Pc.deep));
+      g.fillStyle = gr;
+      g.beginPath();
+      g.moveTo(x0 + px * rs, y0 + py * rs); g.lineTo(e.x + px * rs * 0.85, e.y + py * rs * 0.85);
+      g.lineTo(e.x - px * rs * 0.85, e.y - py * rs * 0.85); g.lineTo(x0 - px * rs, y0 - py * rs); g.closePath(); g.fill();
+      // its rows of stitches: soft Vs across the tube
+      g.strokeStyle = rgba(Pc.deep, 0.45); g.lineWidth = Math.max(1, F.cp * 0.06);
+      const nRows = Math.max(2, Math.round(L / (F.chh * 1.1)));
+      for (let q = 1; q < nRows; q++) {
+        const t = q / nRows, cx = x0 + ax * L * t, cy = y0 + ay * L * t, k = rs * (1 - 0.15 * t);
+        g.beginPath(); g.moveTo(cx + px * k * 0.9, cy + py * k * 0.9); g.quadraticCurveTo(cx - ax * F.chh * 0.5, cy - ay * F.chh * 0.5, cx - px * k * 0.9, cy - py * k * 0.9); g.stroke();
+      }
+      // the cuff end: an open ellipse
+      g.fillStyle = rgba(Pc.deep); g.beginPath(); g.ellipse(e.x, e.y, rs * 0.85, rs * 0.35, Math.atan2(py, px), 0, TAU); g.fill();
+      g.restore();
+      this.drawCalls += 3;
+    }
+  }
+
+  // the strand's route on a tube: from the tip, out past the tube's right side a little below the needles,
+  // then (as the flat route) down to the ball
+  _strandOut(F, S) {
+    const geo = this.geo, r = Math.min(this.ch.height, F.live), b = geo.band(r), P = this.params(b);
+    const yF = geo.topY(r), R = this.radiusAt(P, this.mapY(b, yF), yF);
+    const xR = this.X(F, P.axis + R) + 0.5 * F.cp;
+    const a = S.pts[0], z = S.pts[S.pts.length - 1];
+    if (a.x >= xR || z.x < xR) return S;
+    const side = { x: xR, y: a.y + 1.6 * F.chh };
+    const pts = [a, { x: lerp(a.x, xR, 0.6), y: a.y + 0.7 * F.chh }, side];
+    const len = Math.hypot(z.x - side.x, z.y - side.y);
+    if (len > F.cp * 2) pts.push({ x: (side.x + z.x) / 2, y: (side.y + z.y) / 2 + Math.min(len * 0.12, 36) });
+    pts.push(z);
+    return { ...S, pts };
   }
 
   // the new stitch pops in through the projection
@@ -600,6 +762,14 @@ export class RoundView {
     scene.G2 = G2;
     scene.tube = { map: mapNs, G2, rowOf, counterNo: ch.rowNo(r).unit === 'step' ? ch.rowNo(Math.max(1, r - 1)).n : ch.rowNo(r).n, dyS: (c, side) => G2.dyS(c, side), near: true };
     if (o.step === 'join') scene.tube.join = true;
+    // the needles' far ends stay put just outside the tube (only the working tip travels as the tube
+    // turns under it): the right needle rises to the right past the rim, the left lies along the rim
+    if (!flatWork) {
+      const yF = geo.topY(r), R = this.radiusAt(P, this.mapY(b, yF), yF);
+      const xL = this.X(F, P.axis - R), xR = this.X(F, P.axis + R);
+      const yT = G2.rowT(r);
+      scene.tube.ends = { r: { x: xR + 3.4 * F.cp, y: yT - 1.5 * F.chh }, l: { x: xL - 1.5 * F.cp } };
+    }
     // a joining round: the sleeve sts wait on a spare DPN beside the tip
     if (o.step === 'joining' && ns.next && ns.next.stitch === 'v') {
       let q = ns.k, n = 0; while (q < R.map.length && R.map[q].stitch === 'v') { q++; n++; }
@@ -675,16 +845,18 @@ export class RoundView {
     const ns = scene.ns;
     const tipCol = ns.next ? ns.next.col : null;
     let tipLift = 0, tipTh = 0;
-    if (tipCol != null) { const j = b.pos.get(tipCol); if (j != null) { tipLift = this.liftOf(P, j); tipTh = this.theta(P, j + 0.5); } }
+    let tipR = P.Rc;
+    if (tipCol != null) { const j = b.pos.get(tipCol); if (j != null) { tipLift = this.liftAt(P, j, geo.topY(r)); tipTh = this.theta(P, j + 0.5); } }
+    { const yF = geo.topY(r); tipR = this.radiusAt(P, this.mapY(b, yF), yF); }
     const rowFor = (c) => {
       const rr = scene.rowOf && scene.rowOf.get(c);
-      if (rr != null) return rr;
-      return geo.band(r).pos.has(c) && ch.cell(r, c) ? r : r - 1;
+      if (rr != null) return self.lastKnit(rr, c);
+      return geo.band(r).pos.has(c) && ch.cell(r, c) ? r : self.lastKnit(r - 1, c);
     };
-    const zeroTop = o.zero ? geo.topY(r - 1) + 1 : null;
+    const zeroTop = o.zero ? self.wyTop(r - 1) + 1 : null;
     const rowT = (rr) => {
-      const wy = rr === r && zeroTop != null ? zeroTop : geo.topY(rr);
-      return self.Y(F, wy + tipLift + P.gdy) + self.yE(F, P, tipTh);
+      const wy = rr === r && zeroTop != null ? zeroTop : self.wyTop(rr);
+      return self.Y(F, wy + tipLift + P.gdy) + self.yE(F, P, tipTh, tipR);
     };
     const pt = (c, sub) => { const p = self.cellTop(F, rowFor(c), c, sub); return p; };
     const G2 = {
@@ -710,7 +882,7 @@ export class RoundView {
     const rad = Math.max(1.6, F.cp * 0.11);
     const want = (cos) => (pass === 'back' ? cos < 0 : cos >= 0);
     const loopAt = (x) => {
-      const p = this.cellTop(F, Math.max(0, x.r), x.c, 0.5);
+      const p = this.cellTop(F, this.lastKnit(Math.max(0, x.r), x.c), x.c, 0.5);
       if (!p) return null;
       const yarn = this._yarnAt(x.r, x.c);
       return { x: p.x, yN: p.y - 0.58 * F.chh, yS: p.y + 0.05 * F.chh, yarn, color: yarnColorAt(yarn, Math.max(0, w.fabric.idx(x.r, x.c))), cos: p.cos, th: p.th };
@@ -831,11 +1003,19 @@ export class RoundView {
     path(-lw * 0.25); g.strokeStyle = 'rgba(255,255,255,0.55)'; g.lineWidth = lw * 0.3; g.stroke();
     g.restore();
   }
+  // the waste yarn: the bright scrap that stands out most from the piece's yarns (never teal on teal)
+  _waste_() {
+    if (this._wasteC) return this._wasteC;
+    const ys = [this.w.castOnYarn, ...(this.w.yarns || []).slice(-60), this.w.nextYarn].filter(Boolean).map((y) => hexRgb(y.color));
+    let best = WASTES[0], bd = -1;
+    for (const c of WASTES) { const a = hexRgb(c); const d = Math.min(...ys.map((y) => Math.hypot(a[0] - y[0], a[1] - y[1], a[2] - y[2]))); if (d > bd) { bd = d; best = c; } }
+    return (this._wasteC = best);
+  }
   // a bright scrap of waste yarn through held loops (under them, or its two loose ends over)
   _waste(g, F, loops, pass, ends = false) {
     const pts = loops.slice().sort((a, b) => a.x - b.x).map((L) => ({ x: L.x, y: L.yN + F.chh * 0.08 }));
     if (!pts.length) return;
-    const P = palette(WASTE, 'cotton');
+    const P = palette(this._waste_(), 'cotton');
     const lw = Math.max(1.6, F.cp * 0.16);
     g.save(); g.lineCap = 'round'; g.lineJoin = 'round';
     if (pass === 'back') g.globalAlpha = 0.7;
@@ -929,7 +1109,7 @@ export class RoundView {
         g.save(); g.globalAlpha = Math.sin(Math.PI * p) * 0.7;
         g.strokeStyle = 'rgba(255,240,200,0.9)'; g.lineWidth = Math.max(1.5, F.cp * 0.12);
         g.beginPath();
-        const y0 = this.Y(F, geo.topY(geo.firstRow) - 1);
+        const y0 = this.Y(F, this.wyTop(geo.firstRow) - 1);
         for (let q = 0; q <= 24; q++) { const th = -Math.PI / 2 + Math.PI * q / 24; const x = this.X(F, this.xc(P, th)), y = y0 + this.yE(F, P, th); if (q) g.lineTo(x, y); else g.moveTo(x, y); }
         g.stroke(); g.restore();
       }
@@ -938,7 +1118,7 @@ export class RoundView {
         const cols = heldGroup(ch, e.r, entry);
         const loops = cols.map((c) => this.cellTop(F, e.r - 1, c, 0.5)).filter((x) => x && x.cos > 0).sort((a, b) => a.x - b.x);
         if (loops.length) {
-          const P = palette(WASTE, 'cotton'), lw = Math.max(1.6, F.cp * 0.16);
+          const P = palette(this._waste_(), 'cotton'), lw = Math.max(1.6, F.cp * 0.16);
           const upto = Math.max(1, Math.ceil(loops.length * ease(p * 1.4)));
           g.save(); g.lineCap = 'round';
           g.strokeStyle = rgba(P.base); g.lineWidth = lw;
@@ -1050,9 +1230,12 @@ export class RoundView {
       const P = this.params(b);
       for (let r = b.ra; r <= b.rb; r++) {
         if (r < live - 1 && b.g === curG) continue;
-        const yT = this.Y(F, geo.topY(r) + P.gdy), yB = this.Y(F, geo.topY(r) - 1 + P.gdy);
-        const xr = P.phi < 0.05 ? P.axis + P.n / 2 : P.axis + P.Rc;
-        (b.g === curG ? L : L).push({ g: b.g, xl: this.X(F, P.phi < 0.05 ? P.axis - P.n / 2 : P.axis - P.Rc), xr: this.X(F, xr), yT, yB, P, r });
+        if (this.isCup(b) && (b.fl.cupK || 0) > 0.001) continue; // a folded heel is drawn as knit
+        const yF = geo.topY(r), yD = this.mapY(b, yF), Rr = P.phi < 0.999 ? P.Rc : this.radiusAt(P, yD - 0.5, yF - 0.5);
+        const yT = this.Y(F, yD + P.gdy), yB = this.Y(F, this.mapY(b, yF - 1) + P.gdy);
+        const PR = { ...P, Rc: Rr };
+        const xr = P.phi < 0.05 ? P.axis + P.n / 2 : P.axis + Rr;
+        L.push({ g: b.g, xl: this.X(F, P.phi < 0.05 ? P.axis - P.n / 2 : P.axis - Rr), xr: this.X(F, xr), yT, yB, P: PR, r });
       }
     }
     if (!L.length) return;
