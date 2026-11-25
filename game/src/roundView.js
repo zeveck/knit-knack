@@ -29,7 +29,7 @@ export const reduceMotion = () => typeof matchMedia !== 'undefined' && matchMedi
 const WASTES = ['#3fb6c8', '#f07a3a', '#e8c547', '#d94f8a']; // bright scraps of waste yarn
 const hexRgb = (h) => { const v = parseInt(String(h).replace('#', '').slice(0, 6), 16); return [(v >> 16) & 255, (v >> 8) & 255, v & 255]; };
 const CUP_S = 0.42; // a folded heel's rows, squashed: the cup curves away from us
-const CUP_BULGE = 0.3; // how far the heel cup stands out from the tube at its middle
+const CUP_BULGE = 0.14; // how far the heel cup stands out from the tube at its middle
 const SHEAR_ROWS = 3; // the rows over which a level bottom edge rises into the helix
 
 // ---------------------------------------------------------------- the geometry (per chart, pure)
@@ -334,6 +334,13 @@ export class RoundView {
     if (!v || P.b.shear == null) return v;
     return v * clamp((y - P.b.shear) / SHEAR_ROWS, 0, 1);
   }
+  // the same at a fractional ring position jf (a strip's edge): the lift runs on smoothly round the
+  // ring, so neighbouring strips (and the band above, whatever its count) meet without a step
+  liftF(P, jf, y) {
+    if (!P.lift) return 0;
+    const v = P.phi * (P.n - 0.5 - jf) / P.n;
+    return P.b.shear == null ? v : v * clamp((y - P.b.shear) / SHEAR_ROWS, 0, 1);
+  }
 
   // ---- the vertical map (fabric y -> drawn y): a heel's flat rows fold into a cup once the rounds go on
   isCup(b) { return !!(b.fl && b.fl.cup); }
@@ -365,7 +372,9 @@ export class RoundView {
       if (P.phi < 0.999) continue;
       const y0 = this.mapY(b, ch.yOf(b.ra) - 1), y1 = this.mapY(b, ch.yOf(b.rb));
       if (y1 - y0 < 0.01) continue;
-      if (y1 - y0 >= 1.5) K.push({ y: y0 + 0.5, R: P.Rc }, { y: y1 - 0.5, R: P.Rc }); else K.push({ y: (y0 + y1) / 2, R: P.Rc });
+      // (a short band, a crown's or a gusset's, gives one knot at its middle, so a run of them makes an
+      // even slope rather than steps; a tall one holds its ring to a row from either end)
+      if (y1 - y0 >= 3.5) K.push({ y: y0 + 1, R: P.Rc }, { y: y1 - 1, R: P.Rc }); else K.push({ y: (y0 + y1) / 2, R: P.Rc });
     }
     return K.sort((a, b) => a.y - b.y);
   }
@@ -398,8 +407,8 @@ export class RoundView {
     const j = b.pos.get(c);
     if (j == null) return null;
     const th = this.theta(P, j + sub);
-    const yF = geo.topY(r), yD = this.mapY(b, yF), R = this.radiusAt(P, yD, yF);
-    return { x: this.X(F, P.axis + R * Math.sin(th)), y: this.Y(F, yD + this.liftAt(P, j, yF) + P.gdy) + this.yE(F, P, th, R), th, cos: P.phi > 0.6 ? Math.cos(th) : 1, P, j, w: Math.abs(Math.cos(th)) * F.cp, R };
+    const yF = geo.topY(r), yD = this.mapY(b, yF), lf = this.liftAt(P, j, yF), R = this.radiusAt(P, yD + lf, yF);
+    return { x: this.X(F, P.axis + R * Math.sin(th)), y: this.Y(F, yD + lf + P.gdy) + this.yE(F, P, th, R), th, cos: P.phi > 0.6 ? Math.cos(th) : 1, P, j, w: Math.abs(Math.cos(th)) * F.cp, R };
   }
 
   // ---- the camera
@@ -480,11 +489,26 @@ export class RoundView {
       if (topW - botW < 0.02) continue;
       // the slices, in fabric y: [bot, top, R(top), R(bot)]
       const slices = this._slices(b, P, botW, topW, F, cup);
-      for (let j = 0; j < b.cols.length; j++) {
-        const c = b.cols[j], jj = b.pos.get(c);
+      // a flat band (a heel flap, its turn, the folded cup) draws only its own worked columns: the held
+      // ones in its frame are empty there and would only hide the tube behind
+      let cols = b.cols;
+      if (b.mode === 'frozen') {
+        const own = new Set();
+        for (let r = rLo; r <= rHi; r++) for (const c of geo.rows[r].geo) own.add(c);
+        cols = cols.filter((c) => own.has(c));
+      }
+      const fade = cup ? clamp(b.fl.cupK * 1.5, 0, 1) : 1;
+      // each strip x slice is an affine quad: its corners sit on the tube (the radius at the slice's own
+      // top and bottom, the helix lift and the rim's ellipse at the strip's own edges), so neighbours meet
+      // edge to edge and the outline runs smoothly where the ring narrows. Each quad reaches one device
+      // pixel right and down over its neighbours (drawn after it), so no antialiased seam opens; it is
+      // shaded over all it drew (the fabric is opaque, so nothing under it is darkened twice)
+      const quads = [];
+      for (let j = 0; j < cols.length; j++) {
+        const c = cols[j], jj = b.pos.get(c);
         const ta = this.theta(P, jj);
         const tb = P.phi >= 0.999 && P.gap === 0 ? ta + TAU / P.n : ta + TAU * wrapS((this.theta(P, jj + 1) - ta) / TAU);
-        let fa = 0, fb = 1;
+        let fa = 0, fb = 1, edgeR = false;
         if (P.phi > 0.6) {
           // keep the front half (cos > 0) or the back half (cos < 0), clipping a strip at ±90°
           const ca = Math.cos(ta), cb = Math.cos(tb);
@@ -494,16 +518,12 @@ export class RoundView {
             const edge = Math.sin((ta + tb) / 2) > 0 ? Math.PI / 2 : -Math.PI / 2;
             let te = edge; while (te < Math.min(ta, tb) - 1e-9) te += TAU; while (te > Math.max(ta, tb) + 1e-9) te -= TAU;
             const fe = clamp((te - ta) / (tb - ta), 0, 1);
-            if (ca * want < 0) fa = fe; else fb = fe;
-            if (fb - fa < 0.02) continue;
+            if (ca * want < 0) fa = fe; else { fb = fe; edgeR = true; }
+            if (fb - fa < 0.004) continue;
           }
         }
         const t0 = lerp(ta, tb, fa), t1 = lerp(ta, tb, fb), tm = (t0 + t1) / 2;
-        const sn0 = Math.sin(t0), sn1 = Math.sin(t1);
         const sx = f.padX + (c - f.c0 + fa) * f.W, sw = (fb - fa) * f.W;
-        // (no edge fade: a band's slices overlap their neighbours, and a translucent edge would show each
-        // overlap as a ridge; the side shading below darkens the edges instead)
-        const fade = cup ? clamp(b.fl.cupK * 1.5, 0, 1) : 1;
         // the tube's roundness: darker toward the sides, a soft lamp highlight up and to the left
         let shade = null;
         if (pass === 'front' && P.phi >= 0.15) {
@@ -512,33 +532,57 @@ export class RoundView {
           const hl = Math.max(0, 1 - Math.abs(sn + 0.36) / 0.32) * 0.13 * P.phi;
           if (dark > 0.01 || hl > 0.01) shade = hl > dark ? `rgba(255,236,200,${(hl - dark * 0.5).toFixed(3)})` : `rgba(34,12,34,${dark.toFixed(3)})`;
         }
-        if (fade < 1) tg.globalAlpha = fade;
-        for (const sl of slices) {
-          const sy0 = clamp(cy0(sl.top), 0, f.canvas.height), sy1 = clamp(cy0(sl.bot), 0, f.canvas.height);
-          if (sy1 - sy0 < 0.3) continue;
-          const R = sl.R;
-          const x0 = this.X(F, P.axis + R * sn0), x1 = this.X(F, P.axis + R * sn1);
-          const xl = Math.min(x0, x1), ww = Math.abs(x1 - x0);
-          if (ww < 0.05) continue;
-          const e = this.yE(F, P, tm, R);
-          const yTop = this.Y(F, sl.dTop + this.liftAt(P, jj, sl.top) + P.gdy) + e;
-          const yBot = this.Y(F, sl.dBot + this.liftAt(P, jj, sl.bot) + P.gdy) + e;
-          // (a slice reaches a pixel down over the one below and strips overlap a little, so no
-          // antialiased hairline shows between them)
-          const dh = yBot - yTop + (sl.first && first ? 0 : 1);
-          if (dh < 0.05) continue;
-          tg.drawImage(f.canvas, sx, sy0, sw, sy1 - sy0, xl, yTop, ww + 0.6, dh);
-          if (shade) {
+        quads.push({ c, jj, j0: jj + fa, j1: jj + fb, t0, t1, sx, sw, shade, edgeR, x: Math.sin(tm) });
+      }
+      // the right half is drawn right to left, so each strip's overlap always reaches toward the middle
+      // and the outline's own strips are never overdrawn past the edge
+      quads.sort((q1, q2) => (q1.x < 0 && q2.x < 0 ? q1.x - q2.x : q1.x >= 0 && q2.x >= 0 ? q2.x - q1.x : q1.x - q2.x));
+      const dpr = this.w.dpr;
+      // (the radius is the tube's at the height the corner is drawn, its helix lift included: past the
+      // marker a column sits a row higher, and on a crown it must take the narrower ring there)
+      const pt = (q, side, sl, top) => {
+        const t = side ? q.t1 : q.t0, yF = top ? sl.top : sl.bot, yD = (top ? sl.dTop : sl.dBot) + this.liftF(P, side ? q.j1 : q.j0, yF);
+        const R = this.radiusAt(P, yD, yF);
+        return [this.X(F, P.axis + R * Math.sin(t)), this.Y(F, yD + P.gdy) + this.yE(F, P, t, R)];
+      };
+      if (fade < 1) tg.globalAlpha = fade;
+      for (const sl of slices) {
+        const sy0 = cy0(sl.top), sy1 = cy0(sl.bot), sh = sy1 - sy0;
+        if (sh < 0.05) continue;
+        const down = !(sl.first && first);
+        for (const q of quads) {
+          const TL = pt(q, 0, sl, true), TR = pt(q, 1, sl, true), BL = pt(q, 0, sl, false);
+          let ax = TR[0] - TL[0], ay = TR[1] - TL[1];
+          const cx = BL[0] - TL[0], cyy = BL[1] - TL[1];
+          if (Math.abs(ax) < 0.02 || cyy < 0.02) continue;
+          // one device pixel of overlap toward the tube's middle (the left half reaches right, the right
+          // half left) and down: the quad is stretched by it (its own stitches, never a neighbour's
+          // column, which in a decreased or held ring may be empty fabric). A quad is a parallelogram, so
+          // where the radius changes down the slice its inner bottom corner misses the true one by a
+          // little: the overlap grows by that much (the next strip, drawn after, covers it)
+          const BR = pt(q, 1, sl, false), miss = Math.abs(BR[0] - (TR[0] + cx));
+          const kx = 1 + (1 / dpr + miss) / Math.abs(ax);
+          let ox0 = TL[0], oy0 = TL[1];
+          if (q.x >= 0) { ox0 -= ax * (kx - 1); oy0 -= ay * (kx - 1); }
+          ax *= kx; ay *= kx;
+          const a = ax / q.sw, bq = ay / q.sw, cq = cx / sh, d = cyy / sh;
+          // (down, the source itself runs on a pixel: the same column's fabric continues below)
+          const ovy = down ? Math.min(sh, 1 / (d * dpr)) : 0;
+          tg.setTransform(dpr * a, dpr * bq, dpr * cq, dpr * d, dpr * (ox0 - a * q.sx - cq * sy0), dpr * (oy0 - bq * q.sx - d * sy0));
+          tg.drawImage(f.canvas, q.sx, sy0, q.sw, sh + ovy, q.sx, sy0, q.sw, sh + ovy);
+          if (q.shade) {
             tg.globalCompositeOperation = 'source-atop';
-            tg.fillStyle = shade;
-            tg.fillRect(xl, yTop, ww + 0.6, dh);
+            tg.fillStyle = q.shade;
+            tg.fillRect(q.sx, sy0, q.sw, sh + ovy); // (its overlap too: it covers what was there)
             tg.globalCompositeOperation = 'source-over';
           }
           this.drawCalls++;
-          grow(xl, yTop, xl + ww + 1, yTop + dh);
+          const xs = [ox0, ox0 + ax, ox0 + cx, ox0 + ax + cx], ys = [oy0, oy0 + ay, oy0 + cyy + 1, oy0 + ay + cyy + 1];
+          grow(Math.min(...xs) - 1, Math.min(...ys) - 1, Math.max(...xs) + 1, Math.max(...ys) + 2);
         }
-        if (fade < 1) tg.globalAlpha = 1;
       }
+      tg.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (fade < 1) tg.globalAlpha = 1;
     }
     const v = this.w;
     bb.x0 = Math.max(0, Math.floor(bb.x0)); bb.y0 = Math.max(0, Math.floor(bb.y0)); bb.x1 = Math.min(v.vw, Math.ceil(bb.x1)); bb.y1 = Math.min(v.vh, Math.ceil(bb.y1));
@@ -547,26 +591,39 @@ export class RoundView {
   // a band's horizontal slices between fabric heights bot and top: whole where the radius holds, cut
   // finer where it changes (about 3 px of radius a slice), each with its drawn heights and radius
   _slices(b, P, bot, top, F, cup) {
-    const cuts = [bot, top];
+    const cuts = [bot, top], keep = new Set();
     const d0 = this.mapY(b, 0), s = cup ? (this.mapY(b, 1) - d0) : 1;
     const toF = (yD) => (yD - d0) / s;
-    if (cup) { for (let y = Math.ceil(bot); y < top; y++) if (y > bot) cuts.push(y); }
+    if (cup) { for (let y = Math.ceil(bot / 2) * 2; y < top; y += 2) if (y > bot) cuts.push(y); } // (its bulge, every two rows)
     else {
       const kn = this.knots && this.knots[b.g];
-      if (kn && b.mode !== 'leg' && P.phi >= 0.999) for (const k of kn) { const yF = toF(k.y); if (yF > bot && yF < top) cuts.push(yF); }
-      if (b.shear != null && P.lift) for (const yS of [b.shear, b.shear + SHEAR_ROWS]) if (yS > bot && yS < top) cuts.push(yS);
+      // (a knot is cut where the unlifted and the fully lifted columns reach it: past the marker a column
+      // is drawn up to a row higher, at the radius there)
+      if (kn && b.mode !== 'leg' && P.phi >= 0.999) for (const k of kn) for (const yF of [toF(k.y), toF(k.y - (P.lift ? P.phi : 0))]) if (yF > bot && yF < top) cuts.push(yF);
+      if (b.shear != null && P.lift) for (const yS of [b.shear, b.shear + SHEAR_ROWS]) if (yS > bot && yS < top) { cuts.push(yS); keep.add(yS); }
     }
     cuts.sort((a, z) => a - z);
     const out = [];
-    const Rf = (yF) => this.radiusAt(P, this.mapY(b, yF), yF);
+    const Rf = (yF, l = 0) => this.radiusAt(P, this.mapY(b, yF) + l, yF);
+    const L = P.lift ? P.phi : 0;
+    // (a cut where the radius runs straight on through it is dropped: fewer, taller slices)
+    if (!cup) for (let i = cuts.length - 2; i >= 1; i--) {
+      const a = cuts[i - 1], c = cuts[i], z = cuts[i + 1];
+      if (z - a < 1e-6) { cuts.splice(i, 1); continue; }
+      const t = (c - a) / (z - a);
+      if (keep.has(c)) continue; // (where the helix starts to rise)
+      if (Math.abs(lerp(Rf(a), Rf(z), t) - Rf(c)) * F.cp < 0.4 && Math.abs(lerp(Rf(a, L), Rf(z, L), t) - Rf(c, L)) * F.cp < 0.4) cuts.splice(i, 1);
+    }
     for (let i = 0; i < cuts.length - 1; i++) {
       const a = cuts[i], z = cuts[i + 1];
       if (z - a < 1e-4) continue;
-      const dR = Math.abs(Rf(z) - Rf(a)) * F.cp;
-      const n = cup ? 1 : clamp(Math.ceil(dR / 3), 1, 5);
+      // where the radius changes a band is cut into slices of about 3 px of radius (lifted columns
+      // included), so the outline bends smoothly
+      const dR = Math.max(Math.abs(Rf(z) - Rf(a)), Math.abs(Rf(z, L) - Rf(a, L))) * F.cp;
+      const n = clamp(Math.ceil(dR / 3), 1, 6);
       for (let q = 0; q < n; q++) {
         const sb = lerp(a, z, q / n), st = lerp(a, z, (q + 1) / n);
-        out.push({ bot: sb, top: st, dBot: this.mapY(b, sb), dTop: this.mapY(b, st), R: Rf((sb + st) / 2) });
+        out.push({ bot: sb, top: st, dBot: this.mapY(b, sb), dTop: this.mapY(b, st), Rb: Rf(sb), Rt: Rf(st) });
       }
     }
     if (out.length) out[0].first = true;
