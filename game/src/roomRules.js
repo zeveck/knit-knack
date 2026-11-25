@@ -7,7 +7,7 @@ import { recordChart } from './render.js';
 import { isToy } from './plush.js';
 import { DOLLS, DOLL_NAMES } from './worn.js';
 
-export const LAYERS = ['wall', 'shelf-top', 'shelf-low', 'floor-back', 'window-seat', 'chair', 'rug'];
+export const LAYERS = ['wall', 'shelf-top', 'shelf-low', 'floor-back', 'window-seat', 'chair', 'rug', 'rug-front'];
 const ALL_FLOOR = ['doll', 'purl', 'toy', 'pillow', 'piece:table', 'piece:plant', 'piece:books', 'piece:chest', 'piece:teaset', 'piece:lamp'];
 export const SURFACES = {
   'frame-hook': { kind: 'hook', layer: 'wall', capacity: 1, accepts: ['piece:frame'], name: 'the picture hook' },
@@ -18,15 +18,17 @@ export const SURFACES = {
   'seat-drape': { kind: 'drape', layer: 'window-seat', capacity: 1, accepts: ['blanket'], name: 'the window seat' },
   'window-seat': { kind: 'line', layer: 'window-seat', capacity: 2.0, maxH: 1.6, accepts: ['doll', 'purl', 'toy', 'pillow', 'piece:plant', 'piece:books', 'piece:teaset'], name: 'the window seat' },
   'chair-drape': { kind: 'drape', layer: 'chair', capacity: 1, accepts: ['blanket'], name: 'the armchair' },
-  'chair-arm-l': { kind: 'line', layer: 'chair', capacity: 0.5, maxH: 1.5, accepts: ['toy', 'piece:plant', 'piece:books'], name: 'the chair arm' },
-  'chair-arm-r': { kind: 'line', layer: 'chair', capacity: 0.5, maxH: 1.5, accepts: ['toy', 'piece:plant', 'piece:books'], name: 'the chair arm' },
+  'chair-arm-l': { kind: 'line', layer: 'chair', capacity: 0.8, maxH: 1.5, accepts: ['toy', 'piece:plant', 'piece:books'], name: 'the chair arm' },
+  'chair-arm-r': { kind: 'line', layer: 'chair', capacity: 0.8, maxH: 1.5, accepts: ['toy', 'piece:plant', 'piece:books'], name: 'the chair arm' },
   'chair-seat': { kind: 'line', layer: 'chair', capacity: 1.2, maxH: 2.0, accepts: ['doll', 'purl', 'toy', 'pillow', 'piece:books'], name: 'the armchair' },
-  rug: { kind: 'line', layer: 'rug', capacity: 3.5, maxH: 3.0, accepts: ALL_FLOOR, name: 'the rug' },
+  // the rug holds a group in two rows: its middle, and its front edge (drawn over the middle row)
+  rug: { kind: 'line', layer: 'rug', capacity: 4.0, maxH: 3.0, accepts: ALL_FLOOR, name: 'the rug' },
+  'rug-front': { kind: 'line', layer: 'rug-front', capacity: 3.5, maxH: 3.0, accepts: ALL_FLOOR, name: 'the front of the rug' },
 };
 export const SURFACE_IDS = Object.keys(SURFACES);
 export const LINE_IDS = SURFACE_IDS.filter((id) => SURFACES[id].kind === 'line');
 // keyboard Up / Down: back to front
-export const LINE_ORDER = ['shelf-top', 'shelf-low', 'floor-back', 'window-seat', 'chair-arm-l', 'chair-seat', 'chair-arm-r', 'rug'];
+export const LINE_ORDER = ['shelf-top', 'shelf-low', 'floor-back', 'window-seat', 'chair-arm-l', 'chair-seat', 'chair-arm-r', 'rug', 'rug-front'];
 export const MAX_THINGS = 40;
 
 // room pieces: height and footprint in ru, whether Turn shows (hooks never)
@@ -134,7 +136,9 @@ export function packSurface(list, sid, extra = null) {
   if (items.length) items[0].t = Math.max(items[0].f / 2, items[0].t);
   return items;
 }
-export const usedOn = (list, sid, not = null) => list.filter((e) => e.surface === sid && e.ref !== not).reduce((t, e) => t + (SURFACES[sid].kind === 'line' ? sizeOf(e.ref).foot : 1), 0);
+// what's in the player's hands takes space; a locked thing kept in the save (hidden) doesn't
+export const live = (list) => list.filter((e) => available(e.ref));
+export const usedOn = (list, sid, not = null) => live(list).filter((e) => e.surface === sid && e.ref !== not).reduce((t, e) => t + (SURFACES[sid].kind === 'line' ? sizeOf(e.ref).foot : 1), 0);
 
 // does ref fit on surface sid (list: the room, ref itself left out)? null, or the reason it doesn't
 export function fitReason(list, ref, sid) {
@@ -181,12 +185,12 @@ export function place(list, ref, sid, t) {
   const Sf = SURFACES[sid];
   if (!Sf) return { ok: false, reason: 'unknown', surface: sid, t };
   const had = list.find((e) => e.ref === ref);
-  if (!had && list.length >= MAX_THINGS) return { ok: false, reason: 'room-full', surface: sid, t };
+  if (!had && live(list).length >= MAX_THINGS) return { ok: false, reason: 'room-full', surface: sid, t };
   const why = fitReason(list, ref, sid);
   if (why) return { ok: false, reason: why, surface: sid, t };
   let swapped = null;
   if (Sf.kind !== 'line') {
-    const there = list.find((e) => e.surface === sid && e.ref !== ref);
+    const there = live(list).find((e) => e.surface === sid && e.ref !== ref);
     if (there) { swapped = there.ref; list.splice(list.indexOf(there), 1); }
     t = 0.5;
   }
@@ -194,12 +198,12 @@ export function place(list, ref, sid, t) {
   const cap = Sf.kind === 'line' ? Sf.capacity : 1;
   t = Math.max(foot / 2, Math.min(cap - foot / 2, Number.isFinite(+t) ? +t : cap / 2));
   if (Sf.kind !== 'line') t = 0.5;
-  const z = list.filter((e) => e.surface === sid && e.ref !== ref).reduce((m, e) => Math.max(m, e.z + 1), 0);
+  const z = live(list).filter((e) => e.surface === sid && e.ref !== ref).reduce((m, e) => Math.max(m, e.z + 1), 0);
   const entry = had || { ref, surface: sid, t, flip: false, z };
   if (had) list.splice(list.indexOf(had), 1);
   entry.surface = sid; entry.t = t; entry.z = z;
   if (Sf.kind === 'line') {
-    for (const it of packSurface(list, sid, entry)) it.e.t = Math.round(it.t * 1000) / 1000;
+    for (const it of packSurface(live(list), sid, entry)) it.e.t = Math.round(it.t * 1000) / 1000;
   }
   list.push(entry);
   return { ok: true, surface: sid, t: entry.t, reason: null, swapped };
@@ -217,7 +221,9 @@ export function bringToFront(list, ref) {
 // things) and renumbers z per surface. Locked dolls and pieces stay (they're drawn only when unlocked).
 export function cleanRoom() {
   const s = S.get();
-  const raw = Array.isArray(s.room) ? s.room : [];
+  const raw0 = Array.isArray(s.room) ? s.room : [];
+  // what the player has claims its place first; a locked thing stays (hidden) only where it still fits
+  const raw = [...raw0.filter((e) => available(e.ref)), ...raw0.filter((e) => !available(e.ref))];
   const out = [];
   for (const e of raw) {
     const k = kindOf(e.ref);
@@ -231,13 +237,15 @@ export function cleanRoom() {
     if (Sf.kind !== 'line') { if (out.some((x) => x.surface === sid)) continue; out.push({ ...e, surface: sid, t: 0.5 }); continue; }
     const { h, foot } = sizeOf(e.ref);
     if (h > Sf.maxH + 1e-6 || foot > Sf.capacity + 1e-6) continue;
-    if (usedOn(out, sid) + foot > Sf.capacity + 1e-6) continue; // overflow: back to Your things
+    const usedAll = out.filter((x) => x.surface === sid).reduce((n, x) => n + sizeOf(x.ref).foot, 0);
+    if (usedAll + foot > Sf.capacity + 1e-6) continue; // overflow: back to Your things
     out.push({ ...e, surface: sid, t: Math.max(foot / 2, Math.min(Sf.capacity - foot / 2, e.t)) });
   }
+  out.sort((a, b) => raw0.findIndex((x) => x.ref === a.ref) - raw0.findIndex((x) => x.ref === b.ref)); // the saved order
   if (out.length > MAX_THINGS) out.length = MAX_THINGS;
   for (const sid of SURFACE_IDS) {
     const on = out.filter((e) => e.surface === sid);
-    if (SURFACES[sid].kind === 'line') for (const it of packSurface(out, sid)) it.e.t = Math.round(it.t * 1000) / 1000;
+    if (SURFACES[sid].kind === 'line') for (const it of packSurface(live(out), sid)) it.e.t = Math.round(it.t * 1000) / 1000;
     on.sort((a, b) => a.z - b.z).forEach((e, i) => { e.z = i; });
   }
   s.room = out;

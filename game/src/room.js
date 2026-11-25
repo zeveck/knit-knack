@@ -198,7 +198,7 @@ function renderNew(ref) {
     const H = Math.round(W * 0.72), m = Math.round(W * 0.6);
     eyes = toyEyes(p, chart, g.slots).map((e) => ({ x: m + e.c * W + W / 2, y: m + 0.4 * H + (chart.height - e.r) * H + H * 0.55, color: e.color }));
   }
-  const pl = plushify(flat, { cell: W, eyes }).canvas;
+  const pl = plushify(flat, { cell: W, eyes, shape: kind === 'pillow' ? 'pillow' : 'toy' }).canvas;
   flat.width = flat.height = 0;
   const tb = alphaBox(pl);
   return { el: pl, bw: pl.width, bh: pl.height, ax: (tb[0] + tb[2]) / 2, ay: tb[3] - (tb[3] - tb[1]) * 0.04, ppr: (tb[3] - tb[1]) / h, trim: tb };
@@ -210,13 +210,11 @@ function renderDrape(ref, sid) {
   const J = ART[pic].json.surfaces[sid]; if (!J) return null;
   const RH = (kDev / R_UNIT()) , RW = RH * aspect();
   const mesh = J.parts.map((q) => q.map(([x, y]) => [x * RW, y * RH]));
-  const g = S.galleryById(ref); const p = g && S.patternById(g.pattern);
-  const chart = p && recordChart(g, p);
+  const bows = (J.bows || J.parts.map(() => [0, 0])).map(([a, b]) => [a * RH, b * RH]);
   // about 3 stitches across a doll's body
   const cell = Math.max(3, Math.round(kDev / 16));
   let parts = null;
-  try { parts = drapeOnto(ref, mesh, cell); } catch (e) { console.warn('drape', e); }
-  void chart;
+  try { parts = drapeOnto(ref, mesh, cell, { bows }); } catch (e) { console.warn('drape', e); }
   if (!parts) return null;
   const info = { parts, RW, RH, over: J.over };
   cache.set(key, info);
@@ -288,8 +286,11 @@ function render() {
   const want = pictureFor(sr.width, sr.height);
   pic = ART[want] && ART[want].json ? want : (ART.land && ART.land.json ? 'land' : want);
   const a = aspect();
-  const w = Math.min(sr.width, sr.height * a), h = w / a;
-  box = { w, h, x: (sr.width - w) / 2, y: (sr.height - h) / 2 };
+  // contained; but an upright phone's picture may grow to fill the width, the floor at its bottom edge
+  // going a little under the tray (at most 8% of its height)
+  const crop = pic === 'port' ? 0.08 : 0;
+  const w = Math.min(sr.width, (sr.height * a) / (1 - crop)), h = w / a;
+  box = { w, h, x: (sr.width - w) / 2, y: h > sr.height ? 0 : (sr.height - h) / 2 };
   Object.assign(bx.style, { left: `${box.x}px`, top: `${box.y}px`, width: `${w}px`, height: `${h}px` });
   const A = ART[pic];
   if (A && A.img) bx.append(el('img', { class: 'room-bg', src: A.img.src, alt: 'A cozy room: a window seat under a snowy window, two shelves on the wall, an armchair and a braided rug', draggable: 'false' }));
@@ -438,7 +439,7 @@ function placeDrape(T, p, li) {
 
 // ---------------------------------------------------------------- Your things
 function trayRefs() {
-  const inRoom = new Set(S.get().room.map((e) => e.ref));
+  const inRoom = new Set(S.get().room.filter((e) => R.available(e.ref)).map((e) => e.ref));
   return R.allThings().filter((t) => !inRoom.has(t.ref));
 }
 let trayQueue = [], trayRaf = 0;
@@ -616,6 +617,17 @@ function surfacesAt(ref, fx, fy) {
   }
   const lines = cands.filter((c) => c.below !== undefined);
   let primary = lines.filter((c) => c.below >= -14 && c.below <= 40).sort((a, b) => Math.abs(a.below) - Math.abs(b.below))[0];
+  // anywhere on the painted rug is the rug: the nearer of its two rows, at the nearest t along it
+  const area = J.surfaces.rug.area;
+  if (area && !hookish && (!primary || primary.sid === 'rug' || primary.sid === 'rug-front' || primary.below > 14)) {
+    const [cx, cy, rx, ry] = area;
+    const nx = (fx / box.w - cx) / rx, ny = (fy / box.h - cy) / ry;
+    if (nx * nx + ny * ny <= 1.1) { // (a little past its braid still counts)
+      const rows = lines.filter((c) => c.sid === 'rug' || c.sid === 'rug-front');
+      const byY = rows.map((c) => { const G = lineGeom(J, c.sid, box.w, box.h); return { c, dy: Math.abs(fy - G.p0[1]) }; }).sort((a, b) => a.dy - b.dy);
+      if (byY.length) primary = byY[0].c;
+    }
+  }
   if (!primary) primary = lines.filter((c) => c.d <= 80).sort((a, b) => a.d - b.d)[0] || null;
   const near = lines.filter((c) => c !== primary && c.d <= 60).sort((a, b) => a.d - b.d);
   if (hookish) return { primary: null, why: primary, cands: [] };
@@ -720,7 +732,9 @@ function moveHeld(px, py) {
     position(held.T, [fx, fy], U, U_RUG(), 5000, held.entry ? held.entry.flip : false);
   });
 }
+function unlift() { if (dom) for (const b of dom.list.querySelectorAll('.ti.lifting')) b.classList.remove('lifting'); }
 function endHold() {
+  unlift();
   if (!held) return;
   const h = held; held = null;
   if (h.T.carry) h.T.btn.remove();
@@ -731,7 +745,7 @@ function endHold() {
 }
 // a cancelled hold: back where it came from, nothing saved
 function cancelHeld(silent = false) {
-  if (!held) { disarm(); return; }
+  if (!held) { unlift(); disarm(); return; }
   endHold();
   if (dom) layout();
   if (!silent) speak('Put back');
@@ -781,8 +795,15 @@ function bindPointers() {
   R0.addEventListener('lostpointercapture', (e) => { if (e.target === R0 && held && held.via === 'pointer' && held.pointerId === e.pointerId) cancelHeld(); });
   R0.addEventListener('contextmenu', (e) => e.preventDefault());
   R0.addEventListener('dragstart', (e) => e.preventDefault());
+  // a mouse wheel scrolls the strip sideways (a trackpad's sideways swipe already does)
+  R0.addEventListener('wheel', (e) => {
+    if (!dom || !along() || !e.target.closest || !e.target.closest('.tray-list')) return;
+    if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+    e.preventDefault(); stopMomentum();
+    dom.list.scrollLeft += e.deltaY * (e.deltaMode === 1 ? 32 : e.deltaMode === 2 ? dom.list.clientWidth : 1);
+  }, { passive: false });
 }
-function clearPress() { if (press) { clearTimeout(press.timer); press = null; } }
+function clearPress() { if (press) { clearTimeout(press.timer); press = null; } if (!held) unlift(); }
 function onDown(e) {
   if (!dom || tipOpen) return;
   if (e.button > 0) return;
@@ -805,6 +826,13 @@ function onMove(e) {
   const p = press; if (!p || p.id !== e.pointerId) return;
   const dx = e.clientX - p.x, dy = e.clientY - p.y, dist = Math.hypot(dx, dy);
   if (p.mode === 'scroll') {
+    // scrolling, then out of the tray toward the room: it's a pick-up after all
+    if (p.tref && !inRect(e, dom.tray) && (along() ? e.clientY < dom.tray.getBoundingClientRect().top : e.clientX < dom.tray.getBoundingClientRect().left)) {
+      p.mode = 'held';
+      const [bx, by] = boxPt(e);
+      startHold(p.tref, 'pointer', { pointerId: p.id, px: bx, py: by });
+      press = null; return;
+    }
     const L = dom.list, now = performance.now();
     const d = along() ? e.clientX - p.lx : e.clientY - p.ly;
     if (along()) L.scrollLeft -= d; else L.scrollTop -= d;
@@ -814,7 +842,10 @@ function onMove(e) {
   p.lx = e.clientX; p.ly = e.clientY;
   if (p.tray && !p.mode && dist >= 8) {
     clearTimeout(p.timer);
-    const alongMove = along() ? Math.abs(dx) >= Math.abs(dy) : Math.abs(dy) >= Math.abs(dx);
+    // any clear move toward the room (up out of the strip, left out of the side column) picks it up;
+    // only a move mostly along the tray scrolls it
+    const toward = along() ? -dy > 0.35 * Math.abs(dx) : -dx > 0.35 * Math.abs(dy);
+    const alongMove = !toward;
     if (alongMove || !p.tref) { p.mode = 'scroll'; p.lt = performance.now(); return; }
     p.mode = 'held';
     const [bx, by] = boxPt(e);
@@ -877,7 +908,7 @@ function keyPickFromTray(ref) {
   if (!startHold(ref, 'key')) return;
   // it appears on the rug, or the first surface that takes it
   const L = S.get().room;
-  const order = [...R.LINE_ORDER].reverse();
+  const order = ['rug', ...[...R.LINE_ORDER].reverse().filter((x) => x !== 'rug')];
   let sid = null;
   if (R.isHookThing(ref)) sid = R.PIECES[ref.slice(6)].hook;
   else if (R.goesOnDrape(ref)) sid = L.some((e) => e.surface === 'chair-drape') ? 'seat-drape' : 'chair-drape';

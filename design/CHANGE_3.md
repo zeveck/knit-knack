@@ -77,7 +77,7 @@ All sizes are in **room units (ru)**: **1 ru is a doll's standing height**, from
 |---|---|---|---|---|
 | a doll | 1.0 (from `dollBounds`: Juniper 1.14, Basil 1.08) | 0.6 (the body; outstretched arms, 0.71 wide, may overlap a neighbour's) | shelves, window seat, chair seat, back floor, rug | no |
 | Purl (sitting) | 0.8 | 0.6 | shelves, window seat, chair seat, back floor, rug | yes |
-| a toy | 0.55 (every toy, one height band) | its plush width at that height, 0.35–0.8 | everywhere except the drapes and hooks; the chair arms only if ≤ 0.5 | yes |
+| a toy | 0.55 (every toy, one height band) | its plush width at that height, 0.35–0.8 | everywhere except the drapes and hooks; the chair arms (≤ 0.8: all of them) | yes |
 | a pillow or cushion | 0.5 | its plush width, 0.45–0.7 | window seat, chair seat, rug | no |
 | a blanket | (the drape's mesh) | (one per drape spot) | chair drape, seat drape | no |
 | side table with teacup | 0.9 | 0.7 | back floor, rug | yes |
@@ -103,11 +103,12 @@ Both room pictures have **the same surfaces with the same ids, capacities and li
 | seat-drape | drape | 1 blanket | n/a | window-seat |
 | window-seat | line | 2.0 | 1.6 | window-seat |
 | chair-drape | drape | 1 blanket | n/a | chair |
-| chair-arm-l, chair-arm-r | line | 0.5 each | 1.5 | chair |
+| chair-arm-l, chair-arm-r | line | 0.8 each | 1.5 | chair |
 | chair-seat | line | 1.2 | 2.0 | chair |
-| rug | line | 3.5 | 3.0 | rug |
+| rug | line | 4.0 | 3.0 | rug |
+| rug-front | line | 3.5 | 3.0 | rug-front |
 
-That's 14.2 ru of lines: one of every doll, Purl, every room piece, the 8 toys and both pillows (about 13.4 ru) all fit at once; extra "Knit again" copies may not, which is what "full" is for. A doll (0.6) doesn't fit a chair arm (0.5): the arms hold toys, books and the plant.
+That's 18.8 ru of lines (the rug holds a group in two rows: its middle, and its front edge drawn over it; a drop anywhere inside the painted rug's ellipse, `area` in the JSON, goes to the nearer row at the nearest `t`): one of every doll, Purl, every room piece, the 8 toys and both pillows (about 13.4 ru) all fit at once; extra "Knit again" copies may not, which is what "full" is for. The arms hold toys, books and the plant, never a doll.
 
 **In each picture's JSON** (`assets/bg/room-land.json`, `room-port.json`), as fractions of the image:
 
@@ -133,13 +134,13 @@ That's 14.2 ru of lines: one of every doll, Purl, every room piece, the 8 toys a
 - **The limit:** at most 40 things in the room at once (to keep memory and drawing small). The 41st goes back with "The room is full. Put something away first." In practice the capacities fill first.
 - **Packing** (layout only): a surface's things, sorted by `t`, are pushed right so footprints don't overlap, then pushed back left from the right end. Layout never writes the save.
 - **The save is written** only by a drop, Turn, Put away, Tidy up, or a tap's bring-to-front (its `z`). A drop writes the packed `t` of every thing on that surface, so the save is what you see. **A rotation or resize never rewrites the save**: the other picture lays out the same `{surface, t}`.
-- **Draw order** is fixed by layer: **wall** (hooks) → **shelf-top** → **shelf-low** → **floor-back** → **window-seat** → **chair** → **rug**. Within a layer: the drape's under-parts, then the things by `z` (each with a soft code contact shadow), then the layer's front layer, then any over-part of the drape. A tap or a drop gives a thing the top `z` of its surface. A dragged thing is drawn above everything until it's dropped.
+- **Draw order** is fixed by layer: **wall** (hooks) → **shelf-top** → **shelf-low** → **floor-back** → **window-seat** → **chair** → **rug** → **rug-front**. Within a layer: the drape's under-parts, then the things by `z` (each with a soft code contact shadow), then the layer's front layer, then any over-part of the drape. A tap or a drop gives a thing the top `z` of its surface. A dragged thing is drawn above everything until it's dropped.
 
 ## Controls
 
 - **Touch and mouse:** drag; tap selects (hop, to the front, the button bar).
   - **Tap threshold:** a press that moves under 10 px is a tap (as in input.js). Over 10 px on a placed thing starts a drag, with `setPointerCapture`.
-  - **Picking up from Your things** (which scrolls): the tray has `touch-action: none` and scrolls itself in code (with a little momentum; the mouse wheel and trackpad scroll it natively). On a press, the first 8 px of movement decide: **along** the tray scrolls it; **across** it (up out of a horizontal strip, sideways out of the vertical column) picks the thing up. Holding still for 250 ms also picks it up (it lifts, with sfx-dress). Once picked up, the pointer is captured.
+  - **Picking up from Your things** (which scrolls): the tray has `touch-action: none` and scrolls itself in code (with a little momentum; a mouse wheel's up/down scrolls the strip sideways, a trackpad scrolls it natively). On a press, the first 8 px of movement decide: any clear move **toward the room** (upward by more than 0.35 of the sideways part, out of a horizontal strip; leftward likewise out of the vertical column) picks the thing up; a move mostly **along** the tray scrolls it, and a scroll that then leaves the tray toward the room picks the thing up after all. Holding still for 250 ms also picks it up (it lifts, with sfx-dress). Once picked up, the pointer is captured.
   - **Cancelled drags:** on `pointercancel`, `lostpointercapture`, a resize or rotation, a sheet opening or the page hiding, the held thing goes back where it came from, and nothing is saved.
   - **Hit boxes** come from each thing's trimmed bounds (`dollBounds` for dolls), at least 44 × 44 CSS px, centred on the feet. Things are `<button>`s with `draggable=false` and no long-press callout. The Room tab has no swipe handler.
   - A drop calls `S.saveNow()`.
@@ -153,7 +154,7 @@ That's 14.2 ru of lines: one of every doll, Purl, every room piece, the 8 toys a
 
 ## Layouts
 
-- **Phone portrait (390×844):** the header and tabs, the room (room-port, contained, about 390×585), and Your things as a horizontal strip below it (about 112 px tall plus the safe area).
+- **Phone portrait (390×844):** the header and tabs, the room (room-port, filling the width: it may grow past the stage by up to 8% of its height, the floor at its bottom going under the tray), and Your things as a horizontal strip below it (about 96 px tall plus the safe area). room-port is the portrait edit with a band of empty wall between the shelves taken out (1024×1313), so it fills an upright phone.
 - **Phone landscape (844×390):** on a short landscape screen (height under 500) the tabs fold into the header row. Your things is one column of 2 items (about 170 px) at the right; the room (room-land) fills the rest, about 507×338. A doll on the top shelf is then about 68 px tall, on the rug about 84.
 - **Desktop (1280×800 and up):** the room large (room-land, about 840×560 at 1280×800), with Your things as a strip below it.
 - **Which picture:** room-land when the room's area is wider than tall, else room-port.

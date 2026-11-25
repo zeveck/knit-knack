@@ -22,6 +22,8 @@
 .rt-drape .rt-vis { inset: 0; }
 .rt-drape2 { position: absolute; left: 0; top: 0; touch-action: none; }
 .rt-drape2 > canvas { display: block; width: 100%; height: 100%; pointer-events: none; }
+/* a blanket lies on the furniture: a soft shadow under its edges */
+.rt-drape .rt-bob > canvas, .rt-drape2 > canvas { filter: drop-shadow(0 1.5px 2px rgba(40, 14, 30, 0.4)); }
 .rt.sel .rt-bob { filter: drop-shadow(0 0 3px rgba(255, 233, 160, 0.95)) drop-shadow(0 0 6px rgba(255, 220, 130, 0.6)); }
 .rt.held .rt-bob { filter: drop-shadow(0 0 4px rgba(255, 233, 160, 0.95)); opacity: 0.8; }
 .rt.dragging { z-index: 5000 !important; cursor: grabbing; }
@@ -37,7 +39,7 @@
 .rbar .btn.small { min-height: 36px; padding: 4px 12px; font-size: 14px; }
 
 /* lines over the room */
-.room-msg { position: absolute; left: 50%; top: 10px; transform: translate(-50%, -6px); z-index: 6500; pointer-events: none; opacity: 0; transition: opacity 0.2s, transform 0.2s;
+.room-msg { position: absolute; left: 50%; bottom: 10px; transform: translate(-50%, 6px); z-index: 6500; pointer-events: none; opacity: 0; transition: opacity 0.2s, transform 0.2s;
   background: rgba(34, 22, 46, 0.9); color: var(--cream); border-radius: 999px; padding: 7px 16px; font-weight: 600; font-size: 15px; max-width: 92%; text-align: center; box-shadow: var(--shadow-sm); }
 .room-msg.show { opacity: 1; transform: translate(-50%, 0); }
 .room-soft { position: absolute; z-index: 1900; pointer-events: none; text-align: center; font-family: 'Caveat', cursive; font-size: clamp(17px, 2.6vmin + 6px, 26px); line-height: 1.1; color: #fff4dc; text-shadow: 0 1px 2px rgba(30, 10, 20, 0.9), 0 0 10px rgba(30, 10, 20, 0.6); text-wrap: balance; }
@@ -68,3 +70,15 @@
 .tidy-sheet .acts { display: flex; gap: 10px; flex-wrap: wrap; }
 .closer-big { display: flex; justify-content: center; align-items: flex-end; padding: 8px; background: radial-gradient(circle at 45% 35%, #f3e1bd, #b98d62); border-radius: 14px; min-height: 120px; }
 .closer .acts { display: flex; gap: 8px; justify-content: center; margin-top: 10px; }
+
+/* phones upright: a slimmer tray and tab row so the room can fill the width; a smaller button bar */
+@media (max-width: 560px) and (orientation: portrait) {
+  .room-screen .gal-tabs { padding-top: 2px; }
+  .room-body:not(.side) .tray { height: calc(96px + var(--sab)); }
+  .room-body:not(.side) .tray-head { height: 28px; }
+  .room-body:not(.side) .ti { width: 64px; height: 64px; padding: 2px; border-radius: 10px; }
+  .room-body:not(.side) .ti canvas { width: 58px !important; height: 58px !important; }
+  .room-body:not(.side) .tray-sec { max-height: 64px; }
+  .rbar { gap: 2px; padding: 3px; }
+  .rbar .btn.small { min-height: 34px; padding: 3px 9px; font-size: 13px; }
+}

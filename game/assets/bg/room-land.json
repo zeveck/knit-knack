@@ -1,5 +1,5 @@
 {
- "_note": "Fractions of the picture. line: where feet rest, [x0,y0]->[x1,y1]; scale: height of 1 ru there as a fraction of the image height; capacity/maxH in ru. hook box: [x, y, w, h]. drape parts: two quads [[x,y]x4] (TL, TR, BR, BL), over says whether the part is drawn over the layer front. fronts: polygons cut from the picture by tools/cut-room-fronts.py into bg/<file>, drawn at offset (top-left) and size, after the layer's things. Draw order: wall, shelf-top, shelf-low, floor-back, window-seat, chair, rug. Toys on the chair arms only if footprint <= maxFoot.",
+ "_note": "Fractions of the picture. line: where feet rest, [x0,y0]->[x1,y1]; scale: height of 1 ru there as a fraction of the image height; capacity/maxH in ru. hook box: [x, y, w, h]. drape parts: two quads [[x,y]x4] (TL, TR, BR, BL), over says whether the part is drawn over the layer front. fronts: polygons cut from the picture by tools/cut-room-fronts.py into bg/<file>, drawn at offset (top-left) and size, after the layer's things. Draw order: wall, shelf-top, shelf-low, floor-back, window-seat, chair, rug, rug-front. Toys on the chair arms only if footprint <= maxFoot. rug area: the painted rug's ellipse [cx, cy, rx, ry]; a drop inside it goes to the nearer rug row. drape bows: per part [top, bottom] edge sag at the middle (fraction of the height, negative = up).",
  "image": "room-land.webp",
  "size": [
   1536,
@@ -12,7 +12,8 @@
   "floor-back",
   "window-seat",
   "chair",
-  "rug"
+  "rug",
+  "rug-front"
  ],
  "surfaces": {
   "frame-hook": {
@@ -131,44 +132,54 @@
    "parts": [
     [
      [
-      0.127,
-      0.5117
+      0.07,
+      0.522
      ],
      [
-      0.2962,
-      0.5117
+      0.375,
+      0.522
      ],
      [
-      0.3008,
-      0.5469
+      0.398,
+      0.556
      ],
      [
-      0.1224,
-      0.5469
+      0.048,
+      0.556
      ]
     ],
     [
      [
-      0.1224,
-      0.5449
+      0.048,
+      0.555
      ],
      [
-      0.3008,
-      0.5449
+      0.398,
+      0.555
      ],
      [
-      0.3021,
-      0.5957
+      0.392,
+      0.615
      ],
      [
-      0.1211,
-      0.5957
+      0.054,
+      0.615
      ]
     ]
    ],
    "over": [
     false,
     true
+   ],
+   "bows": [
+    [
+     0,
+     0
+    ],
+    [
+     0,
+     0.012
+    ]
    ]
   },
   "window-seat": {
@@ -208,60 +219,70 @@
    "parts": [
     [
      [
-      0.7096,
-      0.3438
+      0.685,
+      0.385
      ],
      [
-      0.8581,
-      0.3389
+      0.893,
+      0.385
      ],
      [
-      0.8932,
-      0.4121
+      0.898,
+      0.5
      ],
      [
-      0.6745,
-      0.4297
+      0.675,
+      0.52
      ]
     ],
     [
      [
-      0.6745,
-      0.4297
+      0.675,
+      0.52
      ],
      [
-      0.8932,
-      0.4121
+      0.898,
+      0.5
      ],
      [
-      0.8464,
-      0.5762
+      0.902,
+      0.615
      ],
      [
-      0.6823,
-      0.5898
+      0.7,
+      0.59
      ]
     ]
    ],
    "over": [
     false,
     false
+   ],
+   "bows": [
+    [
+     -0.04,
+     0
+    ],
+    [
+     0,
+     0.012
+    ]
    ]
   },
   "chair-arm-l": {
    "kind": "line",
    "line": [
     [
-     0.5534,
-     0.5557
+     0.538,
+     0.5652
     ],
     [
-     0.6133,
-     0.542
+     0.629,
+     0.5444
     ]
    ],
-   "scale": 0.18,
-   "capacity": 0.5,
+   "scale": 0.17,
+   "capacity": 0.8,
    "maxH": 1.5,
    "accepts": [
     "toy",
@@ -270,22 +291,22 @@
    ],
    "layer": "chair",
    "front": "chair",
-   "maxFoot": 0.5
+   "maxFoot": 0.8
   },
   "chair-arm-r": {
    "kind": "line",
    "line": [
     [
-     0.7812,
-     0.5967
+     0.7652,
+     0.606
     ],
     [
-     0.8398,
-     0.5811
+     0.8558,
+     0.5818
     ]
    ],
-   "scale": 0.18,
-   "capacity": 0.5,
+   "scale": 0.17,
+   "capacity": 0.8,
    "maxH": 1.5,
    "accepts": [
     "toy",
@@ -294,7 +315,7 @@
    ],
    "layer": "chair",
    "front": "chair",
-   "maxFoot": 0.5
+   "maxFoot": 0.8
   },
   "chair-seat": {
    "kind": "line",
@@ -325,16 +346,16 @@
    "kind": "line",
    "line": [
     [
-     0.1471,
-     0.8838
+     0.19,
+     0.86
     ],
     [
-     0.6602,
-     0.8838
+     0.78,
+     0.86
     ]
    ],
-   "scale": 0.22,
-   "capacity": 3.5,
+   "scale": 0.215,
+   "capacity": 4.0,
    "maxH": 3.0,
    "accepts": [
     "doll",
@@ -349,6 +370,42 @@
     "piece:lamp"
    ],
    "layer": "rug",
+   "front": null,
+   "area": [
+    0.49,
+    0.89,
+    0.4,
+    0.115
+   ]
+  },
+  "rug-front": {
+   "kind": "line",
+   "line": [
+    [
+     0.24,
+     0.955
+    ],
+    [
+     0.76,
+     0.955
+    ]
+   ],
+   "scale": 0.225,
+   "capacity": 3.5,
+   "maxH": 3.0,
+   "accepts": [
+    "doll",
+    "purl",
+    "toy",
+    "pillow",
+    "piece:table",
+    "piece:plant",
+    "piece:books",
+    "piece:chest",
+    "piece:teaset",
+    "piece:lamp"
+   ],
+   "layer": "rug-front",
    "front": null
   }
  },
