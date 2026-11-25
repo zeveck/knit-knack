@@ -702,6 +702,9 @@ export function sockChart(o) {
   // ---- heel flap over the back half: set-up "k{bR}, turn", then rows from the WS
   b.section(`Heel flap (worked back and forth over ${B} sts; the other ${I} wait on a spare DPN for the instep)`);
   for (const c of inst) b.held.add(c);
+  b.needle({ kind: 'dpn', text: o.legFlat
+    ? `Divide the sts: the ${bR} sts each side of the seam onto one DPN for the heel flap (it is worked back and forth), the other ${I} onto a spare DPN for the instep.`
+    : `Divide the sts: the last ${bL} and the first ${bR} sts of the rnd onto one DPN for the heel flap (it is worked back and forth), the other ${I} onto a spare DPN for the instep.` });
   b.flatStart({ first: o.legFlat ? (o.legFlat.rows % 2 ? 'WS' : 'RS') : 'RS', cut: W - bR, span: B });
   if (b.side()) b.work(rep('k', bR), { slot: sHeel, hold: colsL });
   for (let i = 0; i < o.flapRows; i++) {
@@ -717,15 +720,19 @@ export function sockChart(o) {
   const toCentre = heel.filter((c) => c < W / 2);
   const rest = heel.filter((c) => c >= W / 2);
   const nC = toCentre.length;
-  b.work(rep('k', nC), { slot: sHeel, hold: rest, step: { kind: 'centre', text: `K${nC} (to the centre of the heel); this is the new beg of rnd.`, label: 'To the centre' } });
+  b.work(rep('k', nC), { slot: sHeel, hold: rest, step: { kind: 'centre', text: `With ${sHeel} and the RS facing, k${nC} to the centre of the heel; this is the new beg of rnd (pm).`, label: 'To the centre' } });
   b.flatEnd();
   // ---- gusset set-up round: k the heel's other half, pick up along the flap, k the instep, pick up, k to the marker
   b.section('Gusset');
   b.release(inst);
   const pick = Math.round(o.flapRows / 2 + 0.5);
   if (pick !== g) throw new Error(`sockChart: ${o.flapRows} flap rows give ${pick} sts to pick up, the gusset has ${g}`);
-  if (o.legFlat) b.needle({ kind: 'dpn', n: 3, counts: [b.order().filter((c) => c >= W / 2 && !instSet.has(c)).length + g, I, g + nC],
-    text: 'From here on work in the rnd on 3 DPNs: the sole sts and a gusset on each of 2 needles, the instep on the third.' });
+  const segFrom = b.r + 1;
+  const n1 = b.order().filter((c) => c >= W / 2 && !instSet.has(c)).length + g;
+  if (I <= 14) b.needle({ kind: 'dpn', n: 3, counts: [n1, I, g + nC],
+    text: `From here on work in the rnd on 3 DPNs: on the set-up rnd, the first heel sts and the first gusset's picked-up sts go on needle 1, the ${I} instep sts on needle 2, the second gusset and the last heel sts on needle 3.` });
+  else b.needle({ kind: 'dpn', n: 4, counts: [n1, Math.ceil(I / 2), Math.floor(I / 2), g + nC],
+    text: `From here on work in the rnd on 4 DPNs: on the set-up rnd, the first heel sts and the first gusset's picked-up sts go on needle 1, the ${I} instep sts on needles 2 and 3 (${Math.ceil(I / 2)} and ${Math.floor(I / 2)}), the second gusset and the last heel sts on needle 4.` });
   {
     const L = b.order();
     const ops = [];
@@ -736,7 +743,7 @@ export function sockChart(o) {
     for (let k = 0; k < g; k++) ops.push({ s: 'u', slot: main, col: gL[g - 1 - k] });
     for (let k = 0; k < nC; k++) ops.push({ s: 'k', slot: main });
     const total = nR + g + I + g + nC;
-    b.work(ops, { step: { kind: 'setup', label: 'Set-up rnd', text: `Set-up rnd: k${nR}, pick up and k ${g} sts along the edge of the heel flap, k${I}, pick up and k ${g} sts along the other edge, k${nC} (${total} sts).` } });
+    b.work(ops, { step: { kind: 'setup', label: 'Set-up rnd', text: `Set-up rnd: with ${main}, k${nR}, pick up and k ${g} sts evenly along the edge of the heel flap, k${I}, pick up and k ${g} sts evenly along the other edge, k${nC} (${total} sts).` } });
   }
   // gusset decreases: "k to 3 sts before the instep, k2tog, k1, k across the instep, k1, ssk, k to end", every other round
   // a round with the instep in pattern (o.instepOps(i): tokens covering the I instep sts; default plain)
@@ -759,9 +766,12 @@ export function sockChart(o) {
   const L = b.order();
   const front = L.filter((c) => instSet.has(c)).sort((x, y) => x - y), back = L.filter((c) => !instSet.has(c)).sort((x, y) => b.pos(x, W / 2) - b.pos(y, W / 2));
   const n = front.length;
-  b.graft(front.map((f, k) => [f, back[n - 1 - k]]), `Divide rem ${2 * n} sts onto 2 needles, ${n} for the instep and ${n} for the sole. Graft with Kitchener stitch (${n} sts).`, sToe);
+  const toSide = L.findIndex((c) => instSet.has(c));
+  b.graft(front.map((f, k) => [f, back[n - 1 - k]]), `K${toSide} to the side of the toe. Cut the yarn, leaving a 12" tail. Divide the rem ${2 * n} sts onto 2 needles, ${n} for the instep and ${n} for the sole, and graft them with Kitchener stitch (${n} sts).`, sToe);
   const d = b.def();
-  return { ...d, W, instep: inst, gussets: [gL, gR] };
+  // from the set-up rnd on, the instep is a segment of its own in the wording
+  const segmentRows = []; for (let r = segFrom; r <= b.r; r++) segmentRows.push(r);
+  return { ...d, W, instep: inst, gussets: [gL, gR], segments: [[inst[0], inst[inst.length - 1]]], segmentRows };
 }
 const range = (a, b) => Array.from({ length: b - a }, (_, i) => a + i);
 export const evenSplit = (n, k) => Array.from({ length: k }, (_, i) => Math.floor(n / k) + (i < n % k ? 1 : 0));
@@ -781,17 +791,16 @@ export function hatChart(o) {
   b.rounds(o.brim[0], o.brim[1], { slot: sl('brim') });
   if (o.body && o.body[0]) { if (o.labels?.body !== null) b.section(o.labels?.body || 'Body'); b.rounds(o.body[0], o.body[1], { slot: sl('body') }); }
   b.section('Crown');
-  const before = b.r;
+  const before = b.r, nBefore = b.count();
   if (typeof o.crown === 'function') o.crown(b, sl('crown'));
   else crownRounds(b, o.crown.wedges, { everyOther: o.crown.everyOther, slot: sl('crown') });
   // change to DPNs on the crown's first round
-  const n1 = countAfter(b, before + 1), k = o.dpn || 4;
-  b.needles.push({ from: before + 1, kind: 'dpn', n: k, counts: evenSplit(n1, k) });
+  const k = o.dpn || 4;
+  b.needles.push({ from: before + 1, kind: 'dpn', n: k, counts: evenSplit(nBefore, k) });
   b.needles.sort((x, y) => x.from - y.from);
   b.gather(GATHER(b.count()), sl('crown')(0, 'k', 0));
   return b.def();
 }
-function countAfter(b, r) { const row = b.rows[r - 1]; let n = 0; for (const c of row.st) if (c !== '.' && c !== '_' && c !== '-') n++; return n; }
 
 // mittenChart: a mitten on DPNs: cuff, a set-up round placing markers for the thumb gusset, the gusset
 // increased (M1L after the first marker, M1R before the second), the thumb sts held on waste yarn, the
@@ -814,7 +823,7 @@ export function mittenChart(o) {
   b.section('Cuff');
   b.rounds(o.cuff[0], o.cuff[1], { slot: o.cuff[2] || sCuff });
   b.section('Thumb gusset');
-  b.work(rep('k', co), { slot: main, step: { kind: 'markers', label: 'Set-up rnd', text: `Set-up rnd: k${hA}, pm, k${base}, pm, k${hB}.` } });
+  b.work(rep('k', co), { slot: main, step: { kind: 'markers', label: 'Set-up rnd', text: `Set-up rnd: with ${main}, k${hA}, pm, k${base}, pm, k${hB}. (Slip the markers as you come to them; the increases go just inside them.)` } });
   const R = o.gussetRnds || 8;
   let k = 0;
   for (let i = 1; i <= R; i++) {
@@ -826,7 +835,7 @@ export function mittenChart(o) {
     } else b.work(rep('k', hA + n + hB), { slot: main });
   }
   if (k !== incs) throw new Error('mittenChart: gusset rounds too few');
-  b.hold([gus], `Place the ${G} thumb sts (between the markers) on waste yarn, removing the markers.`, main);
+  b.hold([gus], `Thumb sts: on Hand Rnd 1 below, when you reach the first marker, slip the ${G} sts between the markers onto waste yarn for the thumb and remove the markers; then cast on over the gap as written.`, main);
   b.section('Hand');
   b.work([...rep('k', hA), { s: '+', col: hCO[1] }, { s: '+', col: hCO[0] }, ...rep('k', hB)], { slot: main });
   for (let i = 0; i < o.hand[0]; i++) {
@@ -845,7 +854,7 @@ export function mittenChart(o) {
   b.section('Thumb');
   b.release(gus);
   b.work([...rep('k', G), { s: 'u', col: tU[1] }, { s: 'u', col: tU[0] }], { slot: main,
-    step: { kind: 'thumb', label: 'Thumb set-up rnd', text: `Return the ${G} held sts to DPNs; k${G}, then pick up and k 2 sts in the gap (${G + 2} sts).` } });
+    step: { kind: 'thumb', label: 'Thumb set-up rnd', text: `Return the ${G} held sts to DPNs and join ${main}; k${G}, then pick up and k 2 sts in the gap (${G + 2} sts).` } });
   b.rounds(o.thumb, () => 'k', { slot: main });
   b.work(rep('<', (G + 2) / 2), { slot: main });
   b.gather(GATHER(b.count()), main);

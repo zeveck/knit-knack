@@ -108,7 +108,7 @@ const add = (meta, piece) => {
     // those: yarn weight and gauge, needles, the object's shape kind, the round chart's sections and steps
     edition: meta.edition || 1, gauge: meta.gauge || null, needlesText: meta.needlesText || null, kind: meta.kind || null, bindOff: meta.bindOff || null,
     preamble: meta.preamble || null,
-    ...(d.round ? { round: true, flat: d.flat, sections: d.sections, steps: d.steps, needles: d.needles } : {}),
+    ...(d.round ? { round: true, flat: d.flat, sections: d.sections, steps: d.steps, needles: d.needles, segments: d.segments || null, segmentRows: d.segmentRows || null } : {}),
   });
 };
 
@@ -136,7 +136,7 @@ knit(rect(7, 22)).texture('seed'));
 add({ id: 'ribbed-wristwarmer', name: 'Ribbed Wristwarmer', chapter: 1, technique: '1×1 rib, seamed into a tube', ...ED2,
   source: '1×1 rib over an even count (*k1, p1 on every row), knit flat and seamed once into a tube', repeat: { width: 2, edges: 0, rows: 1 },
   wear: { slot: 'hands', fit: 'pair' }, kind: 'ring', gauge: CHUNKY, needlesText: 'a pair of straight needles',
-  finishing: 'Finishing: fold the piece with the right side out so the two side edges meet, and seam them with mattress stitch to make a tube, leaving a 2-row gap for the thumb 3 rows below the top. Weave in the ends. Make a second one the same for the pair.',
+  finishing: 'Finishing: fold the piece with the right side out so the two side edges meet, and seam them with mattress stitch to make a tube: seam rows 1–7, leave rows 8–9 open for the thumb, and seam rows 10–12. Weave in the ends. Make a second one the same for the pair.',
   slots: { A: Y('plum', 'wool'), B: Y('cream', 'wool', 'Stripe') } },
 knit(rect(24, 12)).texture((r, c) => (c % 2 ? 'k' : 'p')).colors((r) => (r === 3 || r === 4 || r === 9 || r === 10 ? 'B' : null)));
 
@@ -339,8 +339,8 @@ knit(rect(16, 16)).colors((r, c) => ((Math.floor((r - 1) / 4) + Math.floor(c / 4
   add({ id: 'snowflake-mitten', name: 'Snowflake Mitten', chapter: 3, technique: 'Stranded motif, in the round', ...ED2,
     source: 'Stranded snowflake (7 sts × 7 rnds) on the back of the hand and a lice check on the palm, on a mitten in the round: 1×1 rib cuff with a stripe, thumb gusset between markers, thumb picked up and knit',
     repeat: { width: 2, edges: 0, rows: 1, at: 2 }, wear: { slot: 'hands', fit: 'pair' }, kind: 'mitten', gauge: CHUNKY,
-    notes: ['Strand the snowflake and the lice, carrying the yarn not in use loosely behind.'],
-    finishing: 'Finishing: weave in the ends, closing any little gap at the base of the thumb. Make a second mitten the same, but with the snowflake on sts 13–24 of the hand rounds and the lice on sts 1–12, so the snowflake sits on the back of the left hand.',
+    notes: ['Strand the snowflake and the lice, carrying the yarn not in use loosely behind and catching any float longer than 5 sts.'],
+    finishing: 'Finishing: weave in the ends, closing any little gap at the base of the thumb. This is the right mitten: sts 1–12 of each hand rnd are the back of the hand. Left mitten: work it the same, but work each hand rnd as sts 13–24 of the right mitten\'s rnd, then its sts 1–12, so the snowflake sits on the back of the left hand.',
     slots: { A: Y('navy'), B: Y('cream', 'wool', 'Snowflake') } },
   roundPiece(mittenChart({ hA: 11, hB: 11, cuff: [4, ribOps('kp'), (j, s, i) => (i === 2 ? 'B' : 'A')], hand: [8, hand], top: { to: 8, plain: 0 }, thumb: 4, slots: { main: 'A', cuff: 'A' } })));
 }
@@ -366,8 +366,8 @@ knit(rect(16, 16)).colors((r, c) => ((Math.floor((r - 1) / 4) + Math.floor(c / 4
   add({ id: 'argyle-sock', name: 'Argyle Sock', chapter: 3, technique: 'Argyle, then in the round', ...ED2,
     source: 'Argyle (8-st × 12-row diamonds in two colors with diagonal overcheck lines) in intarsia on a leg knit flat, as argyle socks are, seamed up the back; then heel flap, turn, gusset, foot and wedge toe in the round',
     repeat: { width: 8, edges: 0, rows: 12, at: 5 }, wear: { slot: 'feet', fit: 'pair' }, kind: 'sock', gauge: CHUNKY,
-    needlesText: 'a set of 4 DPNs (2 of them used as straight needles for the flat leg)',
-    notes: ['Knit the diamonds in intarsia, with a bobbin for each diamond and each area of A between them; twist the yarns at every color change to avoid holes. Work the D overcheck lines afterwards in duplicate stitch, following the chart.'],
+    needlesText: 'straight needles for the flat leg (or the sts divided over 2–3 DPNs and worked back and forth), then a set of 4 DPNs',
+    notes: ['Knit the diamonds and the D overcheck lines in intarsia as written, with a bobbin for each diamond, each line and each area of A between them; twist the yarns at every color change to avoid holes. (Many knitters work the D lines afterwards in duplicate stitch over A instead: knit those sts in A and stitch D over them.)'],
     finishing: 'Finishing: weave in the ends. Make a second sock the same for the pair.',
     slots: { A: Y('navy'), B: Y('honey', 'wool', 'Diamonds, heel, toe, cuff'), C: Y('cranberry', 'wool', 'Diamonds 2'), D: Y('cream', 'wool', 'Lines') } },
   roundPiece(sockChart({ co: 24, gusset: 5, flapRows: 9, heelTo: 8, foot: 3, toeTo: 8, slots: { main: 'A', heel: 'B', toe: 'B' },
@@ -522,7 +522,7 @@ knit(rect(13, 40)).texture(at((r, c) => {
 }
 
 add({ id: 'lace-sock', name: 'Lace Sock', chapter: 5, technique: 'Lace rib, in the round', ...ED2,
-  source: 'Lace rib in the round on the leg and the instep (*k1, yo, ssk, p2; then *k2tog, yo, k1, p2), *p2, k3 rib cuff, heel flap and turn, gusset, wedge toe grafted',
+  source: 'Lace rib in the round on the leg and the instep (*p2, k1, yo, ssk; then *p2, k2tog, yo, k1), *p2, k3 rib cuff, heel flap and turn, gusset, wedge toe grafted',
   repeat: { width: 5, edges: 0, rows: 2, at: 4 }, wear: { slot: 'feet', fit: 'pair' }, kind: 'sock', gauge: ARAN,
   finishing: 'Finishing: weave in the ends and block lightly to open the lace. Make a second sock the same for the pair.',
   slots: { A: Y('rose'), B: Y('plum', 'wool', 'Heel, toe and cuff') } },
@@ -801,10 +801,13 @@ knit(dome(22, 10, [22, 22, 20, 20, 20, 20, 18, 18, 16, 16, 14, 14, 10, 10])).sha
   b.work(k(4) + '_'.repeat(5) + k(14) + '_'.repeat(5) + k(20), { slot: 'A' });
   b.work(k(4) + '+'.repeat(5) + k(14) + '+'.repeat(5) + k(20), { slot: 'A' });
   b.section('Body').rounds(4, () => 'k', { slot: (j, s, i) => (i === 2 ? 'B' : 'A') });
-  b.section('Belly').work('_'.repeat(12) + k(36), { slot: 'A' });
-  b.section('Back (worked flat)').flatStart({ first: 'WS', cut: 0, span: 36 });
+  // the belly opening: 10 sts bound off at the middle of the 14 sts between the leg openings
+  b.section('Belly').work(k(11) + '_'.repeat(10) + k(27), { slot: 'A' });
+  // then back and forth on the circular over the other 38: first k11 to the opening, then turn
+  b.section('Back (worked back and forth on the circular)').flatStart({ first: 'RS', cut: 37, span: 38 });
+  b.work(k(11), { slot: 'A', hold: [...seq(27)] });
   b.rounds(3, () => 'k', { slot: 'A' });
-  b.rounds(2, (j, i) => (i === 0 ? 'k' : 'p'), { slot: 'B' }); // garter: knit both rows
+  b.rounds(2, (j, i) => (i === 0 ? 'k' : 'p'), { slot: 'B' }); // garter: knit both rows (RS, then WS)
   b.flatEnd();
   add({ id: 'dog-sweater', name: 'Dog Sweater', chapter: 7, technique: 'Leg openings, in the round', ...ED2,
     source: 'Neck-down tube in the round: 2×2 rib neck, stockinette with honey stripes, two one-round leg openings (BO 5, then CO 5 over each gap), the belly bound off and the back finished flat with a garter edge',
@@ -860,7 +863,7 @@ knit(dome(22, 10, [22, 22, 20, 20, 20, 20, 18, 18, 16, 16, 14, 14, 10, 10])).sha
   const yoke = motif(YOKE);
   const b = new Round(W).castOn(body).needle({ kind: 'circular', len: 16 }).join('A');
   b.section('Body').rounds(3, ribOps('kkpp'), { slot: 'A' }).rounds(5, () => 'k', { slot: 'A' });
-  b.hold([uA, uB], 'Place 4 sts at each underarm on waste yarn: the last 2 and first 2 sts of the rnd, and the 4 sts at the middle of the rnd.');
+  b.hold([uA, uB], 'Place 4 sts at each underarm on waste yarn: the last 2 and the first 2 sts of the rnd (removing the marker), and the 4 sts at the middle of the rnd. Join the yarn at the first front st and pm there: this is the new beg of rnd.');
   b.section('Yoke');
   const kk = (n) => 'k'.repeat(n).split('');
   b.work([...kk(20), ...seq(12).map((i) => ({ s: 'v', col: 45 - i })), ...kk(20), ...seq(12).map((i) => ({ s: 'v', col: 13 - i }))],
@@ -870,7 +873,7 @@ knit(dome(22, 10, [22, 22, 20, 20, 20, 20, 18, 18, 16, 16, 14, 14, 10, 10])).sha
   b.rounds(7, (j, i) => ({ s: 'k', slot: yoke(i + 1, j) ? 'B' : 'A' }));
   b.work('kk<'.repeat(16), { slot: 'A' });
   b.rounds(1, () => 'k', { slot: 'A' });
-  b.needle({ kind: 'dpn', n: 4, counts: [8, 8, 8, 8] });
+  b.needle({ kind: 'dpn', n: 4, counts: [12, 12, 12, 12] });
   b.work('k<'.repeat(16), { slot: 'A' });
   b.section('Neck').rounds(2, ribOps('kkpp'), { slot: 'A' });
   b.graft([...uA, ...uB].map((c) => [c]), 'Graft the 4 held sts at each underarm to the 4 held sts of its sleeve with Kitchener stitch (8 sts).', 'A', 'graftUnderarm');
@@ -878,8 +881,8 @@ knit(dome(22, 10, [22, 22, 20, 20, 20, 20, 18, 18, 16, 16, 14, 14, 10, 10])).sha
     source: 'Bottom-up yoke sweater in the round: 2×2 rib hem, the body to the underarms, the sleeves joined on one circular needle, a stranded diamond band (8 sts × 7 rnds) between yoke decreases, 2×2 rib neck',
     repeat: { width: 8, edges: 0, rows: 7, at: band }, wear: { slot: 'body', fit: 'body' }, kind: 'body', gauge: SUPER,
     needlesText: '16" circular needle and a set of 5 DPNs (also for the sleeves)',
-    preamble: ['Sleeves (make 2, before the body, on DPNs): cast on 16 sts in A and join to work in the rnd. Work 3 rnds of *k2, p2 rib, then knit every rnd until the sleeve reaches the underarm. Place the last 2 and the first 2 sts of the rnd (4 sts) on waste yarn for the underarm, and leave the other 12 sts on a spare DPN. Make a second sleeve the same.'],
-    notes: ['Strand the yoke band and the dots, carrying the yarn not in use loosely behind.'],
+    preamble: ['Sleeves (make 2, before the body, on DPNs): cast on 16 sts in A and join to work in the rnd. Work 3 rnds of *k2, p2 rib, then knit 12 rnds (or until the sleeve reaches the underarm). Place the last 2 and the first 2 sts of the rnd (4 sts) on waste yarn for the underarm, leave the other 12 sts on a spare DPN and cut the yarn.'],
+    notes: ['Strand the yoke band and the dots, carrying the yarn not in use loosely behind and catching any float longer than 5 sts.'],
     finishing: 'Finishing: weave in the ends, closing any little gaps at the underarms, and block.',
     slots: { A: Y('cream'), B: Y('cranberry', 'wool', 'Yoke'), C: Y('sage', 'wool', 'Yoke dots') } },
   roundPiece(b.def()));

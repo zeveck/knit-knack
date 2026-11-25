@@ -66,7 +66,7 @@ export const GLOSSARY = {
   M1RP: 'make 1 right purlwise (leans right as seen from the right side)',
   MB: 'make bobble: (k1, p1, k1, p1, k1) into the next st, turn, p5, turn, k5, then pass the 2nd, 3rd, 4th and 5th sts over the first',
   CO: 'cast on (at the start of a row, a knitted or cable cast-on onto the left needle; the new sts are then worked)',
-  BO: 'bind off (the st left on the right needle after a bind-off is the first st of the count that follows)',
+  BO: 'bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off)',
   RS: 'right side', WS: 'wrong side',
   st: 'stitch', sts: 'stitches', rep: 'repeat', rem: 'remaining',
   C2F: 'cable 2 front: slip 1 to cable needle, hold in front, k1, k1 from cable needle',
@@ -938,6 +938,7 @@ function groupAtoms(atoms, colored) {
   const g = [];
   for (const a of atoms) {
     const last = g[g.length - 1];
+    if (last && a.seg != null && last.atoms[last.atoms.length - 1].seg !== a.seg && !a.leftover) { g.push({ op: a.op, slot: a.slot, gap: a.gap, edge: a.edge, atoms: [a], lo: null, segStart: true }); continue; }
     if (last && a.leftover && last.op === 'BO') { last.atoms.push(a); last.lo = a; continue; }
     if (last && !last.lo && keyOf(last.atoms[0], colored) === keyOf(a, colored)) last.atoms.push(a);
     else g.push({ op: a.op, slot: a.slot, gap: a.gap, edge: a.edge, atoms: [a], lo: null });
@@ -965,6 +966,14 @@ function groupText(gp, colored, rs, round = false) {
   return `[${gp.op}${sl}] ${n} times`;
 }
 
+// bracket each segment's tokens on their own, the first token of a new segment glued with "; "
+function bracketSegs(groups, tok) {
+  const out = []; let cur = [];
+  const flush = () => { if (!cur.length) return; const T = bracketTokens(tok(cur)); if (out.length) T[0].glue = '; '; out.push(...T); cur = []; };
+  for (const g of groups) { if (g.segStart) flush(); cur.push(g); }
+  flush();
+  return out;
+}
 function groupsCost(atoms, colored) { return atoms.length ? groupAtoms(atoms, colored).length : 0; }
 const needOf = (list) => list.reduce((t, a) => t + a.need, 0);
 
@@ -1069,6 +1078,10 @@ export function rowWording(chart, r, opts = {}) {
   const colored = chart.slotsUsed.size > 1;
   const ids = opts.part == null || opts.part === -1 || chart.endless ? null : [].concat(opts.part);
   let raw = rowAtoms(chart, r);
+  // (Change 2) a sock's rounds from the gusset on: the instep is its own segment, never merged with the
+  // sole's sts, and the round is written out ("k6, k2tog, k1; k12; k1, ssk, k6")
+  const segRow = !!(chart.round && chart.def.segments && (chart.def.segmentRows || []).includes(r)) && raw.some((a) => !COUNTABLE.has(a.op));
+  if (segRow) { const segOf = (c) => chart.def.segments.findIndex(([a, b]) => c >= a && c <= b); raw = raw.map((a) => ({ ...a, seg: segOf(a.cells.length ? R.map[a.cells[0]].col : a.col) })); }
   if (ids) raw = raw.filter((a) => inPart(chart, r, a, ids));
   const warnings = [];
   const atoms = prepAtoms(raw, rs, (m) => warnings.push(m));
@@ -1108,9 +1121,9 @@ export function rowWording(chart, r, opts = {}) {
       const lo = Math.min(...atoms.filter((a) => a.cells.length).map((a) => R.map[a.cells[0]].col));
       aligned = (s) => { const a = atoms[s]; if (!a.cells.length) return false; const c = R.map[a.cells[0]].col, b = rs ? c + 1 : c; return ((b - lo - el) % rp.width + rp.width) % rp.width === 0; };
     }
-    let fr = shortRow ? null : findRepeat(atoms, perAtomColor, rp || null, aligned);
+    let fr = shortRow || segRow ? null : findRepeat(atoms, perAtomColor, rp || null, aligned);
     // a round's own repeat (a crown's *k4, k2tog) may differ from the pattern's
-    if (!fr && round && rp) fr = findRepeat(atoms, perAtomColor, null, null);
+    if (!fr && round && rp && !segRow) fr = findRepeat(atoms, perAtomColor, null, null);
     if (fr) {
       const pre = atoms.slice(0, fr.s), rep = atoms.slice(fr.s, fr.s + fr.L), suf = atoms.slice(fr.s + fr.n * fr.L);
       tokens.push(...bracketTokens(tok(groupAtoms(pre, perAtomColor), false)));
@@ -1125,7 +1138,7 @@ export function rowWording(chart, r, opts = {}) {
         tokens.push(...bracketTokens(tok(groupAtoms(suf, perAtomColor), false)));
       } else tokens.push({ text: round ? 'rep from * around' : 'rep from * to end', from: null, to: null, rep: false, glue: '; ' });
     } else {
-      const T = bracketTokens(tok(groups, false));
+      const T = segRow ? bracketSegs(groups, (gs) => tok(gs, false)) : bracketTokens(tok(groups, false));
       // "to end" after a bind-off; "k to last n sts" for a long plain stretch near the end
       if (!perAtomColor && T.length > 1 && !shortRow) {
         const last = T[T.length - 1], before = T[T.length - 2];
@@ -1295,9 +1308,16 @@ export function writtenPattern(chart, opts = {}) {
 // in flat sections, each step's own line, "Change to DPNs …" where the needles change, the bind-off when
 // stitches are left, and the finishing. Rounds and rows are numbered from 1 in each section.
 const yarnWeight = (g) => (g ? `${g.yarn} weight (${g.sts} sts = ${g.per || 4}" in stockinette)` : '');
+const NEEDLE_MM = { chunky: '6 mm (US 10)', 'super bulky': '9 mm (US 13)', aran: '5 mm (US 8)' };
 function needlesLine(def) {
-  if (def.needlesText) return def.needlesText;
-  const L = def.needles || [];
+  const mm = def.gauge && NEEDLE_MM[def.gauge.yarn] ? `${NEEDLE_MM[def.gauge.yarn]}: ` : '';
+  if (def.needlesText) return mm + def.needlesText;
+  return mm + needlesLine0(def);
+}
+function needlesLine0(def) {
+  const all = def.needles || [];
+  const dpnN = Math.max(0, ...all.filter((n) => n.kind === 'dpn' && n.n).map((n) => n.n));
+  const L = all.filter((n) => n.kind !== 'dpn' || n.n === dpnN);
   const parts = [];
   for (const n of L) {
     const t = n.kind === 'circular' ? `${n.len || 16}" circular needle` : n.kind === 'dpn' ? `a set of ${(n.n || 4) + 1} DPNs` : 'a pair of straight needles';
@@ -1350,7 +1370,9 @@ function writtenRound(chart, opts = {}) {
   for (const n of def.notes || []) info(`Note: ${n}`);
   for (const l of def.preamble || []) info(l);
   const firstCell = chart.cell(chart.firstRow, chart.castOnCols[chart.castOnCols.length - 1]);
-  info(`Cast on ${co} sts${colored && firstCell ? ` in ${firstCell.slot}` : ''}.`);
+  const n0 = (def.needles || [])[0];
+  const divide = n0 && n0.kind === 'dpn' && n0.counts && chart.firstRow > 1 ? ` and divide them over ${n0.counts.length} DPNs (${n0.counts.every((x) => x === n0.counts[0]) ? `${n0.counts[0]} sts on each` : n0.counts.join(', ') + ' sts'})` : '';
+  info(`Cast on ${co} sts${colored && firstCell ? ` in ${firstCell.slot}` : ''}${divide}.`);
   const keys = new Map(), warnings = [];
   const used = new Set(['st', 'sts']);
   let hdr = 0, list = [], depth = 0;
@@ -1385,7 +1407,7 @@ function writtenRound(chart, opts = {}) {
   used.add('BO');
   if ([...used].some((u) => u === 'k' || u === 'p')) { used.add('k'); used.add('p'); }
   const text = lines.map((l) => (l.label ? `${l.label}: ` : '') + l.text).join('\n');
-  const abbreviations = [...used].filter((a) => GLOSSARY[a]).map((a) => ({ abbr: a, meaning: GLOSSARY[a] }));
+  const abbreviations = [...used].filter((a) => GLOSSARY[a]).map((a) => ({ abbr: a, meaning: a === 'CO' ? 'cast on (over a gap in a round: a backward-loop or cable cast-on onto the right needle, then carry on with the rnd)' : GLOSSARY[a] }));
   for (const [term, re] of ROUND_TERMS) if (re.test(text) && !abbreviations.some((a) => a.abbr === term)) abbreviations.push({ abbr: term, meaning: ROUND_GLOSSARY[term] });
   const cellsUsed = new Set(); for (let r = 1; r <= H; r++) for (const cl of chart.cells(r)) if (cl) cellsUsed.add(cl.s);
   for (const [k, ch] of [['BO here (_)', '_'], ['held (-)', '-'], ['u', 'u'], ['v', 'v']]) if (cellsUsed.has(ch)) abbreviations.push({ abbr: k, meaning: ROUND_CHART_KEYS[k] });
@@ -1425,6 +1447,7 @@ export function parseRowText(text, width, rs = true, round = false) {
   if (round && (t === 'knit' || t === 'purl')) { for (let i = 0; i < width; i++) out.push({ op: t[0], slot }); return out; }
   { const am = round && t.match(/^(\S+) around$/); if (am) { const nd = NEED(am[1]); for (let i = 0; i < width / nd; i++) out.push({ op: am[1], slot }); return out; } }
   t = t.replace(/; rep from \* around$/, '; rep from * to end');
+  if (!t.includes('*')) t = t.replace(/; /g, ', ');
   const plainOp = rs ? 'k' : 'p';
   const exec = (raw, sink) => {
     let m;

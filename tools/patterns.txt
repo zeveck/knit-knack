@@ -16,7 +16,7 @@ Cast on 12 sts.
 Rows 1–12: k to end
 Bind off all sts.
 Finishing: weave in the ends and block flat.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); p = purl.
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); p = purl.
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   12  pppppppppppp   AAAAAAAAAAAA
@@ -45,7 +45,7 @@ Rows 5–9: rep rows 3–4 twice, then row 3 once more
 Row 10 (WS): k to end
 Bind off all sts.
 Finishing: weave in the ends and block flat.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows).
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   10  pppppppppp   AAAAAAAAAA
@@ -69,7 +69,7 @@ Cast on 7 sts.
 Rows 1–22: k1, *p1, k1; rep from * to end
 Bind off in pattern.
 Finishing: weave in the ends and block flat. Make a tassel and sew it to the middle of the bind-off edge.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows).
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   22  pkpkpkp   AAAAAAA
@@ -100,7 +100,7 @@ Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on,
 Repeat: multiple of 2 sts + 0, over 1 rows. Wear: hands (pair). 288 stitches.
 Stitch pattern: 1×1 rib over an even count (*k1, p1 on every row), knit flat and seamed once into a tube.
 Yarn: A Plum wool, B Cream wool; chunky weight (12 sts = 4" in stockinette).
-Needles: A pair of straight needles.
+Needles: 6 mm (US 10): a pair of straight needles.
 Gauge: 12 sts = 4" (10 cm) in stockinette.
 Size: 24 sts × 12 rows, scaled down for the game.
 Cast on 24 sts in A.
@@ -110,8 +110,8 @@ Rows 5–8: with A, *k1, p1; rep from * to end
 Rows 9–10: with B, *k1, p1; rep from * to end
 Rows 11–12: with A, *k1, p1; rep from * to end
 Bind off loosely in rib.
-Finishing: fold the piece with the right side out so the two side edges meet, and seam them with mattress stitch to make a tube, leaving a 2-row gap for the thumb 3 rows below the top. Weave in the ends. Make a second one the same for the pair.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows).
+Finishing: fold the piece with the right side out so the two side edges meet, and seam them with mattress stitch to make a tube: seam rows 1–7, leave rows 8–9 open for the thumb, and seam rows 10–12. Weave in the ends. Make a second one the same for the pair.
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   12  pkpkpkpkpkpkpkpkpkpkpkpk   AAAAAAAAAAAAAAAAAAAAAAAA
@@ -132,7 +132,7 @@ Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on,
 Repeat: multiple of 4 sts + 0 (counted on row 2), over 2 rows. Wear: head (band). 401 stitches.
 Stitch pattern: 2×2 rib in the round (*k2, p2), 2-rnd stripes in 3 colors.
 Yarn: A Cranberry wool, B Cream wool, C Honey wool; super bulky weight (10 sts = 4" in stockinette).
-Needles: 16" circular needle.
+Needles: 9 mm (US 13): 16" circular needle.
 Gauge: 10 sts = 4" (10 cm) in stockinette.
 Size: 40 sts around × 10 rnds, scaled down for the game.
 Note: Stripes knit in the round show a small step (the jog) where each round begins. To hide it, slip the first st of the 2nd rnd of each new color purlwise; the game knits it plain and shows the jog.
@@ -145,7 +145,7 @@ Rnds 7–8: with B, *k2, p2; rep from * around
 Rnds 9–10: with A, *k2, p2; rep from * around
 Bind off loosely in rib.
 Finishing: weave in the ends and block lightly.
-Abbreviations: st = stitch; sts = stitches; k = knit; p = purl; BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; circular needle = a pair of needle tips joined by a flexible cable, for knitting in the round; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it; Jog = the step at the beginning of a round where one round ends a row above where it began; on stripes, knitters hide it by slipping the first st of the 2nd rnd of each new color.
+Abbreviations: st = stitch; sts = stitches; k = knit; p = purl; BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; circular needle = a pair of needle tips joined by a flexible cable, for knitting in the round; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it; Jog = the step at the beginning of a round where one round ends a row above where it began; on stripes, knitters hide it by slipping the first st of the 2nd rnd of each new color.
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable, s slip, - held (on waste yarn or a spare needle), _ bound off here, u picked up and knit, v sleeve st, q p2tog; letters below are the color slots):
   11  ppkkppkkppkkppkkppkkppkkppkkppkkppkkppkk   AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -173,7 +173,7 @@ Rows 7–10: k2, *k4, p4; rep from * to last 2 sts, k2
 Rows 11–12: k to end
 Bind off all sts.
 Finishing: weave in the ends and block. Wrap round a mug and seam the side edges above and below the handle.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows).
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   12  pppppppppppppppppppp   AAAAAAAAAAAAAAAAAAAA
@@ -198,7 +198,7 @@ CHAPTER 2. WARM THINGS
 Repeat: multiple of 1 sts + 0, over 1 rows. Wear: head (dome). 633 stitches.
 Stitch pattern: Stockinette in the round (the cast-on edge rolls outward by itself), the crown decreased in 8 wedges (*k4, k2tog, one st fewer each time) and gathered.
 Yarn: A Sage wool, B Cream wool; chunky weight (12 sts = 4" in stockinette).
-Needles: 16" circular needle and a set of 5 DPNs.
+Needles: 6 mm (US 10): 16" circular needle and a set of 5 DPNs.
 Gauge: 12 sts = 4" (10 cm) in stockinette.
 Size: 48 sts around × 16 rnds, scaled down for the game.
 Note: Stripes knit in the round show a small step (the jog) where each round begins. To hide it, slip the first st of the 2nd rnd of each new color purlwise; the game knits it plain and shows the jog.
@@ -208,7 +208,7 @@ Brim and body:
 Rnds 1–4: with B, knit
 Rnds 5–9: with A, knit
 Crown:
-Change to DPNs (10 sts on each of 4 needles).
+Change to DPNs (12 sts on each of 4 needles).
 Rnd 1: with A, *k4, k2tog; rep from * around (40 sts)
 Rnd 2: with A, knit
 Rnd 3: with A, *k3, k2tog; rep from * around (32 sts)
@@ -218,7 +218,7 @@ Rnd 6: with A, *k1, k2tog; rep from * around (16 sts)
 Rnd 7: with A, k2tog around (8 sts)
 Cut yarn, leaving a 6" tail; thread it through the rem 8 sts, pull tight and fasten off.
 Finishing: weave in the ends. The brim rolls up by itself.
-Abbreviations: st = stitch; sts = stitches; k = knit; k2tog = knit 2 together (right-leaning decrease); BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); p = purl; Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; circular needle = a pair of needle tips joined by a flexible cable, for knitting in the round; DPN(s) = double-pointed needles; the stitches are divided over 3 or 4 and knit with one more; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it; Jog = the step at the beginning of a round where one round ends a row above where it began; on stripes, knitters hide it by slipping the first st of the 2nd rnd of each new color; rem = remaining.
+Abbreviations: st = stitch; sts = stitches; k = knit; k2tog = knit 2 together (right-leaning decrease); BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); p = purl; Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; circular needle = a pair of needle tips joined by a flexible cable, for knitting in the round; DPN(s) = double-pointed needles; the stitches are divided over 3 or 4 and knit with one more; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it; Jog = the step at the beginning of a round where one round ends a row above where it began; on stripes, knitters hide it by slipping the first st of the 2nd rnd of each new color; rem = remaining.
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable, s slip, - held (on waste yarn or a spare needle), _ bound off here, u picked up and knit, v sleeve st, q p2tog; letters below are the color slots):
   18  ................................................   ................................................
@@ -245,7 +245,7 @@ Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on,
 Repeat: multiple of 2 sts + 0 (counted on row 2), over 4 rows. Wear: head (band). 449 stitches.
 Stitch pattern: Moss stitch in the round (2 rnds *k1, p1, then 2 rnds *p1, k1; 4-rnd repeat), cinched at the front.
 Yarn: A Plum wool; chunky weight (12 sts = 4" in stockinette).
-Needles: 16" circular needle.
+Needles: 6 mm (US 10): 16" circular needle.
 Gauge: 12 sts = 4" (10 cm) in stockinette.
 Size: 56 sts around × 8 rnds, scaled down for the game.
 Cast on 56 sts.
@@ -255,7 +255,7 @@ Rnds 3–4: *p1, k1; rep from * around
 Rnds 5–8: rep rnds 1–4 once
 Bind off in pattern.
 Finishing: wrap a short length of the yarn tightly round the front of the band 8 times to cinch it, sew the ends in on the inside, and weave in the ends.
-Abbreviations: st = stitch; sts = stitches; k = knit; p = purl; BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; circular needle = a pair of needle tips joined by a flexible cable, for knitting in the round; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it.
+Abbreviations: st = stitch; sts = stitches; k = knit; p = purl; BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; circular needle = a pair of needle tips joined by a flexible cable, for knitting in the round; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it.
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable, s slip, - held (on waste yarn or a spare needle), _ bound off here, u picked up and knit, v sleeve st, q p2tog; letters below are the color slots):
    9  kpkpkpkpkpkpkpkpkpkpkpkpkpkpkpkpkpkpkpkpkpkpkpkpkpkpkpkp   AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -273,7 +273,7 @@ Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on,
 Repeat: multiple of 4 sts + 0 (counted on row 2), over 1 rows. Wear: head (dome). 681 stitches.
 Stitch pattern: 2×2 rib brim, stockinette body with a stripe, crown decreased in 8 wedges and gathered, all in the round.
 Yarn: A Cranberry wool, B Cream wool; chunky weight (12 sts = 4" in stockinette).
-Needles: 16" circular needle and a set of 5 DPNs.
+Needles: 6 mm (US 10): 16" circular needle and a set of 5 DPNs.
 Gauge: 12 sts = 4" (10 cm) in stockinette.
 Size: 48 sts around × 17 rnds, scaled down for the game.
 Note: Stripes knit in the round show a small step (the jog) where each round begins. To hide it, slip the first st of the 2nd rnd of each new color purlwise; the game knits it plain and shows the jog.
@@ -286,7 +286,7 @@ Rnds 1–2: with A, knit
 Rnds 3–4: with B, knit
 Rnd 5: with A, knit
 Crown:
-Change to DPNs (10 sts on each of 4 needles).
+Change to DPNs (12 sts on each of 4 needles).
 Rnd 1: with A, *k4, k2tog; rep from * around (40 sts)
 Rnd 2: with A, knit
 Rnd 3: with A, *k3, k2tog; rep from * around (32 sts)
@@ -296,7 +296,7 @@ Rnd 6: with A, *k1, k2tog; rep from * around (16 sts)
 Rnd 7: with A, k2tog around (8 sts)
 Cut yarn, leaving a 6" tail; thread it through the rem 8 sts, pull tight and fasten off.
 Finishing: make a pom-pom in B and sew it to the gathered top. Weave in the ends.
-Abbreviations: st = stitch; sts = stitches; k = knit; p = purl; k2tog = knit 2 together (right-leaning decrease); BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; circular needle = a pair of needle tips joined by a flexible cable, for knitting in the round; DPN(s) = double-pointed needles; the stitches are divided over 3 or 4 and knit with one more; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it; Jog = the step at the beginning of a round where one round ends a row above where it began; on stripes, knitters hide it by slipping the first st of the 2nd rnd of each new color; rem = remaining.
+Abbreviations: st = stitch; sts = stitches; k = knit; p = purl; k2tog = knit 2 together (right-leaning decrease); BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; circular needle = a pair of needle tips joined by a flexible cable, for knitting in the round; DPN(s) = double-pointed needles; the stitches are divided over 3 or 4 and knit with one more; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it; Jog = the step at the beginning of a round where one round ends a row above where it began; on stripes, knitters hide it by slipping the first st of the 2nd rnd of each new color; rem = remaining.
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable, s slip, - held (on waste yarn or a spare needle), _ bound off here, u picked up and knit, v sleeve st, q p2tog; letters below are the color slots):
   19  ................................................   ................................................
@@ -324,7 +324,7 @@ Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on,
 Repeat: multiple of 2 sts + 0 (counted on row 2), over 2 rows. Wear: neck (band). 601 stitches.
 Stitch pattern: Broken rib in the round (Rnd 1: *k1, p1; Rnd 2: knit).
 Yarn: A Rust wool, B Cream wool; chunky weight (12 sts = 4" in stockinette).
-Needles: 16" circular needle.
+Needles: 6 mm (US 10): 16" circular needle.
 Gauge: 12 sts = 4" (10 cm) in stockinette.
 Size: 60 sts around × 10 rnds, scaled down for the game.
 Note: Stripes knit in the round show a small step (the jog) where each round begins. To hide it, slip the first st of the 2nd rnd of each new color purlwise; the game knits it plain and shows the jog.
@@ -337,7 +337,7 @@ Rnd 4: with B, knit
 Rnds 5–10: rep rnds 1–4 once, then rnds 1–2 once more
 Bind off loosely.
 Finishing: weave in the ends and block lightly.
-Abbreviations: st = stitch; sts = stitches; k = knit; p = purl; BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; circular needle = a pair of needle tips joined by a flexible cable, for knitting in the round; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it; Jog = the step at the beginning of a round where one round ends a row above where it began; on stripes, knitters hide it by slipping the first st of the 2nd rnd of each new color.
+Abbreviations: st = stitch; sts = stitches; k = knit; p = purl; BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; circular needle = a pair of needle tips joined by a flexible cable, for knitting in the round; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it; Jog = the step at the beginning of a round where one round ends a row above where it began; on stripes, knitters hide it by slipping the first st of the 2nd rnd of each new color.
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable, s slip, - held (on waste yarn or a spare needle), _ bound off here, u picked up and knit, v sleeve st, q p2tog; letters below are the color slots):
   11  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk   AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -357,10 +357,10 @@ Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on,
 Repeat: multiple of 2 sts + 0 (counted on row 2), over 1 rows. Wear: hands (pair). 453 stitches.
 Stitch pattern: 1×1 rib cuffs, stockinette in the round on DPNs, a one-round thumb hole (BO 4, then CO 4 over the gap on the next round).
 Yarn: A Mustard wool, B Charcoal wool; chunky weight (12 sts = 4" in stockinette).
-Needles: A set of 4 DPNs.
+Needles: 6 mm (US 10): a set of 4 DPNs.
 Gauge: 12 sts = 4" (10 cm) in stockinette.
 Size: 24 sts around × 19 rnds, scaled down for the game.
-Cast on 24 sts in B.
+Cast on 24 sts in B and divide them over 3 DPNs (8 sts on each).
 Join to work in the rnd, being careful not to twist sts; pm for beg of rnd.
 Cuff:
 Rnds 1–5: with B, *k1, p1; rep from * around
@@ -373,7 +373,7 @@ Top edge:
 Rnds 1–3: with B, *k1, p1; rep from * around
 Bind off loosely in rib.
 Finishing: weave in the ends, tidying the corners of the thumb hole. Make a second mitt the same: the thumb hole sits at the side, so the pair fits either hand.
-Abbreviations: st = stitch; sts = stitches; k = knit; p = purl; BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); CO = cast on (at the start of a row, a knitted or cable cast-on onto the left needle; the new sts are then worked); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; DPN(s) = double-pointed needles; the stitches are divided over 3 or 4 and knit with one more; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it; BO here (_) = a st bound off in the middle of a round (a thumb hole, a leg opening); not a tap.
+Abbreviations: st = stitch; sts = stitches; k = knit; p = purl; BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); CO = cast on (over a gap in a round: a backward-loop or cable cast-on onto the right needle, then carry on with the rnd); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; DPN(s) = double-pointed needles; the stitches are divided over 3 or 4 and knit with one more; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it; BO here (_) = a st bound off in the middle of a round (a thumb hole, a leg opening); not a tap.
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable, s slip, - held (on waste yarn or a spare needle), _ bound off here, u picked up and knit, v sleeve st, q p2tog; letters below are the color slots):
   20  pkpkpkpkpkpkpkpkpkpkpkpk   BBBBBBBBBBBBBBBBBBBBBBBB
@@ -402,16 +402,17 @@ Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on,
 Repeat: multiple of 4 sts + 0 (counted on row 2), over 1 rows. Wear: feet (pair). 743 stitches.
 Stitch pattern: Cuff-down sock in the round: 2×2 rib cuff, stockinette leg, slipped heel flap, heel turned with short rows, gusset picked up and decreased, wedge toe grafted with Kitchener stitch.
 Yarn: A Sky wool, B Cream wool; chunky weight (12 sts = 4" in stockinette).
-Needles: A set of 4 DPNs.
+Needles: 6 mm (US 10): a set of 4 DPNs.
 Gauge: 12 sts = 4" (10 cm) in stockinette.
 Size: 24 sts around × 25 rnds and 14 rows, scaled down for the game.
-Cast on 24 sts in B.
+Cast on 24 sts in B and divide them over 3 DPNs (8 sts on each).
 Join to work in the rnd, being careful not to twist sts; pm for beg of rnd.
 Cuff:
 Rnds 1–4: with B, *k2, p2; rep from * around
 Leg:
 Rnds 1–6: with A, knit
 Heel flap (worked back and forth over 12 sts; the other 12 wait on a spare DPN for the instep):
+Divide the sts: the last 6 and the first 6 sts of the rnd onto one DPN for the heel flap (it is worked back and forth), the other 12 onto a spare DPN for the instep.
 Row 1 (RS): with B, k6, turn
 Row 2 (WS): with B, sl1 wyif, p to end
 Row 3 (RS): with B, sl1 wyib, k to end
@@ -421,26 +422,27 @@ Row 1 (RS): with B, sl1 wyib, k6, ssk, k1, turn
 Row 2 (WS): with B, sl1 wyif, p3, p2tog, p1, turn
 Row 3 (RS): with B, sl1 wyib, k4, ssk, k1, turn
 Row 4 (WS): with B, sl1 wyif, p5, p2tog, p1 (8 sts)
-K4 (to the centre of the heel); this is the new beg of rnd.
+With B and the RS facing, k4 to the centre of the heel; this is the new beg of rnd (pm).
 Gusset:
-Set-up rnd: k4, pick up and k 5 sts along the edge of the heel flap, k12, pick up and k 5 sts along the other edge, k4 (30 sts).
-Rnd 1: with A, k6, k2tog, k14, ssk, k6 (28 sts)
+From here on work in the rnd on 3 DPNs: on the set-up rnd, the first heel sts and the first gusset's picked-up sts go on needle 1, the 12 instep sts on needle 2, the second gusset and the last heel sts on needle 3.
+Set-up rnd: with A, k4, pick up and k 5 sts evenly along the edge of the heel flap, k12, pick up and k 5 sts evenly along the other edge, k4 (30 sts).
+Rnd 1: with A, k6, k2tog, k1; k12; k1, ssk, k6 (28 sts)
 Rnd 2: with A, knit
-Rnd 3: with A, k5, k2tog, k14, ssk, k5 (26 sts)
+Rnd 3: with A, k5, k2tog, k1; k12; k1, ssk, k5 (26 sts)
 Rnd 4: with A, knit
-Rnd 5: with A, k4, k2tog, k14, ssk, k4 (24 sts)
+Rnd 5: with A, k4, k2tog, k1; k12; k1, ssk, k4 (24 sts)
 Foot:
 Rnds 1–4: with A, knit
 Toe:
-Rnd 1: with B, *k3, k2tog, k2, ssk, k3; rep from * around (20 sts)
+Rnd 1: with B, k3, k2tog, k1; k1, ssk, k6, k2tog, k1; k1, ssk, k3 (20 sts)
 Rnd 2: with B, knit
-Rnd 3: with B, *k2, k2tog, k2, ssk, k2; rep from * around (16 sts)
+Rnd 3: with B, k2, k2tog, k1; k1, ssk, k4, k2tog, k1; k1, ssk, k2 (16 sts)
 Rnd 4: with B, knit
-Rnd 5: with B, *k1, k2tog, k2, ssk, k1; rep from * around (12 sts)
-Rnd 6: with B, *k2tog, k2, ssk; rep from * around (8 sts)
-Divide rem 8 sts onto 2 needles, 4 for the instep and 4 for the sole. Graft with Kitchener stitch (4 sts).
+Rnd 5: with B, k1, k2tog, k1; k1, ssk, k2, k2tog, k1; k1, ssk, k1 (12 sts)
+Rnd 6: with B, k2tog, k1; k1, ssk, k2tog, k1; k1, ssk (8 sts)
+K2 to the side of the toe. Cut the yarn, leaving a 12" tail. Divide the rem 8 sts onto 2 needles, 4 for the instep and 4 for the sole, and graft them with Kitchener stitch (4 sts).
 Finishing: weave in the ends. Make a second sock the same for the pair.
-Abbreviations: st = stitch; sts = stitches; k = knit; p = purl; ssk = slip, slip, knit (left-leaning decrease); p2tog = purl 2 together (right-leaning from the front); k2tog = knit 2 together (right-leaning decrease); BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; DPN(s) = double-pointed needles; the stitches are divided over 3 or 4 and knit with one more; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it; sl1 wyib = slip 1 st purlwise with yarn in back (on RS rows); sl1 wyif = slip 1 st purlwise with yarn in front (on WS rows); Heel flap = a flat rectangle worked over the back of the leg's sts; Turn heel = short rows that shape the cup of the heel; turn = stop mid-row and turn the work, leaving the rest unworked; Pick up and k = draw a loop of new yarn through the edge and knit it; Gusset = the triangle of picked-up sts decreased back to the foot's count (and, on a mitten, the increases for the thumb); Kitchener stitch (graft) = joins two sets of live sts invisibly with a needle, one grafted st per pair; rem = remaining; held (-) = a st waiting on waste yarn or a spare needle (the instep during the heel, a thumb, the underarms); u = pick up and k: a new st drawn through the edge of the heel flap or the thumb gap.
+Abbreviations: st = stitch; sts = stitches; k = knit; p = purl; ssk = slip, slip, knit (left-leaning decrease); p2tog = purl 2 together (right-leaning from the front); k2tog = knit 2 together (right-leaning decrease); BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; DPN(s) = double-pointed needles; the stitches are divided over 3 or 4 and knit with one more; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it; sl1 wyib = slip 1 st purlwise with yarn in back (on RS rows); sl1 wyif = slip 1 st purlwise with yarn in front (on WS rows); Heel flap = a flat rectangle worked over the back of the leg's sts; Turn heel = short rows that shape the cup of the heel; turn = stop mid-row and turn the work, leaving the rest unworked; Pick up and k = draw a loop of new yarn through the edge and knit it; Gusset = the triangle of picked-up sts decreased back to the foot's count (and, on a mitten, the increases for the thumb); Kitchener stitch (graft) = joins two sets of live sts invisibly with a needle, one grafted st per pair; rem = remaining; held (-) = a st waiting on waste yarn or a spare needle (the instep during the heel, a thumb, the underarms); u = pick up and k: a new st drawn through the edge of the heel flap or the thumb gap.
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable, s slip, - held (on waste yarn or a spare needle), _ bound off here, u picked up and knit, v sleeve st, q p2tog; letters below are the color slots):
   43  ..................................   ..................................
@@ -492,22 +494,22 @@ Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on,
 Repeat: multiple of 2 sts + 0 (counted on row 2), over 1 rows. Wear: hands (pair). 536 stitches.
 Stitch pattern: Mitten in the round on DPNs: 1×1 rib cuff, a thumb gusset increased between markers, the thumb sts held on waste yarn, the hand decreased at both sides and gathered, then the thumb picked up and knit.
 Yarn: A Teal chunky, B Cream chunky; chunky weight (12 sts = 4" in stockinette).
-Needles: A set of 4 DPNs.
+Needles: 6 mm (US 10): a set of 4 DPNs.
 Gauge: 12 sts = 4" (10 cm) in stockinette.
 Size: 20 sts around × 27 rnds, scaled down for the game.
-Cast on 20 sts in B.
+Cast on 20 sts in B and divide them over 3 DPNs (7, 7, 6 sts).
 Join to work in the rnd, being careful not to twist sts; pm for beg of rnd.
 Cuff:
 Rnds 1–4: with B, *k1, p1; rep from * around
 Thumb gusset:
-Set-up rnd: k9, pm, k2, pm, k9.
+Set-up rnd: with A, k9, pm, k2, pm, k9. (Slip the markers as you come to them; the increases go just inside them.)
 Rnd 1: with A, knit
 Rnd 2: with A, k9, M1L, k2, M1R, k9 (22 sts)
 Rnds 3–4: with A, knit
 Rnd 5: with A, k9, M1L, k4, M1R, k9 (24 sts)
 Rnds 6–7: with A, knit
 Rnd 8: with A, k9, M1L, k6, M1R, k9 (26 sts)
-Place the 8 thumb sts (between the markers) on waste yarn, removing the markers.
+Thumb sts: on Hand Rnd 1 below, when you reach the first marker, slip the 8 sts between the markers onto waste yarn for the thumb and remove the markers; then cast on over the gap as written.
 Hand:
 Rnd 1: with A, k9, cast on 2 sts over the gap, k9 (20 sts)
 Rnds 2–7: with A, knit
@@ -518,12 +520,12 @@ Rnd 3: with A, *k1, ssk, k2, k2tog, k1; rep from * around (12 sts)
 Rnd 4: with A, *k1, ssk, k2tog, k1; rep from * around (8 sts)
 Cut yarn, leaving a 6" tail; thread it through the rem 8 sts, pull tight and fasten off.
 Thumb:
-Return the 8 held sts to DPNs; k8, then pick up and k 2 sts in the gap (10 sts).
+Return the 8 held sts to DPNs and join A; k8, then pick up and k 2 sts in the gap (10 sts).
 Rnds 1–3: with A, knit
 Rnd 4: with A, k2tog around (5 sts)
 Cut yarn, leaving a 6" tail; thread it through the rem 5 sts, pull tight and fasten off.
 Finishing: weave in the ends, closing any little gap at the base of the thumb. Make a second mitten the same: the thumb sits at the side, so it fits either hand.
-Abbreviations: st = stitch; sts = stitches; k = knit; p = purl; M1L = make 1 left (left-leaning increase); M1R = make 1 right (right-leaning increase); CO = cast on (at the start of a row, a knitted or cable cast-on onto the left needle; the new sts are then worked); ssk = slip, slip, knit (left-leaning decrease); k2tog = knit 2 together (right-leaning decrease); BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; DPN(s) = double-pointed needles; the stitches are divided over 3 or 4 and knit with one more; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it; Pick up and k = draw a loop of new yarn through the edge and knit it; Gusset = the triangle of picked-up sts decreased back to the foot's count (and, on a mitten, the increases for the thumb); Waste yarn = a scrap of yarn that holds live sts for later; rem = remaining; held (-) = a st waiting on waste yarn or a spare needle (the instep during the heel, a thumb, the underarms); u = pick up and k: a new st drawn through the edge of the heel flap or the thumb gap.
+Abbreviations: st = stitch; sts = stitches; k = knit; p = purl; M1L = make 1 left (left-leaning increase); M1R = make 1 right (right-leaning increase); CO = cast on (over a gap in a round: a backward-loop or cable cast-on onto the right needle, then carry on with the rnd); ssk = slip, slip, knit (left-leaning decrease); k2tog = knit 2 together (right-leaning decrease); BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; DPN(s) = double-pointed needles; the stitches are divided over 3 or 4 and knit with one more; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it; Pick up and k = draw a loop of new yarn through the edge and knit it; Gusset = the triangle of picked-up sts decreased back to the foot's count (and, on a mitten, the increases for the thumb); Waste yarn = a scrap of yarn that holds live sts for later; rem = remaining; held (-) = a st waiting on waste yarn or a spare needle (the instep during the heel, a thumb, the underarms); u = pick up and k: a new st drawn through the edge of the heel flap or the thumb gap.
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable, s slip, - held (on waste yarn or a spare needle), _ bound off here, u picked up and knit, v sleeve st, q p2tog; letters below are the color slots):
   33  ..............................   ..............................
@@ -586,7 +588,7 @@ Row 12 (WS): [p1 B, p1 A] 6 times, p1 B
 Row 13 (RS): with A, k to end
 Bind off all sts.
 Finishing: weave in the ends and block flat.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows).
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   13  kkkkkkkkkkkkk   AAAAAAAAAAAAA
@@ -619,7 +621,7 @@ Rows 7–8: rep rows 5–6 once
 Rows 9–16: rep rows 1–8 once
 Bind off all sts.
 Finishing: weave in the ends and block flat.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows).
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   16  kkkkkkkkkkkkkkkk   BBBBAAAABBBBAAAA
@@ -669,7 +671,7 @@ Row 19 (RS): with A, k to end
 Row 20 (WS): with A, p to end
 Bind off all sts.
 Finishing: make a back in A. Place right sides together and seam round 3 sides, turn out, stuff and sew the last side closed.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows).
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   20  kkkkkkkkkkkkkkkkkkkk   AAAAAAAAAAAAAAAAAAAA
@@ -726,7 +728,7 @@ Row 16 (WS): p2tog, p1, ssp (3 sts)
 Row 17 (RS): k to end
 Bind off all sts.
 Finishing: make a back the same. Place right sides together and seam round, leaving a small gap. Turn out, stuff lightly, sew closed and add a hanging loop at the top point.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; M1RP = make 1 right purlwise (leans right as seen from the right side); ssk = slip, slip, knit (left-leaning decrease); M1R = make 1 right (right-leaning increase); M1LP = make 1 left purlwise (leans left as seen from the right side); M1L = make 1 left (left-leaning increase); k2tog = knit 2 together (right-leaning decrease); CO = cast on (at the start of a row, a knitted or cable cast-on onto the left needle; the new sts are then worked); BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); p2tog = purl 2 together (right-leaning from the front); ssp = slip, slip, purl (left-leaning from the front).
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; M1RP = make 1 right purlwise (leans right as seen from the right side); ssk = slip, slip, knit (left-leaning decrease); M1R = make 1 right (right-leaning increase); M1LP = make 1 left purlwise (leans left as seen from the right side); M1L = make 1 left (left-leaning increase); k2tog = knit 2 together (right-leaning decrease); CO = cast on (at the start of a row, a knitted or cable cast-on onto the left needle; the new sts are then worked); BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); p2tog = purl 2 together (right-leaning from the front); ssp = slip, slip, purl (left-leaning from the front).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   17  ......kkk......   ......AAA......
@@ -752,11 +754,11 @@ Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on,
 Repeat: multiple of 4 sts + 0 (counted on row 9), over 4 rows. A gallery piece. 505 stitches.
 Stitch pattern: Knit in the round from the tip: 8 sts increased to 32 (*k1, M1L; then *k2, M1L; then *k3, M1L), stranded seed dots in B (every 4th st, offset), leafy rounds in C with an eyelet round (*k2tog, yo) for the drawstring.
 Yarn: A Red cotton, B Honey cotton, C Leaf cotton; chunky weight (12 sts = 4" in stockinette).
-Needles: A set of 4 DPNs.
+Needles: 6 mm (US 10): a set of 4 DPNs.
 Gauge: 12 sts = 4" (10 cm) in stockinette.
 Size: 8 sts at the cast-on, 32 sts around at the widest × 18 rnds, scaled down for the game.
 Note: Strand the seeds: carry B loosely behind the work between the dots.
-Cast on 8 sts in A.
+Cast on 8 sts in A and divide them over 3 DPNs (3, 3, 2 sts).
 Join to work in the rnd, being careful not to twist sts; pm for beg of rnd.
 Tip:
 Rnd 1: with A, knit
@@ -779,7 +781,7 @@ Rnd 3: with C, *k2tog, yo; rep from * around
 Rnds 4–5: with C, knit
 Bind off loosely.
 Finishing: thread the cast-on tail through the 8 cast-on sts at the tip, pull tight and fasten off on the inside. Make a twisted cord of C about 12" long and thread it in and out of the eyelets for the drawstring. Weave in the ends.
-Abbreviations: st = stitch; sts = stitches; k = knit; M1L = make 1 left (left-leaning increase); k2tog = knit 2 together (right-leaning decrease); yo = yarn over (makes a hole); BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); p = purl; Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; DPN(s) = double-pointed needles; the stitches are divided over 3 or 4 and knit with one more; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it.
+Abbreviations: st = stitch; sts = stitches; k = knit; M1L = make 1 left (left-leaning increase); k2tog = knit 2 together (right-leaning decrease); yo = yarn over (makes a hole); BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); p = purl; Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; DPN(s) = double-pointed needles; the stitches are divided over 3 or 4 and knit with one more; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it.
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable, s slip, - held (on waste yarn or a spare needle), _ bound off here, u picked up and knit, v sleeve st, q p2tog; letters below are the color slots):
   19  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk   CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -807,25 +809,25 @@ Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on,
 Repeat: multiple of 2 sts + 0 (counted on row 2), over 1 rows. Wear: hands (pair). 678 stitches.
 Stitch pattern: Stranded snowflake (7 sts × 7 rnds) on the back of the hand and a lice check on the palm, on a mitten in the round: 1×1 rib cuff with a stripe, thumb gusset between markers, thumb picked up and knit.
 Yarn: A Navy wool, B Cream wool; chunky weight (12 sts = 4" in stockinette).
-Needles: A set of 4 DPNs.
+Needles: 6 mm (US 10): a set of 4 DPNs.
 Gauge: 12 sts = 4" (10 cm) in stockinette.
 Size: 24 sts around × 30 rnds, scaled down for the game.
-Note: Strand the snowflake and the lice, carrying the yarn not in use loosely behind.
-Cast on 24 sts in A.
+Note: Strand the snowflake and the lice, carrying the yarn not in use loosely behind and catching any float longer than 5 sts.
+Cast on 24 sts in A and divide them over 3 DPNs (8 sts on each).
 Join to work in the rnd, being careful not to twist sts; pm for beg of rnd.
 Cuff:
 Rnds 1–2: with A, *k1, p1; rep from * around
 Rnd 3: with B, *k1, p1; rep from * around
 Rnd 4: with A, *k1, p1; rep from * around
 Thumb gusset:
-Set-up rnd: k11, pm, k2, pm, k11.
+Set-up rnd: with A, k11, pm, k2, pm, k11. (Slip the markers as you come to them; the increases go just inside them.)
 Rnd 1: with A, knit
 Rnd 2: with A, k11, M1L, k2, M1R, k to end (26 sts)
 Rnds 3–4: with A, knit
 Rnd 5: with A, k11, M1L, k4, M1R, k to end (28 sts)
 Rnds 6–7: with A, knit
 Rnd 8: with A, k11, M1L, k6, M1R, k to end (30 sts)
-Place the 8 thumb sts (between the markers) on waste yarn, removing the markers.
+Thumb sts: on Hand Rnd 1 below, when you reach the first marker, slip the 8 sts between the markers onto waste yarn for the thumb and remove the markers; then cast on over the gap as written.
 Hand:
 Rnd 1: with A, k11, cast on 2 sts over the gap, k to end (24 sts)
 Rnd 2: with A, knit
@@ -843,12 +845,12 @@ Rnd 3: with A, *k1, ssk, k2, k2tog, k1; rep from * around (12 sts)
 Rnd 4: with A, *k1, ssk, k2tog, k1; rep from * around (8 sts)
 Cut yarn, leaving a 6" tail; thread it through the rem 8 sts, pull tight and fasten off.
 Thumb:
-Return the 8 held sts to DPNs; k8, then pick up and k 2 sts in the gap (10 sts).
+Return the 8 held sts to DPNs and join A; k8, then pick up and k 2 sts in the gap (10 sts).
 Rnds 1–4: with A, knit
 Rnd 5: with A, k2tog around (5 sts)
 Cut yarn, leaving a 6" tail; thread it through the rem 5 sts, pull tight and fasten off.
-Finishing: weave in the ends, closing any little gap at the base of the thumb. Make a second mitten the same, but with the snowflake on sts 13–24 of the hand rounds and the lice on sts 1–12, so the snowflake sits on the back of the left hand.
-Abbreviations: st = stitch; sts = stitches; k = knit; p = purl; M1L = make 1 left (left-leaning increase); M1R = make 1 right (right-leaning increase); CO = cast on (at the start of a row, a knitted or cable cast-on onto the left needle; the new sts are then worked); ssk = slip, slip, knit (left-leaning decrease); k2tog = knit 2 together (right-leaning decrease); BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; DPN(s) = double-pointed needles; the stitches are divided over 3 or 4 and knit with one more; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it; Pick up and k = draw a loop of new yarn through the edge and knit it; Gusset = the triangle of picked-up sts decreased back to the foot's count (and, on a mitten, the increases for the thumb); Waste yarn = a scrap of yarn that holds live sts for later; rem = remaining; held (-) = a st waiting on waste yarn or a spare needle (the instep during the heel, a thumb, the underarms); u = pick up and k: a new st drawn through the edge of the heel flap or the thumb gap.
+Finishing: weave in the ends, closing any little gap at the base of the thumb. This is the right mitten: sts 1–12 of each hand rnd are the back of the hand. Left mitten: work it the same, but work each hand rnd as sts 13–24 of the right mitten's rnd, then its sts 1–12, so the snowflake sits on the back of the left hand.
+Abbreviations: st = stitch; sts = stitches; k = knit; p = purl; M1L = make 1 left (left-leaning increase); M1R = make 1 right (right-leaning increase); CO = cast on (over a gap in a round: a backward-loop or cable cast-on onto the right needle, then carry on with the rnd); ssk = slip, slip, knit (left-leaning decrease); k2tog = knit 2 together (right-leaning decrease); BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; DPN(s) = double-pointed needles; the stitches are divided over 3 or 4 and knit with one more; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it; Pick up and k = draw a loop of new yarn through the edge and knit it; Gusset = the triangle of picked-up sts decreased back to the foot's count (and, on a mitten, the increases for the thumb); Waste yarn = a scrap of yarn that holds live sts for later; rem = remaining; held (-) = a st waiting on waste yarn or a spare needle (the instep during the heel, a thumb, the underarms); u = pick up and k: a new st drawn through the edge of the heel flap or the thumb gap.
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable, s slip, - held (on waste yarn or a spare needle), _ bound off here, u picked up and knit, v sleeve st, q p2tog; letters below are the color slots):
   36  ..................................   ..................................
@@ -893,10 +895,10 @@ Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on,
 Repeat: multiple of 8 sts + 0 (counted on row 5), over 12 rows. Wear: feet (pair). 870 stitches.
 Stitch pattern: Argyle (8-st × 12-row diamonds in two colors with diagonal overcheck lines) in intarsia on a leg knit flat, as argyle socks are, seamed up the back; then heel flap, turn, gusset, foot and wedge toe in the round.
 Yarn: A Navy wool, B Honey wool, C Cranberry wool, D Cream wool; chunky weight (12 sts = 4" in stockinette).
-Needles: A set of 4 DPNs (2 of them used as straight needles for the flat leg).
+Needles: 6 mm (US 10): straight needles for the flat leg (or the sts divided over 2–3 DPNs and worked back and forth), then a set of 4 DPNs.
 Gauge: 12 sts = 4" (10 cm) in stockinette.
 Size: 24 sts around × 14 rnds and 30 rows, scaled down for the game.
-Note: Knit the diamonds in intarsia, with a bobbin for each diamond and each area of A between them; twist the yarns at every color change to avoid holes. Work the D overcheck lines afterwards in duplicate stitch, following the chart.
+Note: Knit the diamonds and the D overcheck lines in intarsia as written, with a bobbin for each diamond, each line and each area of A between them; twist the yarns at every color change to avoid holes. (Many knitters work the D lines afterwards in duplicate stitch over A instead: knit those sts in A and stitch D over them.)
 Cast on 24 sts in B.
 Leg (worked flat):
 Rows 1–4: with B, *k2, p2; rep from * to end
@@ -914,6 +916,7 @@ Row 15 (RS): k2 A, k4 B, k4 A, k4 C, k4 A, k4 B, k2 A
 Row 16 (WS): p1 D, p2 A, p2 B, p2 A, p2 D, p2 A, p2 C, p2 A, p2 D, p2 A, p2 B, p2 A, p1 D
 Fold the leg so its side edges meet at the back, and seam them with mattress stitch from the cuff down to the needle.
 Heel flap (worked back and forth over 12 sts; the other 12 wait on a spare DPN for the instep):
+Divide the sts: the 6 sts each side of the seam onto one DPN for the heel flap (it is worked back and forth), the other 12 onto a spare DPN for the instep.
 Row 1 (RS): with B, k6, turn
 Row 2 (WS): with B, sl1 wyif, p to end
 Row 3 (RS): with B, sl1 wyib, k to end
@@ -923,27 +926,27 @@ Row 1 (RS): with B, sl1 wyib, k6, ssk, k1, turn
 Row 2 (WS): with B, sl1 wyif, p3, p2tog, p1, turn
 Row 3 (RS): with B, sl1 wyib, k4, ssk, k1, turn
 Row 4 (WS): with B, sl1 wyif, p5, p2tog, p1 (8 sts)
-K4 (to the centre of the heel); this is the new beg of rnd.
+With B and the RS facing, k4 to the centre of the heel; this is the new beg of rnd (pm).
 Gusset:
-From here on work in the rnd on 3 DPNs: the sole sts and a gusset on each of 2 needles, the instep on the third.
-Set-up rnd: k4, pick up and k 5 sts along the edge of the heel flap, k12, pick up and k 5 sts along the other edge, k4 (30 sts).
-Rnd 1: with A, k6, k2tog, k14, ssk, k6 (28 sts)
+From here on work in the rnd on 3 DPNs: on the set-up rnd, the first heel sts and the first gusset's picked-up sts go on needle 1, the 12 instep sts on needle 2, the second gusset and the last heel sts on needle 3.
+Set-up rnd: with A, k4, pick up and k 5 sts evenly along the edge of the heel flap, k12, pick up and k 5 sts evenly along the other edge, k4 (30 sts).
+Rnd 1: with A, k6, k2tog, k1; k12; k1, ssk, k6 (28 sts)
 Rnd 2: with A, knit
-Rnd 3: with A, k5, k2tog, k14, ssk, k5 (26 sts)
+Rnd 3: with A, k5, k2tog, k1; k12; k1, ssk, k5 (26 sts)
 Rnd 4: with A, knit
-Rnd 5: with A, k4, k2tog, k14, ssk, k4 (24 sts)
+Rnd 5: with A, k4, k2tog, k1; k12; k1, ssk, k4 (24 sts)
 Foot:
 Rnds 1–3: with A, knit
 Toe:
-Rnd 1: with B, *k3, k2tog, k2, ssk, k3; rep from * around (20 sts)
+Rnd 1: with B, k3, k2tog, k1; k1, ssk, k6, k2tog, k1; k1, ssk, k3 (20 sts)
 Rnd 2: with B, knit
-Rnd 3: with B, *k2, k2tog, k2, ssk, k2; rep from * around (16 sts)
+Rnd 3: with B, k2, k2tog, k1; k1, ssk, k4, k2tog, k1; k1, ssk, k2 (16 sts)
 Rnd 4: with B, knit
-Rnd 5: with B, *k1, k2tog, k2, ssk, k1; rep from * around (12 sts)
-Rnd 6: with B, *k2tog, k2, ssk; rep from * around (8 sts)
-Divide rem 8 sts onto 2 needles, 4 for the instep and 4 for the sole. Graft with Kitchener stitch (4 sts).
+Rnd 5: with B, k1, k2tog, k1; k1, ssk, k2, k2tog, k1; k1, ssk, k1 (12 sts)
+Rnd 6: with B, k2tog, k1; k1, ssk, k2tog, k1; k1, ssk (8 sts)
+K2 to the side of the toe. Cut the yarn, leaving a 12" tail. Divide the rem 8 sts onto 2 needles, 4 for the instep and 4 for the sole, and graft them with Kitchener stitch (4 sts).
 Finishing: weave in the ends. Make a second sock the same for the pair.
-Abbreviations: st = stitch; sts = stitches; k = knit; p = purl; ssk = slip, slip, knit (left-leaning decrease); p2tog = purl 2 together (right-leaning from the front); k2tog = knit 2 together (right-leaning decrease); BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); Rnd(s) = round(s); beg of rnd = beginning of the round; DPN(s) = double-pointed needles; the stitches are divided over 3 or 4 and knit with one more; sl1 wyib = slip 1 st purlwise with yarn in back (on RS rows); sl1 wyif = slip 1 st purlwise with yarn in front (on WS rows); Heel flap = a flat rectangle worked over the back of the leg's sts; Turn heel = short rows that shape the cup of the heel; turn = stop mid-row and turn the work, leaving the rest unworked; Pick up and k = draw a loop of new yarn through the edge and knit it; Gusset = the triangle of picked-up sts decreased back to the foot's count (and, on a mitten, the increases for the thumb); Kitchener stitch (graft) = joins two sets of live sts invisibly with a needle, one grafted st per pair; Mattress stitch = a seam worked from the right side, picking up the bars between the edge sts, so the seam disappears; rem = remaining; held (-) = a st waiting on waste yarn or a spare needle (the instep during the heel, a thumb, the underarms); u = pick up and k: a new st drawn through the edge of the heel flap or the thumb gap.
+Abbreviations: st = stitch; sts = stitches; k = knit; p = purl; ssk = slip, slip, knit (left-leaning decrease); p2tog = purl 2 together (right-leaning from the front); k2tog = knit 2 together (right-leaning decrease); BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; DPN(s) = double-pointed needles; the stitches are divided over 3 or 4 and knit with one more; sl1 wyib = slip 1 st purlwise with yarn in back (on RS rows); sl1 wyif = slip 1 st purlwise with yarn in front (on WS rows); Heel flap = a flat rectangle worked over the back of the leg's sts; Turn heel = short rows that shape the cup of the heel; turn = stop mid-row and turn the work, leaving the rest unworked; Pick up and k = draw a loop of new yarn through the edge and knit it; Gusset = the triangle of picked-up sts decreased back to the foot's count (and, on a mitten, the increases for the thumb); Kitchener stitch (graft) = joins two sets of live sts invisibly with a needle, one grafted st per pair; Mattress stitch = a seam worked from the right side, picking up the bars between the edge sts, so the seam disappears; rem = remaining; held (-) = a st waiting on waste yarn or a spare needle (the instep during the heel, a thumb, the underarms); u = pick up and k: a new st drawn through the edge of the heel flap or the thumb gap.
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable, s slip, - held (on waste yarn or a spare needle), _ bound off here, u picked up and knit, v sleeve st, q p2tog; letters below are the color slots):
   48  ..................................   ..................................
@@ -1004,7 +1007,7 @@ CHAPTER 4. CABLES AND TEXTURE
 Repeat: multiple of 6 sts + 0 (counted on row 2), over 6 rows. Wear: head (band). 481 stitches.
 Stitch pattern: Rope cables in the round: *p2, k4, with C4F every 6th rnd.
 Yarn: A Cream wool; chunky weight (12 sts = 4" in stockinette).
-Needles: 16" circular needle.
+Needles: 6 mm (US 10): 16" circular needle.
 Gauge: 12 sts = 4" (10 cm) in stockinette.
 Size: 48 sts around × 10 rnds, scaled down for the game.
 Cast on 48 sts.
@@ -1016,7 +1019,7 @@ Rnd 9: *p2, C4F; rep from * around
 Rnd 10: *p2, k4; rep from * around
 Bind off in pattern.
 Finishing: weave in the ends and block lightly.
-Abbreviations: st = stitch; sts = stitches; p = purl; k = knit; C4F = cable 4 front: slip 2 to cable needle, hold in front, k2, k2 from cable needle; BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; circular needle = a pair of needle tips joined by a flexible cable, for knitting in the round; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it.
+Abbreviations: st = stitch; sts = stitches; p = purl; k = knit; C4F = cable 4 front: slip 2 to cable needle, hold in front, k2, k2 from cable needle; BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; circular needle = a pair of needle tips joined by a flexible cable, for knitting in the round; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it.
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable, s slip, - held (on waste yarn or a spare needle), _ bound off here, u picked up and knit, v sleeve st, q p2tog; letters below are the color slots):
   11  kkkkppkkkkppkkkkppkkkkppkkkkppkkkkppkkkkppkkkkpp   AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -1045,7 +1048,7 @@ Row 4 (WS): k1, p1, *k2, p4, k1, p1; rep from * to last 2 sts, k1, p1
 Rows 5–12: rep rows 1–4 twice
 Bind off in pattern.
 Finishing: weave in the ends and block. Wrap round a mug and seam the side edges above and below the handle.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; p = purl; k = knit; C4B = cable 4 back: slip 2 to cable needle, hold in back, k2, k2 from cable needle; BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows).
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; p = purl; k = knit; C4B = cable 4 back: slip 2 to cable needle, hold in back, k2, k2 from cable needle; BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   12  pkppkkkkpkppkkkkpkpk   AAAAAAAAAAAAAAAAAAAA
@@ -1066,7 +1069,7 @@ Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on,
 Repeat: multiple of 4 sts + 0 (counted on row 4), over 8 rows. Wear: neck (band). 673 stitches.
 Stitch pattern: Honeycomb in the round (*C2B, C2F, then *C2F, C2B 4 rnds later; 8-rnd repeat) between garter ridges (a purl and a knit round).
 Yarn: A Mint wool; chunky weight (12 sts = 4" in stockinette).
-Needles: 16" circular needle.
+Needles: 6 mm (US 10): 16" circular needle.
 Gauge: 12 sts = 4" (10 cm) in stockinette.
 Size: 56 sts around × 12 rnds, scaled down for the game.
 Cast on 56 sts.
@@ -1084,7 +1087,7 @@ Rnd 1: knit
 Rnd 2: purl
 Bind off loosely.
 Finishing: weave in the ends and block lightly.
-Abbreviations: st = stitch; sts = stitches; p = purl; k = knit; C2B = cable 2 back: slip 1 to cable needle, hold in back, k1, k1 from cable needle; C2F = cable 2 front: slip 1 to cable needle, hold in front, k1, k1 from cable needle; BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; circular needle = a pair of needle tips joined by a flexible cable, for knitting in the round; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it.
+Abbreviations: st = stitch; sts = stitches; p = purl; k = knit; C2B = cable 2 back: slip 1 to cable needle, hold in back, k1, k1 from cable needle; C2F = cable 2 front: slip 1 to cable needle, hold in front, k1, k1 from cable needle; BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; circular needle = a pair of needle tips joined by a flexible cable, for knitting in the round; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it.
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable, s slip, - held (on waste yarn or a spare needle), _ bound off here, u picked up and knit, v sleeve st, q p2tog; letters below are the color slots):
   13  pppppppppppppppppppppppppppppppppppppppppppppppppppppppp   AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -1131,7 +1134,7 @@ Row 19 (RS): with A, k1, *k3, p1, k1, p1, k4; rep from * to end
 Row 20 (WS): with A, *p5, k1, p4; rep from * to last st, p1
 Bind off in pattern.
 Finishing: make a back in A. Place right sides together and seam round 3 sides, turn out, stuff and sew the last side closed.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; MB = make bobble: (k1, p1, k1, p1, k1) into the next st, turn, p5, turn, k5, then pass the 2nd, 3rd, 4th and 5th sts over the first; BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows).
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; MB = make bobble: (k1, p1, k1, p1, k1) into the next st, turn, p5, turn, k5, then pass the 2nd, 3rd, 4th and 5th sts over the first; BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   20  kkkkkpkkkkkkkkkpkkkkk   AAAAAAAAAAAAAAAAAAAAA
@@ -1160,7 +1163,7 @@ Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on,
 Repeat: multiple of 6 sts + 0 (counted on row 6), over 6 rows. Wear: head (dome). 737 stitches.
 Stitch pattern: 2×2 rib brim, then *p2, k4 rope cables (C4F every 6th rnd) in the round, the crown decreased in the purls and then across the cables, and gathered.
 Yarn: A Oatmeal wool; chunky weight (12 sts = 4" in stockinette).
-Needles: 16" circular needle and a set of 5 DPNs.
+Needles: 6 mm (US 10): 16" circular needle and a set of 5 DPNs.
 Gauge: 12 sts = 4" (10 cm) in stockinette.
 Size: 48 sts around × 18 rnds, scaled down for the game.
 Cast on 48 sts.
@@ -1173,7 +1176,7 @@ Rnd 2: *p2, C4F; rep from * around
 Rnds 3–7: *p2, k4; rep from * around
 Rnd 8: *p2, C4F; rep from * around
 Crown:
-Change to DPNs (10 sts on each of 4 needles).
+Change to DPNs (12 sts on each of 4 needles).
 Rnd 1: *p2tog, k4; rep from * around (40 sts)
 Rnd 2: *p1, k4; rep from * around
 Rnd 3: *p1, k2tog, ssk; rep from * around (24 sts)
@@ -1182,7 +1185,7 @@ Rnd 5: *p1, k2tog; rep from * around (16 sts)
 Rnd 6: k2tog around (8 sts)
 Cut yarn, leaving a 6" tail; thread it through the rem 8 sts, pull tight and fasten off.
 Finishing: weave in the ends.
-Abbreviations: st = stitch; sts = stitches; k = knit; p = purl; C4F = cable 4 front: slip 2 to cable needle, hold in front, k2, k2 from cable needle; p2tog = purl 2 together (right-leaning from the front); k2tog = knit 2 together (right-leaning decrease); ssk = slip, slip, knit (left-leaning decrease); BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; circular needle = a pair of needle tips joined by a flexible cable, for knitting in the round; DPN(s) = double-pointed needles; the stitches are divided over 3 or 4 and knit with one more; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it; rem = remaining.
+Abbreviations: st = stitch; sts = stitches; k = knit; p = purl; C4F = cable 4 front: slip 2 to cable needle, hold in front, k2, k2 from cable needle; p2tog = purl 2 together (right-leaning from the front); k2tog = knit 2 together (right-leaning decrease); ssk = slip, slip, knit (left-leaning decrease); BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; circular needle = a pair of needle tips joined by a flexible cable, for knitting in the round; DPN(s) = double-pointed needles; the stitches are divided over 3 or 4 and knit with one more; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it; rem = remaining.
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable, s slip, - held (on waste yarn or a spare needle), _ bound off here, u picked up and knit, v sleeve st, q p2tog; letters below are the color slots):
   20  ................................................   ................................................
@@ -1224,7 +1227,7 @@ Row 8 (WS): k2, p9, k2
 Rows 9–40: rep rows 1–8 four times
 Bind off in pattern.
 Finishing: weave in the ends and block flat.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; p = purl; k = knit; C6F = cable 6 front: slip 3 to cable needle, hold in front, k3, k3 from cable needle; C6B = cable 6 back: slip 3 to cable needle, hold in back, k3, k3 from cable needle; BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows).
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; p = purl; k = knit; C6F = cable 6 front: slip 3 to cable needle, hold in front, k3, k3 from cable needle; C6B = cable 6 back: slip 3 to cable needle, hold in back, k3, k3 from cable needle; BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   40  ppkkkkkkkkkpp   AAAAAAAAAAAAA
@@ -1292,7 +1295,7 @@ Rows 12–13: rep rows 10–11 once
 Row 14 (WS): k to end
 Bind off all sts.
 Finishing: weave in the ends and block flat.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; k2tog = knit 2 together (right-leaning decrease); yo = yarn over (makes a hole); BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows).
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; k2tog = knit 2 together (right-leaning decrease); yo = yarn over (makes a hole); BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   14  pppppppppppppp   AAAAAAAAAAAAAA
@@ -1326,7 +1329,7 @@ Rows 7–26: rep rows 3–6 five times
 Rows 27–28: k to end
 Bind off all sts.
 Finishing: weave in the ends and block, pinning the edges straight. Make a tassel and sew it to the middle of the bind-off edge.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; yo = yarn over (makes a hole); ssk = slip, slip, knit (left-leaning decrease); k2tog = knit 2 together (right-leaning decrease); p = purl; BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows).
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; yo = yarn over (makes a hole); ssk = slip, slip, knit (left-leaning decrease); k2tog = knit 2 together (right-leaning decrease); p = purl; BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   28  ppppppppppppp   AAAAAAAAAAAAA
@@ -1389,7 +1392,7 @@ Row 22 (WS): k1, p to last st, k1
 Rows 23–24: k to end
 Bind off all sts.
 Finishing: weave in the ends. Wet-block, pinning the edges straight and the corners square.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; yo = yarn over (makes a hole); ssk = slip, slip, knit (left-leaning decrease); p = purl; k2tog = knit 2 together (right-leaning decrease); BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows).
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; yo = yarn over (makes a hole); ssk = slip, slip, knit (left-leaning decrease); p = purl; k2tog = knit 2 together (right-leaning decrease); BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   24  ppppppppppppppppppppp   AAAAAAAAAAAAAAAAAAAAA
@@ -1435,7 +1438,7 @@ Row 10 (WS): with B, k to end
 Rows 11–18: rep rows 3–10 once
 Bind off all sts.
 Finishing: weave in the ends. Wet-block, pinning out each scallop along the cast-on edge.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; k2tog = knit 2 together (right-leaning decrease); yo = yarn over (makes a hole); BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows).
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; k2tog = knit 2 together (right-leaning decrease); yo = yarn over (makes a hole); BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   18  pppppppppppppppppppppppppppppppppppppp   BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
@@ -1460,12 +1463,12 @@ Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on,
 ------------------------------------------------------------------------------
 31. Lace Sock  (Lace rib, in the round)
 Repeat: multiple of 5 sts + 0 (counted on row 4), over 2 rows. Wear: feet (pair). 854 stitches.
-Stitch pattern: Lace rib in the round on the leg and the instep (*k1, yo, ssk, p2; then *k2tog, yo, k1, p2), *p2, k3 rib cuff, heel flap and turn, gusset, wedge toe grafted.
+Stitch pattern: Lace rib in the round on the leg and the instep (*p2, k1, yo, ssk; then *p2, k2tog, yo, k1), *p2, k3 rib cuff, heel flap and turn, gusset, wedge toe grafted.
 Yarn: A Rose wool, B Plum wool; aran weight (18 sts = 4" in stockinette).
-Needles: A set of 4 DPNs.
+Needles: 5 mm (US 8): a set of 5 DPNs.
 Gauge: 18 sts = 4" (10 cm) in stockinette.
 Size: 30 sts around × 23 rnds and 16 rows, scaled down for the game.
-Cast on 30 sts in B.
+Cast on 30 sts in B and divide them over 3 DPNs (10 sts on each).
 Join to work in the rnd, being careful not to twist sts; pm for beg of rnd.
 Cuff:
 Rnds 1–2: with B, *p2, k3; rep from * around
@@ -1474,6 +1477,7 @@ Rnd 1: with A, *p2, k1, yo, ssk; rep from * around
 Rnd 2: with A, *p2, k2tog, yo, k1; rep from * around
 Rnds 3–8: rep rnds 1–2 three times
 Heel flap (worked back and forth over 15 sts; the other 15 wait on a spare DPN for the instep):
+Divide the sts: the last 8 and the first 7 sts of the rnd onto one DPN for the heel flap (it is worked back and forth), the other 15 onto a spare DPN for the instep.
 Row 1 (RS): with B, k7, turn
 Row 2 (WS): with B, sl1 wyif, p to end
 Row 3 (RS): with B, sl1 wyib, k to end
@@ -1485,27 +1489,28 @@ Row 3 (RS): with B, sl1 wyib, k3, ssk, k1, turn
 Row 4 (WS): with B, sl1 wyif, p4, p2tog, p1, turn
 Row 5 (RS): with B, sl1 wyib, k5, ssk, k1, turn
 Row 6 (WS): with B, sl1 wyif, p6, p2tog, p1 (9 sts)
-K5 (to the centre of the heel); this is the new beg of rnd.
+With B and the RS facing, k5 to the centre of the heel; this is the new beg of rnd (pm).
 Gusset:
-Set-up rnd: k4, pick up and k 5 sts along the edge of the heel flap, k15, pick up and k 5 sts along the other edge, k5 (34 sts).
-Rnd 1: with A, k6, k2tog, k2, *yo, ssk, p2, k1; rep from * to last 9 sts, ssk, k7 (32 sts)
-Rnd 2: with A, k8, *k2tog, yo, k1, p2; rep from * to last 9 sts, k9
-Rnd 3: with A, k5, k2tog, k2, *yo, ssk, p2, k1; rep from * to last 8 sts, ssk, k6 (30 sts)
+From here on work in the rnd on 4 DPNs: on the set-up rnd, the first heel sts and the first gusset's picked-up sts go on needle 1, the 15 instep sts on needles 2 and 3 (8 and 7), the second gusset and the last heel sts on needle 4.
+Set-up rnd: with A, k4, pick up and k 5 sts evenly along the edge of the heel flap, k15, pick up and k 5 sts evenly along the other edge, k5 (34 sts).
+Rnd 1: with A, k6, k2tog, k1; [k1, yo, ssk, p2] 3 times; k1, ssk, k7 (32 sts)
+Rnd 2: with A, k8; [k2tog, yo, k1, p2] 3 times; k9
+Rnd 3: with A, k5, k2tog, k1; [k1, yo, ssk, p2] 3 times; k1, ssk, k6 (30 sts)
 Foot:
-Rnd 1: with A, k7, *k2tog, yo, k1, p2; rep from * to last 8 sts, k8
-Rnd 2: with A, k8, *yo, ssk, p2, k1; rep from * to last 7 sts, k7
-Rnd 3: with A, k7, *k2tog, yo, k1, p2; rep from * to last 8 sts, k8
+Rnd 1: with A, k7; [k2tog, yo, k1, p2] 3 times; k8
+Rnd 2: with A, k7; [k1, yo, ssk, p2] 3 times; k8
+Rnd 3: with A, k7; [k2tog, yo, k1, p2] 3 times; k8
 Toe:
-Rnd 1: with B, *k4, k2tog, k2, ssk, k5; rep from * around (26 sts)
+Rnd 1: with B, k4, k2tog, k1; k1, ssk, k9, k2tog, k1; k1, ssk, k5 (26 sts)
 Rnd 2: with B, knit
-Rnd 3: with B, *k3, k2tog, k2, ssk, k4; rep from * around (22 sts)
+Rnd 3: with B, k3, k2tog, k1; k1, ssk, k7, k2tog, k1; k1, ssk, k4 (22 sts)
 Rnd 4: with B, knit
-Rnd 5: with B, *k2, k2tog, k2, ssk, k3; rep from * around (18 sts)
-Rnd 6: with B, *k1, k2tog, k2, ssk, k2; rep from * around (14 sts)
-Rnd 7: with B, *k2tog, k2, ssk, k1; rep from * around (10 sts)
-Divide rem 10 sts onto 2 needles, 5 for the instep and 5 for the sole. Graft with Kitchener stitch (5 sts).
+Rnd 5: with B, k2, k2tog, k1; k1, ssk, k5, k2tog, k1; k1, ssk, k3 (18 sts)
+Rnd 6: with B, k1, k2tog, k1; k1, ssk, k3, k2tog, k1; k1, ssk, k2 (14 sts)
+Rnd 7: with B, k2tog, k1; k1, ssk, k1, k2tog, k1; k1, ssk, k1 (10 sts)
+K2 to the side of the toe. Cut the yarn, leaving a 12" tail. Divide the rem 10 sts onto 2 needles, 5 for the instep and 5 for the sole, and graft them with Kitchener stitch (5 sts).
 Finishing: weave in the ends and block lightly to open the lace. Make a second sock the same for the pair.
-Abbreviations: st = stitch; sts = stitches; p = purl; k = knit; yo = yarn over (makes a hole); ssk = slip, slip, knit (left-leaning decrease); k2tog = knit 2 together (right-leaning decrease); p2tog = purl 2 together (right-leaning from the front); BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; DPN(s) = double-pointed needles; the stitches are divided over 3 or 4 and knit with one more; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it; sl1 wyib = slip 1 st purlwise with yarn in back (on RS rows); sl1 wyif = slip 1 st purlwise with yarn in front (on WS rows); Heel flap = a flat rectangle worked over the back of the leg's sts; Turn heel = short rows that shape the cup of the heel; turn = stop mid-row and turn the work, leaving the rest unworked; Pick up and k = draw a loop of new yarn through the edge and knit it; Gusset = the triangle of picked-up sts decreased back to the foot's count (and, on a mitten, the increases for the thumb); Kitchener stitch (graft) = joins two sets of live sts invisibly with a needle, one grafted st per pair; rem = remaining; held (-) = a st waiting on waste yarn or a spare needle (the instep during the heel, a thumb, the underarms); u = pick up and k: a new st drawn through the edge of the heel flap or the thumb gap.
+Abbreviations: st = stitch; sts = stitches; p = purl; k = knit; yo = yarn over (makes a hole); ssk = slip, slip, knit (left-leaning decrease); k2tog = knit 2 together (right-leaning decrease); p2tog = purl 2 together (right-leaning from the front); BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; DPN(s) = double-pointed needles; the stitches are divided over 3 or 4 and knit with one more; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it; sl1 wyib = slip 1 st purlwise with yarn in back (on RS rows); sl1 wyif = slip 1 st purlwise with yarn in front (on WS rows); Heel flap = a flat rectangle worked over the back of the leg's sts; Turn heel = short rows that shape the cup of the heel; turn = stop mid-row and turn the work, leaving the rest unworked; Pick up and k = draw a loop of new yarn through the edge and knit it; Gusset = the triangle of picked-up sts decreased back to the foot's count (and, on a mitten, the increases for the thumb); Kitchener stitch (graft) = joins two sets of live sts invisibly with a needle, one grafted st per pair; rem = remaining; held (-) = a st waiting on waste yarn or a spare needle (the instep during the heel, a thumb, the underarms); u = pick up and k: a new st drawn through the edge of the heel flap or the thumb gap.
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable, s slip, - held (on waste yarn or a spare needle), _ bound off here, u picked up and knit, v sleeve st, q p2tog; letters below are the color slots):
   43  ........................................   ........................................
@@ -1582,7 +1587,7 @@ Row 26 (WS): with A, k1, p to last st, k1
 Rows 27–28: with A, k to end
 Bind off all sts.
 Finishing: weave in the ends and block flat.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; ssk = slip, slip, knit (left-leaning decrease); yo = yarn over (makes a hole); k2tog = knit 2 together (right-leaning decrease); p = purl; BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows).
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; ssk = slip, slip, knit (left-leaning decrease); yo = yarn over (makes a hole); k2tog = knit 2 together (right-leaning decrease); p = purl; BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   28  pppppppppppppppppppppppppppp   AAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -1653,7 +1658,7 @@ Right ear (rejoin yarn at the inner edge, WS facing):
   Row 24 (WS): with A, k to end
   Bind off all sts.
 Finishing: work a back as the front, but plain in A where the front has the face. Place the two pieces right sides together and seam round, leaving the cast-on edge open. Turn out, stuff lightly and sew the opening closed. Sew on two button eyes. For a baby or a child under 3, embroider the eyes in black yarn instead of using buttons. Weave in the ends.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; M1R = make 1 right (right-leaning increase); M1L = make 1 left (left-leaning increase); ssk = slip, slip, knit (left-leaning decrease); k2tog = knit 2 together (right-leaning decrease); BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); CO = cast on (at the start of a row, a knitted or cable cast-on onto the left needle; the new sts are then worked); p = purl.
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; M1R = make 1 right (right-leaning increase); M1L = make 1 left (left-leaning increase); ssk = slip, slip, knit (left-leaning decrease); k2tog = knit 2 together (right-leaning decrease); BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); CO = cast on (at the start of a row, a knitted or cable cast-on onto the left needle; the new sts are then worked); p = purl.
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   24  ...pp......pp...   ...AA......AA...
@@ -1716,7 +1721,7 @@ Right ear (rejoin yarn at the inner edge, WS facing):
   Row 18 (WS): with A, p2tog (1 st)
   Fasten off.
 Finishing: work a back as the front, but plain in A where the front has the face. Place the two pieces right sides together and seam round, leaving the cast-on edge open. Turn out, stuff lightly and sew the opening closed. Weave in the ends.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; ssk = slip, slip, knit (left-leaning decrease); k2tog = knit 2 together (right-leaning decrease); M1LP = make 1 left purlwise (leans left as seen from the right side); M1RP = make 1 right purlwise (leans right as seen from the right side); M1R = make 1 right (right-leaning increase); M1L = make 1 left (left-leaning increase); p2tog = purl 2 together (right-leaning from the front); ssp = slip, slip, purl (left-leaning from the front); BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows).
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; ssk = slip, slip, knit (left-leaning decrease); k2tog = knit 2 together (right-leaning decrease); M1LP = make 1 left purlwise (leans left as seen from the right side); M1RP = make 1 right purlwise (leans right as seen from the right side); M1R = make 1 right (right-leaning increase); M1L = make 1 left (left-leaning increase); p2tog = purl 2 together (right-leaning from the front); ssp = slip, slip, purl (left-leaning from the front); BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   18  .>............<.   .A............A.
@@ -1775,7 +1780,7 @@ Tail (rejoin yarn at the inner edge, WS facing):
     Row 16 (WS): with A, p2tog (1 st)
     Fasten off.
 Finishing: work a back as the front, but with the belly in B as the front and no eye. Place the two pieces right sides together and seam round, leaving the cast-on edge open. Turn out, stuff lightly and sew the opening closed. Weave in the ends.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; CO = cast on (at the start of a row, a knitted or cable cast-on onto the left needle; the new sts are then worked); p = purl; M1L = make 1 left (left-leaning increase); BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); k2tog = knit 2 together (right-leaning decrease); p2tog = purl 2 together (right-leaning from the front); ssp = slip, slip, purl (left-leaning from the front); rem = remaining; M1R = make 1 right (right-leaning increase); M1LP = make 1 left purlwise (leans left as seen from the right side); M1RP = make 1 right purlwise (leans right as seen from the right side).
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; CO = cast on (at the start of a row, a knitted or cable cast-on onto the left needle; the new sts are then worked); p = purl; M1L = make 1 left (left-leaning increase); BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); k2tog = knit 2 together (right-leaning decrease); p2tog = purl 2 together (right-leaning from the front); ssp = slip, slip, purl (left-leaning from the front); rem = remaining; M1R = make 1 right (right-leaning increase); M1LP = make 1 left purlwise (leans left as seen from the right side); M1RP = make 1 right purlwise (leans right as seen from the right side).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   16  .................>...<.   .................A...A.
@@ -1827,7 +1832,7 @@ Right eye (rejoin yarn at the inner edge, WS facing):
   Row 16 (WS): with A, p2tog, p1, k1, ssp (4 sts)
   Bind off all sts.
 Finishing: work a back as the front, but plain in A where the front has the face. Place the two pieces right sides together and seam round, leaving the cast-on edge open. Turn out, stuff lightly and sew the opening closed. Weave in the ends.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; p = purl; k = knit; M1LP = make 1 left purlwise (leans left as seen from the right side); M1R = make 1 right (right-leaning increase); M1RP = make 1 right purlwise (leans right as seen from the right side); M1L = make 1 left (left-leaning increase); ssk = slip, slip, knit (left-leaning decrease); BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); k2tog = knit 2 together (right-leaning decrease); p2tog = purl 2 together (right-leaning from the front); ssp = slip, slip, purl (left-leaning from the front).
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; p = purl; k = knit; M1LP = make 1 left purlwise (leans left as seen from the right side); M1R = make 1 right (right-leaning increase); M1RP = make 1 right purlwise (leans right as seen from the right side); M1L = make 1 left (left-leaning increase); ssk = slip, slip, knit (left-leaning decrease); BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); k2tog = knit 2 together (right-leaning decrease); p2tog = purl 2 together (right-leaning from the front); ssp = slip, slip, purl (left-leaning from the front).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   16  ..<kp>......<kp>..   ..AAAA......AAAA..
@@ -1879,7 +1884,7 @@ Row 21 (RS): with A, k to end
 Row 22 (WS): with A, p2tog, p4, ssp (6 sts)
 Bind off all sts.
 Finishing: work a back as the front, but plain in A (the black back). Place the two pieces right sides together and seam round, leaving the cast-on edge open. Turn out, stuff lightly and sew the opening closed. Weave in the ends.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; M1R = make 1 right (right-leaning increase); M1L = make 1 left (left-leaning increase); M1LP = make 1 left purlwise (leans left as seen from the right side); M1RP = make 1 right purlwise (leans right as seen from the right side); ssk = slip, slip, knit (left-leaning decrease); k2tog = knit 2 together (right-leaning decrease); p2tog = purl 2 together (right-leaning from the front); ssp = slip, slip, purl (left-leaning from the front); BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows).
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; M1R = make 1 right (right-leaning increase); M1L = make 1 left (left-leaning increase); M1LP = make 1 left purlwise (leans left as seen from the right side); M1RP = make 1 right purlwise (leans right as seen from the right side); ssk = slip, slip, knit (left-leaning decrease); k2tog = knit 2 together (right-leaning decrease); p2tog = purl 2 together (right-leaning from the front); ssp = slip, slip, purl (left-leaning from the front); BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   22  ....<kkkk>....   ....AAAAAA....
@@ -1937,7 +1942,7 @@ Row 19 (RS): with A, k to end
 Row 20 (WS): with A, p2tog, p8, ssp (10 sts)
 Bind off all sts.
 Finishing: work a back as the front, with its own 4 legs, but plain in A (no eyes). Place the two pieces right sides together and seam round the head and down each side to the top of the legs (row 7), leaving the legs free: the front's 4 legs and the back's 4 make 8. Seam across the tops of the legs, front to back, between the legs, leaving the gap between the two middle legs open. Turn out through that gap, stuff the head and sew the gap closed. Weave in the ends.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; CO = cast on (at the start of a row, a knitted or cable cast-on onto the left needle; the new sts are then worked); p2tog = purl 2 together (right-leaning from the front); ssp = slip, slip, purl (left-leaning from the front); ssk = slip, slip, knit (left-leaning decrease); k2tog = knit 2 together (right-leaning decrease); M1LP = make 1 left purlwise (leans left as seen from the right side); M1RP = make 1 right purlwise (leans right as seen from the right side); BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows).
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; CO = cast on (at the start of a row, a knitted or cable cast-on onto the left needle; the new sts are then worked); p2tog = purl 2 together (right-leaning from the front); ssp = slip, slip, purl (left-leaning from the front); ssk = slip, slip, knit (left-leaning decrease); k2tog = knit 2 together (right-leaning decrease); M1LP = make 1 left purlwise (leans left as seen from the right side); M1RP = make 1 right purlwise (leans right as seen from the right side); BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   20  ....<kkkkkkkk>....   ....AAAAAAAAAA....
@@ -2004,7 +2009,7 @@ Body (rejoin yarn at the inner edge, RS facing):
     Row 20 (WS): with C, p2tog (1 st)
     Fasten off.
 Finishing: work a back as the front, but plain in A where the front has the face. Place the two pieces right sides together and seam round, leaving the cast-on edge open. Turn out, stuff lightly and sew the opening closed. Weave in the ends.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; M1RP = make 1 right purlwise (leans right as seen from the right side); BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); ssk = slip, slip, knit (left-leaning decrease); k2tog = knit 2 together (right-leaning decrease); rem = remaining; p2tog = purl 2 together (right-leaning from the front); ssp = slip, slip, purl (left-leaning from the front); M1LP = make 1 left purlwise (leans left as seen from the right side); CO = cast on (at the start of a row, a knitted or cable cast-on onto the left needle; the new sts are then worked).
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; M1RP = make 1 right purlwise (leans right as seen from the right side); BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); ssk = slip, slip, knit (left-leaning decrease); k2tog = knit 2 together (right-leaning decrease); rem = remaining; p2tog = purl 2 together (right-leaning from the front); ssp = slip, slip, purl (left-leaning from the front); M1LP = make 1 left purlwise (leans left as seen from the right side); CO = cast on (at the start of a row, a knitted or cable cast-on onto the left needle; the new sts are then worked).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   20  .>............<...   .C............C...
@@ -2073,7 +2078,7 @@ Left ear (rejoin yarn at the inner edge, RS facing):
   Row 22 (WS): with A, p2tog, p1, ssp (3 sts)
   Bind off all sts.
 Finishing: work a back as the front, but plain in A where the front has the face. Place the two pieces right sides together and seam round, leaving the cast-on edge open. Turn out, stuff lightly and sew the opening closed. Weave in the ends.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; CO = cast on (at the start of a row, a knitted or cable cast-on onto the left needle; the new sts are then worked); BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); M1R = make 1 right (right-leaning increase); M1L = make 1 left (left-leaning increase); p2tog = purl 2 together (right-leaning from the front); ssp = slip, slip, purl (left-leaning from the front).
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; CO = cast on (at the start of a row, a knitted or cable cast-on onto the left needle; the new sts are then worked); BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); M1R = make 1 right (right-leaning increase); M1L = make 1 left (left-leaning increase); p2tog = purl 2 together (right-leaning from the front); ssp = slip, slip, purl (left-leaning from the front).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   22  .<k>..........<k>.   .AAA..........AAA.
@@ -2126,7 +2131,7 @@ Row 23 (RS): with B, bind off 2 sts, k to end (12 sts)
 Row 24 (WS): with B, bind off 2 sts knitwise, k to end (10 sts)
 Bind off all sts.
 Finishing: make a back the same. Place right sides together and seam the top and the sides, leaving a gap in each side for the spout and the handle and the cast-on edge open. Turn out, make a pom-pom in B and sew it to the top. Weave in the ends.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; ssk = slip, slip, knit (left-leaning decrease); k2tog = knit 2 together (right-leaning decrease); BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); p = purl.
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; ssk = slip, slip, knit (left-leaning decrease); k2tog = knit 2 together (right-leaning decrease); BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); p = purl.
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   24  ......pppppppppp......   ......BBBBBBBBBB......
@@ -2159,11 +2164,11 @@ Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on,
 Repeat: multiple of 6 sts + 0 (counted on row 6), over 7 rows. A gallery piece. 1249 stitches.
 Stitch pattern: Cuff-down stocking in the round: garter cuff (purl and knit rounds), stranded peerie band (6 sts × 7 rnds), heel flap and turn, gusset, foot, wedge toe grafted.
 Yarn: A Red wool, B White wool, C Forest wool; chunky weight (12 sts = 4" in stockinette).
-Needles: A set of 4 DPNs.
+Needles: 6 mm (US 10): a set of 5 DPNs.
 Gauge: 12 sts = 4" (10 cm) in stockinette.
 Size: 36 sts around × 28 rnds and 18 rows, scaled down for the game.
 Note: Strand the peerie band, carrying the yarn not in use loosely behind.
-Cast on 36 sts in B.
+Cast on 36 sts in B and divide them over 3 DPNs (12 sts on each).
 Join to work in the rnd, being careful not to twist sts; pm for beg of rnd.
 Cuff:
 Rnd 1: with B, purl
@@ -2180,6 +2185,7 @@ Rnd 7: *k1 C, k1 B, k1 C; rep from * around
 Leg:
 Rnd 1: with A, knit
 Heel flap (worked back and forth over 18 sts; the other 18 wait on a spare DPN for the instep):
+Divide the sts: the last 9 and the first 9 sts of the rnd onto one DPN for the heel flap (it is worked back and forth), the other 18 onto a spare DPN for the instep.
 Row 1 (RS): with B, k9, turn
 Row 2 (WS): with B, sl1 wyif, p to end
 Row 3 (RS): with B, sl1 wyib, k to end
@@ -2191,28 +2197,29 @@ Row 3 (RS): with B, sl1 wyib, k6, ssk, k1, turn
 Row 4 (WS): with B, sl1 wyif, p7, p2tog, p1, turn
 Row 5 (RS): with B, sl1 wyib, k8, ssk, k1, turn
 Row 6 (WS): with B, sl1 wyif, p9, p2tog, p1 (12 sts)
-K6 (to the centre of the heel); this is the new beg of rnd.
+With B and the RS facing, k6 to the centre of the heel; this is the new beg of rnd (pm).
 Gusset:
-Set-up rnd: k6, pick up and k 6 sts along the edge of the heel flap, k18, pick up and k 6 sts along the other edge, k6 (42 sts).
-Rnd 1: with A, k9, k2tog, k20, ssk, k9 (40 sts)
+From here on work in the rnd on 4 DPNs: on the set-up rnd, the first heel sts and the first gusset's picked-up sts go on needle 1, the 18 instep sts on needles 2 and 3 (9 and 9), the second gusset and the last heel sts on needle 4.
+Set-up rnd: with A, k6, pick up and k 6 sts evenly along the edge of the heel flap, k18, pick up and k 6 sts evenly along the other edge, k6 (42 sts).
+Rnd 1: with A, k9, k2tog, k1; k18; k1, ssk, k9 (40 sts)
 Rnd 2: with A, knit
-Rnd 3: with A, k8, k2tog, k20, ssk, k8 (38 sts)
+Rnd 3: with A, k8, k2tog, k1; k18; k1, ssk, k8 (38 sts)
 Rnd 4: with A, knit
-Rnd 5: with A, k7, k2tog, k20, ssk, k7 (36 sts)
+Rnd 5: with A, k7, k2tog, k1; k18; k1, ssk, k7 (36 sts)
 Foot:
 Rnds 1–3: with A, knit
 Toe:
-Rnd 1: with B, *k6, k2tog, k2, ssk, k6; rep from * around (32 sts)
+Rnd 1: with B, k6, k2tog, k1; k1, ssk, k12, k2tog, k1; k1, ssk, k6 (32 sts)
 Rnd 2: with B, knit
-Rnd 3: with B, *k5, k2tog, k2, ssk, k5; rep from * around (28 sts)
+Rnd 3: with B, k5, k2tog, k1; k1, ssk, k10, k2tog, k1; k1, ssk, k5 (28 sts)
 Rnd 4: with B, knit
-Rnd 5: with B, *k4, k2tog, k2, ssk, k4; rep from * around (24 sts)
-Rnd 6: with B, *k3, k2tog, k2, ssk, k3; rep from * around (20 sts)
-Rnd 7: with B, *k2, k2tog, k2, ssk, k2; rep from * around (16 sts)
-Rnd 8: with B, *k1, k2tog, k2, ssk, k1; rep from * around (12 sts)
-Divide rem 12 sts onto 2 needles, 6 for the instep and 6 for the sole. Graft with Kitchener stitch (6 sts).
+Rnd 5: with B, k4, k2tog, k1; k1, ssk, k8, k2tog, k1; k1, ssk, k4 (24 sts)
+Rnd 6: with B, k3, k2tog, k1; k1, ssk, k6, k2tog, k1; k1, ssk, k3 (20 sts)
+Rnd 7: with B, k2, k2tog, k1; k1, ssk, k4, k2tog, k1; k1, ssk, k2 (16 sts)
+Rnd 8: with B, k1, k2tog, k1; k1, ssk, k2, k2tog, k1; k1, ssk, k1 (12 sts)
+K3 to the side of the toe. Cut the yarn, leaving a 12" tail. Divide the rem 12 sts onto 2 needles, 6 for the instep and 6 for the sole, and graft them with Kitchener stitch (6 sts).
 Finishing: make a hanging loop: a 3" twisted cord of B, sewn inside the back of the cuff. Weave in the ends.
-Abbreviations: st = stitch; sts = stitches; p = purl; k = knit; ssk = slip, slip, knit (left-leaning decrease); p2tog = purl 2 together (right-leaning from the front); k2tog = knit 2 together (right-leaning decrease); BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; DPN(s) = double-pointed needles; the stitches are divided over 3 or 4 and knit with one more; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it; sl1 wyib = slip 1 st purlwise with yarn in back (on RS rows); sl1 wyif = slip 1 st purlwise with yarn in front (on WS rows); Heel flap = a flat rectangle worked over the back of the leg's sts; Turn heel = short rows that shape the cup of the heel; turn = stop mid-row and turn the work, leaving the rest unworked; Pick up and k = draw a loop of new yarn through the edge and knit it; Gusset = the triangle of picked-up sts decreased back to the foot's count (and, on a mitten, the increases for the thumb); Kitchener stitch (graft) = joins two sets of live sts invisibly with a needle, one grafted st per pair; rem = remaining; held (-) = a st waiting on waste yarn or a spare needle (the instep during the heel, a thumb, the underarms); u = pick up and k: a new st drawn through the edge of the heel flap or the thumb gap.
+Abbreviations: st = stitch; sts = stitches; p = purl; k = knit; ssk = slip, slip, knit (left-leaning decrease); p2tog = purl 2 together (right-leaning from the front); k2tog = knit 2 together (right-leaning decrease); BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; DPN(s) = double-pointed needles; the stitches are divided over 3 or 4 and knit with one more; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it; sl1 wyib = slip 1 st purlwise with yarn in back (on RS rows); sl1 wyif = slip 1 st purlwise with yarn in front (on WS rows); Heel flap = a flat rectangle worked over the back of the leg's sts; Turn heel = short rows that shape the cup of the heel; turn = stop mid-row and turn the work, leaving the rest unworked; Pick up and k = draw a loop of new yarn through the edge and knit it; Gusset = the triangle of picked-up sts decreased back to the foot's count (and, on a mitten, the increases for the thumb); Kitchener stitch (graft) = joins two sets of live sts invisibly with a needle, one grafted st per pair; rem = remaining; held (-) = a st waiting on waste yarn or a spare needle (the instep during the heel, a thumb, the underarms); u = pick up and k: a new st drawn through the edge of the heel flap or the thumb gap.
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable, s slip, - held (on waste yarn or a spare needle), _ bound off here, u picked up and knit, v sleeve st, q p2tog; letters below are the color slots):
   50  ................................................   ................................................
@@ -2268,12 +2275,12 @@ Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on,
 
 ------------------------------------------------------------------------------
 43. Dog Sweater  (Leg openings, in the round)
-Repeat: multiple of 4 sts + 0 (counted on row 2), over 1 rows. A gallery piece. 831 stitches.
+Repeat: multiple of 4 sts + 0 (counted on row 2), over 1 rows. A gallery piece. 854 stitches.
 Stitch pattern: Neck-down tube in the round: 2×2 rib neck, stockinette with honey stripes, two one-round leg openings (BO 5, then CO 5 over each gap), the belly bound off and the back finished flat with a garter edge.
 Yarn: A Denim wool, B Honey wool; chunky weight (12 sts = 4" in stockinette).
-Needles: 16" circular needle.
+Needles: 6 mm (US 10): 16" circular needle.
 Gauge: 12 sts = 4" (10 cm) in stockinette.
-Size: 48 sts around × 14 rnds and 5 rows, scaled down for the game.
+Size: 48 sts around × 14 rnds and 6 rows, scaled down for the game.
 Note: Stripes knit in the round show a small step (the jog) where each round begins. To hide it, slip the first st of the 2nd rnd of each new color purlwise; the game knits it plain and shows the jog.
 Cast on 48 sts in B.
 Join to work in the rnd, being careful not to twist sts; pm for beg of rnd.
@@ -2290,23 +2297,25 @@ Rnds 1–2: with A, knit
 Rnd 3: with B, knit
 Rnd 4: with A, knit
 Belly:
-Rnd 1: with A, bind off 12 sts, k to end (36 sts)
-Back (worked flat):
-Row 1 (WS): with A, p to end
-Row 2 (RS): with A, k to end
-Row 3 (WS): with A, p to end
-Rows 4–5: with B, k to end
+Rnd 1: with A, k11, bind off 10 sts, k to end (38 sts)
+Back (worked back and forth on the circular):
+Row 1 (RS): with A, k11, turn
+Row 2 (WS): with A, p to end
+Row 3 (RS): with A, k to end
+Row 4 (WS): with A, p to end
+Rows 5–6: with B, k to end
 Bind off all sts knitwise.
 Finishing: weave in the ends and block. The flat part covers the dog's back and leaves the belly free. It's for a dog, so no doll can wear it.
-Abbreviations: st = stitch; sts = stitches; k = knit; p = purl; BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); CO = cast on (at the start of a row, a knitted or cable cast-on onto the left needle; the new sts are then worked); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; circular needle = a pair of needle tips joined by a flexible cable, for knitting in the round; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it; Jog = the step at the beginning of a round where one round ends a row above where it began; on stripes, knitters hide it by slipping the first st of the 2nd rnd of each new color; BO here (_) = a st bound off in the middle of a round (a thumb hole, a leg opening); not a tap.
+Abbreviations: st = stitch; sts = stitches; k = knit; p = purl; BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); CO = cast on (over a gap in a round: a backward-loop or cable cast-on onto the right needle, then carry on with the rnd); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; circular needle = a pair of needle tips joined by a flexible cable, for knitting in the round; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it; turn = stop mid-row and turn the work, leaving the rest unworked; Jog = the step at the beginning of a round where one round ends a row above where it began; on stripes, knitters hide it by slipping the first st of the 2nd rnd of each new color; BO here (_) = a st bound off in the middle of a round (a thumb hole, a leg opening); not a tap; held (-) = a st waiting on waste yarn or a spare needle (the instep during the heel, a thumb, the underarms).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable, s slip, - held (on waste yarn or a spare needle), _ bound off here, u picked up and knit, v sleeve st, q p2tog; letters below are the color slots):
-  20  pppppppppppppppppppppppppppppppppppp............   BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB............
-  19  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk............   BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB............
-  18  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk............   AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA............
-  17  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk............   AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA............
-  16  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk............   AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA............
-  15  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk____________   AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+  21  ppppppppppppppppppppppppppp..........ppppppppppp   BBBBBBBBBBBBBBBBBBBBBBBBBBB..........BBBBBBBBBBB
+  20  kkkkkkkkkkkkkkkkkkkkkkkkkkk..........kkkkkkkkkkk   BBBBBBBBBBBBBBBBBBBBBBBBBBB..........BBBBBBBBBBB
+  19  kkkkkkkkkkkkkkkkkkkkkkkkkkk..........kkkkkkkkkkk   AAAAAAAAAAAAAAAAAAAAAAAAAAA..........AAAAAAAAAAA
+  18  kkkkkkkkkkkkkkkkkkkkkkkkkkk..........kkkkkkkkkkk   AAAAAAAAAAAAAAAAAAAAAAAAAAA..........AAAAAAAAAAA
+  17  kkkkkkkkkkkkkkkkkkkkkkkkkkk..........kkkkkkkkkkk   AAAAAAAAAAAAAAAAAAAAAAAAAAA..........AAAAAAAAAAA
+  16  ---------------------------..........kkkkkkkkkkk   AAAAAAAAAAAAAAAAAAAAAAAAAAA..........AAAAAAAAAAA
+  15  kkkkkkkkkkkkkkkkkkkkkkkkkkk__________kkkkkkkkkkk   AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
   14  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk   AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
   13  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk   BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
   12  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk   AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -2361,7 +2370,7 @@ Row 35 (RS): k1 A, k2tog A, yo A, k3 A, k2tog A, yo A, k4 A, k12 B, [p1 A, k1 A]
 Row 36 (WS): p12 A, p12 B, p12 A
 Bind off all sts.
 Finishing: weave in the ends and block flat.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; p = purl; k = knit; k2tog = knit 2 together (right-leaning decrease); yo = yarn over (makes a hole); BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows).
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; p = purl; k = knit; k2tog = knit 2 together (right-leaning decrease); yo = yarn over (makes a hole); BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   36  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk   AAAAAAAAAAAABBBBBBBBBBBBAAAAAAAAAAAA
@@ -2406,17 +2415,17 @@ Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on,
 Repeat: multiple of 8 sts + 0 (counted on row 13), over 7 rows. Wear: body (body). 1163 stitches.
 Stitch pattern: Bottom-up yoke sweater in the round: 2×2 rib hem, the body to the underarms, the sleeves joined on one circular needle, a stranded diamond band (8 sts × 7 rnds) between yoke decreases, 2×2 rib neck.
 Yarn: A Cream wool, B Cranberry wool, C Sage wool; super bulky weight (10 sts = 4" in stockinette).
-Needles: 16" circular needle and a set of 5 DPNs (also for the sleeves).
+Needles: 9 mm (US 13): 16" circular needle and a set of 5 DPNs (also for the sleeves).
 Gauge: 10 sts = 4" (10 cm) in stockinette.
 Size: 48 sts around × 21 rnds, scaled down for the game.
-Note: Strand the yoke band and the dots, carrying the yarn not in use loosely behind.
-Sleeves (make 2, before the body, on DPNs): cast on 16 sts in A and join to work in the rnd. Work 3 rnds of *k2, p2 rib, then knit every rnd until the sleeve reaches the underarm. Place the last 2 and the first 2 sts of the rnd (4 sts) on waste yarn for the underarm, and leave the other 12 sts on a spare DPN. Make a second sleeve the same.
+Note: Strand the yoke band and the dots, carrying the yarn not in use loosely behind and catching any float longer than 5 sts.
+Sleeves (make 2, before the body, on DPNs): cast on 16 sts in A and join to work in the rnd. Work 3 rnds of *k2, p2 rib, then knit 12 rnds (or until the sleeve reaches the underarm). Place the last 2 and the first 2 sts of the rnd (4 sts) on waste yarn for the underarm, leave the other 12 sts on a spare DPN and cut the yarn.
 Cast on 48 sts in A.
 Join to work in the rnd, being careful not to twist sts; pm for beg of rnd.
 Body:
 Rnds 1–3: with A, *k2, p2; rep from * around
 Rnds 4–8: with A, knit
-Place 4 sts at each underarm on waste yarn: the last 2 and first 2 sts of the rnd, and the 4 sts at the middle of the rnd.
+Place 4 sts at each underarm on waste yarn: the last 2 and the first 2 sts of the rnd (removing the marker), and the 4 sts at the middle of the rnd. Join the yarn at the first front st and pm there: this is the new beg of rnd.
 Yoke:
 Joining rnd: k20 front sts, k12 sts of one sleeve, k20 back sts, k12 sts of the other sleeve (64 sts).
 Rnd 1: *k1 A, k1 C, k2 A; rep from * around
@@ -2429,14 +2438,14 @@ Rnd 7: *k2 A, k3 B, k3 A; rep from * around
 Rnd 8: *k3 A, k1 B, k4 A; rep from * around
 Rnd 9: with A, *k2, k2tog; rep from * around (48 sts)
 Rnd 10: with A, knit
-Change to DPNs (8 sts on each of 4 needles).
+Change to DPNs (12 sts on each of 4 needles).
 Rnd 11: with A, *k1, k2tog; rep from * around (32 sts)
 Neck:
 Rnds 1–2: with A, *k2, p2; rep from * around
 Bind off loosely in rib.
 Graft the 4 held sts at each underarm to the 4 held sts of its sleeve with Kitchener stitch (8 sts).
 Finishing: weave in the ends, closing any little gaps at the underarms, and block.
-Abbreviations: st = stitch; sts = stitches; k = knit; p = purl; k2tog = knit 2 together (right-leaning decrease); BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; circular needle = a pair of needle tips joined by a flexible cable, for knitting in the round; DPN(s) = double-pointed needles; the stitches are divided over 3 or 4 and knit with one more; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it; Waste yarn = a scrap of yarn that holds live sts for later; Kitchener stitch (graft) = joins two sets of live sts invisibly with a needle, one grafted st per pair; held (-) = a st waiting on waste yarn or a spare needle (the instep during the heel, a thumb, the underarms); v = sleeve st: a st of a sleeve knit separately, joined into the yoke.
+Abbreviations: st = stitch; sts = stitches; k = knit; p = purl; k2tog = knit 2 together (right-leaning decrease); BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); Rnd(s) = round(s); beg of rnd = beginning of the round; pm = place marker; circular needle = a pair of needle tips joined by a flexible cable, for knitting in the round; DPN(s) = double-pointed needles; the stitches are divided over 3 or 4 and knit with one more; Join in the rnd = after casting on, knit the first st with the yarn from the last, closing the ring without twisting it; Waste yarn = a scrap of yarn that holds live sts for later; Kitchener stitch (graft) = joins two sets of live sts invisibly with a needle, one grafted st per pair; held (-) = a st waiting on waste yarn or a spare needle (the instep during the heel, a thumb, the underarms); v = sleeve st: a st of a sleeve knit separately, joined into the yoke.
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable, s slip, - held (on waste yarn or a spare needle), _ bound off here, u picked up and knit, v sleeve st, q p2tog; letters below are the color slots):
   25  ........................................................................   ........................................................................
@@ -2540,7 +2549,7 @@ Right front:
   Row 48 (WS): *k1, p1; rep from * to end
   Bind off in pattern.
 Finishing: work the back in one piece. Cast on 23 sts in A. Rows 1–2: [p1, k1] 11 times, p1. Rows 3–26: stockinette (k on RS rows, p on WS rows). Rows 27–32: shape the sleeves as on the fronts, casting on 2 sts at the start of every row and working an M1 one st in from the end of every row (41 sts); from row 27 work the first and last 3 sts of every row in 1×1 rib as the cuffs. Rows 33–42: work even. Rows 43–46: bind off 5 sts at the start of each row (21 sts). Rows 47–48: work even. Bind off the remaining 21 sts. Place the back and the fronts right sides together and seam the shoulders and the tops of the sleeves, then the underarms and the sides. Turn out, sew the 4 buttons to the right front band opposite the buttonholes, weave in the ends and block.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; p = purl; k = knit; C4B = cable 4 back: slip 2 to cable needle, hold in back, k2, k2 from cable needle; k2tog = knit 2 together (right-leaning decrease); yo = yarn over (makes a hole); CO = cast on (at the start of a row, a knitted or cable cast-on onto the left needle; the new sts are then worked); M1RP = make 1 right purlwise (leans right as seen from the right side); p2tog = purl 2 together (right-leaning from the front); BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows); C4F = cable 4 front: slip 2 to cable needle, hold in front, k2, k2 from cable needle; M1LP = make 1 left purlwise (leans left as seen from the right side); M1L = make 1 left (left-leaning increase); ssk = slip, slip, knit (left-leaning decrease); ssp = slip, slip, purl (left-leaning from the front).
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; p = purl; k = knit; C4B = cable 4 back: slip 2 to cable needle, hold in back, k2, k2 from cable needle; k2tog = knit 2 together (right-leaning decrease); yo = yarn over (makes a hole); CO = cast on (at the start of a row, a knitted or cable cast-on onto the left needle; the new sts are then worked); M1RP = make 1 right purlwise (leans right as seen from the right side); p2tog = purl 2 together (right-leaning from the front); BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off); C4F = cable 4 front: slip 2 to cable needle, hold in front, k2, k2 from cable needle; M1LP = make 1 left purlwise (leans left as seen from the right side); M1L = make 1 left (left-leaning increase); ssk = slip, slip, knit (left-leaning decrease); ssp = slip, slip, purl (left-leaning from the front).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   48  ..........pkpk.............kpkp..........   ..........AAAA.............AAAA..........
@@ -2632,7 +2641,7 @@ Row 38 (WS): k2 A, k36 D, k2 A
 Rows 39–40: with A, k to end
 Bind off all sts.
 Finishing: weave in the ends and block, pinning the garter border straight.
-Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; C4B = cable 4 back: slip 2 to cable needle, hold in back, k2, k2 from cable needle; C4F = cable 4 front: slip 2 to cable needle, hold in front, k2, k2 from cable needle; yo = yarn over (makes a hole); ssk = slip, slip, knit (left-leaning decrease); k2tog = knit 2 together (right-leaning decrease); MB = make bobble: (k1, p1, k1, p1, k1) into the next st, turn, p5, turn, k5, then pass the 2nd, 3rd, 4th and 5th sts over the first; BO = bind off (the st left on the right needle after a bind-off is the first st of the count that follows).
+Abbreviations: st = stitch; sts = stitches; RS = right side; WS = wrong side; k = knit; p = purl; C4B = cable 4 back: slip 2 to cable needle, hold in back, k2, k2 from cable needle; C4F = cable 4 front: slip 2 to cable needle, hold in front, k2, k2 from cable needle; yo = yarn over (makes a hole); ssk = slip, slip, knit (left-leaning decrease); k2tog = knit 2 together (right-leaning decrease); MB = make bobble: (k1, p1, k1, p1, k1) into the next st, turn, p5, turn, k5, then pass the 2nd, 3rd, 4th and 5th sts over the first; BO = bind off (the st left on the right needle after a bind-off counts as the first st of what follows, so the next count leaves it out: "bind off 5 sts, k13" works 14 sts after the bind-off).
 
 Chart (top row first; k knit, p purl, o yo, < k2tog, > ssk, m make 1, + cast on, b bobble, x cable; letters below are the color slots):
   40  pppppppppppppppppppppppppppppppppppppppp   AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA

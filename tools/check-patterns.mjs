@@ -181,7 +181,9 @@ function checkRound(p, ch, wp) {
     if (n.kind === 'dpn' && n.counts) {
       const R = ch.row(Math.max(1, n.from));
       if (n.counts.some((c) => c < 2 || c > 14)) fail(id, `DPN counts ${n.counts} (each needle holds 2 to 14)`);
-      if (n.counts.reduce((a, b) => a + b, 0) !== R.ring.length) fail(id, `DPN counts ${n.counts} at row ${n.from} add to ${n.counts.reduce((a, b) => a + b, 0)}, the row has ${R.ring.length}`);
+      // the counts are the sts the needles hold where the line is read: before that row, or after it (a set-up round)
+      const sum = n.counts.reduce((a, b) => a + b, 0), before = R.prevCols.length - R.held.length;
+      if (sum !== R.ring.length && sum !== before) fail(id, `DPN counts ${n.counts} at row ${n.from} add to ${sum}, the row has ${before} before and ${R.ring.length} after`);
     }
   });
   if (!wp.lines.some((l) => l.kind === 'section') && ch.height > 14) fail(id, 'a long round piece needs section headers');
@@ -262,12 +264,12 @@ try {
   // heels, gussets, thumbs and the yoke join read as real patterns
   { const w = writtenPattern(C('cozy-sock')).text;
     expect('cozy-sock', /Turn heel:\nRow 1 \(RS\): with B, sl1 wyib, k6, ssk, k1, turn\nRow 2 \(WS\): with B, sl1 wyif, p3, p2tog, p1, turn/.test(w), 'the cozy sock\'s heel turn reads "sl1, k6, ssk, k1, turn" / "sl1, p3, p2tog, p1, turn"');
-    expect('cozy-sock', /Set-up rnd: k4, pick up and k 5 sts along the edge of the heel flap, k12, pick up and k 5 sts along the other edge, k4 \(30 sts\)\./.test(w), 'the gusset set-up round');
+    expect('cozy-sock', /Set-up rnd: with A, k4, pick up and k 5 sts evenly along the edge of the heel flap, k12, pick up and k 5 sts evenly along the other edge, k4 \(30 sts\)\./.test(w), 'the gusset set-up round');
     note('cozy sock: ' + w.split('\n').filter((l) => /^(Row 1 \(RS\): with B, sl1|Set-up rnd|Divide rem)/.test(l)).join(' | ')); }
   { const w = writtenPattern(C('yoke-sweater')).text;
     expect('yoke-sweater', /Sleeves \(make 2/.test(w) && /Joining rnd: k20 front sts, k12 sts of one sleeve, k20 back sts, k12 sts of the other sleeve \(64 sts\)/.test(w), 'the yoke joins its sleeves'); }
   { const w = writtenPattern(C('chunky-mitten')).text;
-    expect('chunky-mitten', /Place the 8 thumb sts/.test(w) && /k9, cast on 2 sts over the gap, k9 \(20 sts\)/.test(w) && /pick up and k 2 sts in the gap \(10 sts\)/.test(w), 'the mitten holds its thumb, casts over the gap and picks the thumb up'); }
+    expect('chunky-mitten', /slip the 8 sts between the markers onto waste yarn for the thumb/.test(w) && /k9, cast on 2 sts over the gap, k9 \(20 sts\)/.test(w) && /pick up and k 2 sts in the gap \(10 sts\)/.test(w), 'the mitten holds its thumb, casts over the gap and picks the thumb up'); }
   { const w = writtenPattern(C('fingerless-mitts')).text;
     expect('fingerless-mitts', /k10, bind off 4 sts, k to end \(20 sts\)/.test(w) && /k10, cast on 4 sts over the gap, k to end \(24 sts\)/.test(w), 'the mitts\' one-round thumb hole'); }
 } catch (e) { fail('checks', e.stack); }
