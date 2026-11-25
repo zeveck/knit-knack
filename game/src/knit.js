@@ -721,6 +721,11 @@ export function leave() {
 export function applySettings() { if (root && piece && currentScreen() === 'knit') { layout = ''; relayout(); refreshBar(); refreshMute(); } }
 export function onEquipChange() { if (work) { equipWork(); backdropKey = ''; work._kick && work._kick(); } }
 
+function roundState(L) {
+  const R = chart.row(L.r), sec = chart.sectionAt ? chart.sectionAt(L.r) : null, nd = chart.needleAt ? chart.needleAt(L.r) : null;
+  return { round: !!R.round, section: sec ? sec.label : null, step: R.step ? R.step.kind : null, stepTap: R.step ? L.k : null,
+    needles: nd ? nd.kind : 'straight', frontPos: null, ring: R.round ? (R.prevCols.length - (R.held || []).length) : null, edition: piece.ed || 1 };
+}
 export function knitState() {
   if (!work || !chart || !piece) return { pattern: pattern ? pattern.id : null };
   const ws = work.state();
@@ -731,6 +736,8 @@ export function knitState() {
     yarn: currentYarn(), mode: piece.follow ? 'follow' : 'freestyle', slots: piece.slots,
     zoom: ws.zoom, cellPx: +ws.cellPx.toFixed(2), fabricCanvas: ws.fabricCanvas, layout,
     previewCard: previewCard.state(dom.pvCanvas), fitBox: fitBox(), needle: ws.needle,
+    // (Change 2) the round model at the next stitch (CHANGE_2.md C.4): frontPos is the tube's front (part B)
+    ...roundState(L),
   };
 }
 export function setSlotYarn(slot, y) { if (!piece) return false; piece.slots[slot] = y; S.pushRecent(y); refreshBar(); S.saveSoon(); return true; }

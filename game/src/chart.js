@@ -2,7 +2,8 @@
 //
 // A chart is three fixed-width text layers (top row first, as a chart is read):
 //   shape  '#' a stitch, '.' no stitch          (optional: derived from `stitch` when missing)
-//   stitch k p o(yo) <(k2tog) >(ssk) m(make one) +(cast on) b(bobble) x(cable cell) .(none)
+//   stitch k p o(yo) <(k2tog) >(ssk) m(make one) +(cast on) b(bobble) x(cable cell) .(none);
+//          round pieces add s - _ u v q (see below)
 //   color  A-D                                   (optional: all 'A')
 // plus `cables: [{row, col, type}]` where row is 1-based from the bottom, col is the
 // span's leftmost column (0-based), type is C2F C2B C4F C4B C6F C6B.
@@ -13,6 +14,40 @@
 // The row map (the one stitch mapping) is built exactly as GAME_DESIGN "The row map" says,
 // with the review's rule that multi-stitch bind-offs and edge cast-ons happen at the
 // START of a row (right edge on RS, left edge on WS), except under / across a gap.
+//
+// ---- (Change 2) knitting in the round: the data the renderer reads (CHANGE_2.md B, C)
+// A def with `round: true` is a tube cut open at the beginning-of-round marker, which sits between
+// col W−1 and col 0 (at the piece's back); W is the widest ring plus columns only some rows use
+// (gussets, a thumb, the yoke's sleeves). Cells are always the front view; rounds are never inverted.
+//   chart.round                 true for a round piece (flat pieces: false; everything below still works)
+//   chart.rsOf(r)               the row's side: flat pieces r odd; rounds true; in a flat range its `first`,
+//                               then alternating. chart.flatAt(r) -> {from, to, first, cut, span} | null
+//   chart.row(r)                as before ({map, cols, prevCols, runs, boundOff…}) plus:
+//     .round                    true for a round (a round piece's row outside its flat ranges)
+//     .cut                      the ring's start for this row (0 for rounds; a flat range's low end)
+//     .cols                     the live sts after the row (held ones included), ascending columns
+//     .ring                     the live sts that aren't held, ascending columns: rows with the same ring
+//                               form one band of the tube (B.1); ring order from the cut is cut, cut+1, …
+//     .held                     columns held on waste yarn or a spare needle in this row ('-' cells)
+//     .step                     {kind, label, text} | null. Kinds: join, seam, hold, gather, graft,
+//                               graftUnderarm (zero height: ZERO_HEIGHT_STEPS; their taps are listed, one
+//                               map entry each, with a real col), and setup, thumb, joining, markers,
+//                               centre (ordinary one-cell-high rounds or rows with their own wording)
+//     .outCols                  (step rows) the live sts after it; the next row maps from them
+//     .map[k]                   the taps in knitting order: rounds run from the ring's high end (col W−1)
+//                               down; .k is the tap's place in the round (the helix lift of B.1 is k/n)
+//   chart.yOf(r), rowHeight(r)  the row→y table: the top of row r in row heights from the cast-on edge
+//                               (zero-height steps add 0); chart.heightY is the piece's height in rows
+//   chart.sections              [{i, from, to, label}]; chart.sectionAt(r); chart.rowNo(r) -> {n, unit:
+//                               'Rnd' | 'Row' | 'step', section} (numbering restarts in each section)
+//   chart.needleAt(r)           {from, kind: 'circular' | 'dpn' | 'straight', len, n, counts} (def.needles)
+//   chart.firstRow, castOnCols  the first worked row (row 1 is usually the join) and the cast-on's columns
+//   chart.needles(i)            as before, plus .held, .round and .step (the kind) at tap i; .left leaves
+//                               out held sts
+//   stitch cells added: s slip (1 tap), - held (no tap), _ bound off here (no tap; its st goes into the
+//   previous tap's boundOffAfter), u picked up and knit, v sleeve st (0 uses, 1 tap; step rows only),
+//   q p2tog worked from the RS (round pieces only)
+// Edition 1 of the 19 rewritten patterns is in patterns-flat-v1.json (render.js chartOf(pattern, ed)).
 
 export const USES = { k: 1, p: 1, b: 1, x: 1, '<': 2, '>': 2, o: 0, m: 0, '+': 0, s: 1, '-': 1, _: 1, u: 0, v: 0, q: 2 };
 export const CABLES = { C2F: 2, C2B: 2, C4F: 4, C4B: 4, C6F: 6, C6B: 6 };
@@ -57,6 +92,14 @@ export const ROUND_GLOSSARY = {
   Jog: 'the step at the beginning of a round where one round ends a row above where it began; on stripes, knitters hide it by slipping the first st of the 2nd rnd of each new color',
   'Mattress stitch': 'a seam worked from the right side, picking up the bars between the edge sts, so the seam disappears',
   rem: 'remaining',
+};
+// the chart keys of the new cells (the Read the pattern key and the glossary)
+export const ROUND_CHART_KEYS = {
+  'BO here (_)': 'a st bound off in the middle of a round (a thumb hole, a leg opening); not a tap',
+  'held (-)': 'a st waiting on waste yarn or a spare needle (the instep during the heel, a thumb, the underarms)',
+  'u': 'pick up and k: a new st drawn through the edge of the heel flap or the thumb gap',
+  'v': 'sleeve st: a st of a sleeve knit separately, joined into the yoke',
+  'sl1': 'slip 1 st purlwise (with yarn in back on RS rows, in front on WS rows)',
 };
 // which round terms a written pattern's text uses
 const ROUND_TERMS = [
@@ -1300,7 +1343,9 @@ function writtenRound(chart, opts = {}) {
   let rnds = 0, rws = 0;
   for (let r = 1; r <= chart.height; r++) { const u = chart.rowNo(r).unit; if (u === 'Rnd') rnds++; else if (u === 'Row') rws++; }
   const co = chart.castOnCols.length;
-  const sz = rnds ? `${co} sts around × ${rnds} rnds${rws ? ` and ${rws} rows` : ''}` : `${co} sts × ${rws} rows`;
+  let widest = co; for (let r = 1; r <= chart.height; r++) if (chart.row(r).round) widest = Math.max(widest, chart.row(r).ring.length);
+  const around = widest > co * 1.5 ? `${co} sts at the cast-on, ${widest} sts around at the widest` : `${co} sts around`; // a piece knit from a tip
+  const sz = rnds ? `${around} × ${rnds} rnds${rws ? ` and ${rws} rows` : ''}` : `${co} sts × ${rws} rows`;
   info(`Size: ${sz}, scaled down for the game.`);
   for (const n of def.notes || []) info(`Note: ${n}`);
   for (const l of def.preamble || []) info(l);
@@ -1342,6 +1387,8 @@ function writtenRound(chart, opts = {}) {
   const text = lines.map((l) => (l.label ? `${l.label}: ` : '') + l.text).join('\n');
   const abbreviations = [...used].filter((a) => GLOSSARY[a]).map((a) => ({ abbr: a, meaning: GLOSSARY[a] }));
   for (const [term, re] of ROUND_TERMS) if (re.test(text) && !abbreviations.some((a) => a.abbr === term)) abbreviations.push({ abbr: term, meaning: ROUND_GLOSSARY[term] });
+  const cellsUsed = new Set(); for (let r = 1; r <= H; r++) for (const cl of chart.cells(r)) if (cl) cellsUsed.add(cl.s);
+  for (const [k, ch] of [['BO here (_)', '_'], ['held (-)', '-'], ['u', 'u'], ['v', 'v']]) if (cellsUsed.has(ch)) abbreviations.push({ abbr: k, meaning: ROUND_CHART_KEYS[k] });
   return { lines, text, abbreviations, keys, warnings };
 }
 

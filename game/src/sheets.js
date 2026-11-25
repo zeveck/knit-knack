@@ -2,7 +2,7 @@
 import { el, openSheet, closeSheet, ICON } from './ui.js';
 import { PALETTE, YARN_TYPES, YARN_LABELS, normYarn, yarnName, paintBallInto, colorName } from './yarn.js';
 import * as S from './state.js';
-import { writtenPattern, GLOSSARY } from './chart.js';
+import { writtenPattern, GLOSSARY, ROUND_GLOSSARY, ROUND_CHART_KEYS } from './chart.js';
 import * as audio from './audio.js';
 
 // ---------------------------------------------------------------- yarn picker
@@ -132,7 +132,7 @@ export function openPattern({ chart, pattern, slots, currentRow = 0, currentInde
 export function openGlossary(chart, pattern) {
   let used = [];
   try { used = writtenPattern(chart, { name: pattern.name }).abbreviations; } catch { used = []; }
-  const all = Object.entries(GLOSSARY).map(([abbr, meaning]) => ({ abbr, meaning }));
+  const all = [GLOSSARY, ROUND_GLOSSARY, ROUND_CHART_KEYS].flatMap((g) => Object.entries(g).map(([abbr, meaning]) => ({ abbr, meaning })));
   const box = el('div');
   box.append(el('p', { text: 'Pattern words, as in a real knitting pattern. On WS (wrong side) rows you work from the back, so a stitch that looks purled from the front is knit.' }));
   const key = el('div', { class: 'key' });

@@ -1,5 +1,6 @@
 // node tools/check-chart.mjs — checks chart.js on a few test charts (row map, wording, round trip).
-import { parseChart, fill, rowWording, stripWording, writtenPattern, roundTrip as fullRoundTrip, wordingCursor, u16ToBase64, base64ToU16 } from '../game/src/chart.js';
+import { parseChart, fill, rowWording, stripWording, writtenPattern, roundTrip as fullRoundTrip, wordingCursor, u16ToBase64, base64ToU16, parseRowText, parseWrittenPattern } from '../game/src/chart.js';
+import { Round, crownRounds, hatChart, sockChart, mittenChart, ribOps } from '../game/src/patternKit.js';
 
 let fails = 0;
 const ok = (cond, msg) => { console.log(`${cond ? 'ok  ' : 'FAIL'} ${msg}`); if (!cond) fails++; };
@@ -180,6 +181,110 @@ const roundTrip = (ch, name) => {
   const pt = parseChart({ stitch: ['..k..', '..>..', '..kk.', '..kk.'] });
   const pw = writtenPattern(pt).text;
   ok(/\(1 st\)/.test(pw) && /Fasten off\./.test(pw) && !/1 sts/.test(pw), 'one st left: "(1 st)" and "Fasten off."');
+}
+
+
+// ================================================================ (Change 2) knitting in the round
+const seq = (n) => Array.from({ length: n }, (_, i) => i);
+const rdef = (b, extra = {}) => ({ ...(typeof b.def === 'function' ? b.def() : b), repeat: { width: 4, edges: 0, rows: 1, at: 2 }, gauge: { sts: 12, per: 4, yarn: 'chunky' }, finishing: 'Finishing: done.', ...extra });
+
+// 10. rounds: every round from the RS, never inverted, "rep from * around", garter as purl and knit rounds
+{
+  const b = new Round(12).castOn(seq(12)).needle({ kind: 'circular', len: 4 }).join('A');
+  b.rounds(2, ribOps('kkpp')).work('p'.repeat(12)).work('k'.repeat(12));
+  const ch = parseChart(rdef(b));
+  ok(!ch.errors.length, `a round chart parses (${ch.errors.join('; ')})`);
+  ok(ch.round && [1, 2, 3, 4, 5].every((r) => ch.rsOf(r)) && ch.row(2).round, 'rsOf is true on every round; R.round is set');
+  ok(rowWording(ch, 2).text === '*k2, p2; rep from * around', `2×2 rib in the round: "${rowWording(ch, 2).text}"`);
+  ok(rowWording(ch, 3).text === '*k2, p2; rep from * around', 'the next round reads the same (no WS inversion)');
+  ok(rowWording(ch, 4).text === 'purl' && rowWording(ch, 5).text === 'knit', `garter in the round: "${rowWording(ch, 4).text}" / "${rowWording(ch, 5).text}"`);
+  ok(rowWording(ch, 2).label === 'Rnd 1', `labelled "${rowWording(ch, 2).label}"`);
+  const R = ch.row(2);
+  ok(R.map[0].col === 11 && R.map[11].col === 0, 'a round is knit from col W−1 (right of the marker) down to col 0');
+  ok(ch.row(1).step.kind === 'join' && ch.row(1).map.length === 1 && ch.row(1).map[0].takes.length === 0 && ch.row(1).outCols.length === 12, 'the join is one tap that takes nothing; all 12 sts stay live (outCols)');
+  ok(ch.yOf(1) === 0 && ch.yOf(2) === 1 && ch.yOf(5) === 4 && ch.rowHeight(1) === 0, `the row→y table: the join has no height (yOf: ${[1, 2, 5].map((r) => ch.yOf(r))})`);
+  ok(ch.firstRow === 2 && ch.castOnCols.length === 12, 'the cast-on is the first worked round');
+  const wp = writtenPattern(ch).text;
+  ok(/Cast on 12 sts\.\nJoin to work in the rnd, being careful not to twist sts; pm for beg of rnd\.\nRnds 1–2: \*k2, p2; rep from \* around\nRnd 3: purl\nRnd 4: knit/.test(wp), 'written: the join, "Rnds 1–2", "Rnd 3: purl", "Rnd 4: knit"');
+  ok(/^Yarn: chunky weight \(12 sts = 4" in stockinette\)\.$/m.test(wp) && /^Gauge: 12 sts = 4" \(10 cm\) in stockinette\.$/m.test(wp) && /^Needles: 4" circular needle\.$/m.test(wp) && /^Size: 12 sts around × 4 rnds, scaled down for the game\.$/m.test(wp), 'Yarn, Needles, Gauge and Size lines');
+  roundTrip(ch, 'rounds');
+  ok(JSON.stringify(parseRowText('knit', 3, true, true).map((o) => o.op)) === '["k","k","k"]' && parseRowText('*k2, p2; rep from * around', 8, true, true).length === 8, 'the parser reads "knit" and "rep from * around"');
+  ok(parseWrittenPattern('Brim:\nRnds 1–2: knit\nRnd 3: purl').get('2|1') === 'knit', 'the parser keys rounds by section: section|n');
+  // nothing is taken across the round's start: a k2tog in col 0 takes cols 0 and 1, never W−1
+  const c2 = parseChart({ round: true, stitch: ['kkkkkkkkkk.<', 'kkkkkkkkkkkk'], repeat: { width: 1, edges: 0, rows: 1 } });
+  ok(!c2.errors.length && c2.row(2).map.find((e) => e.stitch === '<').takes.map((t) => c2.row(2).prevCols[t]).join() === '10,11', 'a decrease takes the sts beside it in ring order');
+  const c3 = parseChart({ round: true, stitch: ['<.kkkkkkkkkk', 'kkkkkkkkkkkk'], repeat: { width: 1, edges: 0, rows: 1 } });
+  ok(!c3.errors.length && c3.row(2).map.find((e) => e.stitch === '<').takes.map((t) => c3.row(2).prevCols[t]).join() === '0,1', 'the round\'s first cell takes the first sts after the cut (cols 0, 1), not W−1');
+  // rounds have no edge stitches
+  ok(parseChart({ round: true, stitch: fill(12, 2, 'stockinette'), repeat: { width: 4, edges: 2, rows: 1 } }).errors.some((e) => /edges 0/.test(e)), 'a round repeat with edges is rejected');
+}
+
+// 11. a crown: wedges with filler, gathered
+{
+  const ch = parseChart(rdef({ def: () => hatChart({ co: 48, brim: [9, () => 'k'], crown: { wedges: 8, everyOther: 2 } }) }.def(), { repeat: { width: 1, edges: 0, rows: 1 } }));
+  ok(!ch.errors.length && ch.total === 633, `hatChart: the beanie's 48-st crown (${ch.total} taps, ${ch.errors[0] || 'ok'})`);
+  const wp = writtenPattern(ch).text;
+  ok(/Change to DPNs \(10 sts on each of 4 needles\)\.\nRnd 1: \*k4, k2tog; rep from \* around \(40 sts\)\nRnd 2: knit\nRnd 3: \*k3, k2tog; rep from \* around \(32 sts\)/.test(wp), 'crown: "Change to DPNs", "*k4, k2tog; rep from * around (40 sts)", a plain round, "*k3, k2tog"');
+  ok(/Rnd 7: k2tog around \(8 sts\)\nCut yarn, leaving a 6" tail; thread it through the rem 8 sts, pull tight and fasten off\./.test(wp), 'crown: "k2tog around (8 sts)", then the gather');
+  const H = ch.height, G = ch.row(H);
+  ok(G.step.kind === 'gather' && G.map.length === 8 && G.outCols.length === 0 && G.map.every((e) => e.takes.length === 1), 'the gather: one tap per st, each taking it; nothing left after');
+  ok(ch.rowHeight(H) === 0 && ch.yOf(H) === ch.yOf(H - 1), 'the gather takes no height');
+  const n = ch.needles(ch.rowStart(H) + 3);
+  ok(n.step === 'gather' && n.next === G.map[3] && n.left.length === 5, `needles() mid-gather: step ${n.step}, ${n.left.length} sts still on the needles`);
+  const w = stripWording(ch, H, 3);
+  ok(wordingCursor(w, 3).token === 0 && /thread it through the rem 8 sts/.test(w.text), 'the strip shows the gather line for every tap');
+  ok(ch.needles(ch.total).done && ch.needles(ch.total).right.length === 0, 'the hat ends with no sts on the needles');
+  const L = ch.locate(ch.rowStart(H) + 5);
+  ok(L.r === H && L.k === 5, 'locate() finds taps inside a step');
+  roundTrip(ch, 'crown');
+}
+
+// 12. a heel: flat range inside a round piece, held instep, short rows, set-up round with picked-up sts, graft
+{
+  const d = sockChart({ co: 24, gusset: 5, cuff: 2, cuffOp: ribOps('kkpp'), leg: 2, flapRows: 9, heelTo: 8, foot: 1, toeTo: 8 });
+  const ch = parseChart(rdef({ def: () => d }.def()));
+  ok(!ch.errors.length, `sockChart parses (${ch.errors.slice(0, 2).join('; ')})`);
+  const f = ch.flatRanges[0];
+  ok(f && f.cut === 28 && f.span === 12 && ch.rsOf(f.from) === true && ch.rsOf(f.from + 1) === false && ch.rsOf(f.from + 2) === true, `the heel flap is a flat range cut at col 28 over 12 sts, sides alternating from RS (${JSON.stringify(f)})`);
+  const r1 = f.from + 1, R1 = ch.row(r1);
+  ok(R1.held.length === 12 && !R1.round && rowWording(ch, r1).text === 'sl1 wyif, p to end' && rowWording(ch, r1 + 1).text === 'sl1 wyib, k to end', `flap rows: "${rowWording(ch, r1).text}" / "${rowWording(ch, r1 + 1).text}", the instep held`);
+  const nd = ch.needles(ch.rowStart(r1) + 2);
+  ok(nd.left.every((c) => !R1.held.includes(c)) && nd.held.length === 12, 'needles(): the held instep is not on the left needle');
+  ok(rowWording(ch, f.from).text === 'k6, turn', `the flap's set-up row: "${rowWording(ch, f.from).text}"`);
+  const wp = writtenPattern(ch).text;
+  ok(/Turn heel:\nRow 1 \(RS\): sl1 wyib, k6, ssk, k1, turn\nRow 2 \(WS\): sl1 wyif, p3, p2tog, p1, turn\nRow 3 \(RS\): sl1 wyib, k4, ssk, k1, turn\nRow 4 \(WS\): sl1 wyif, p5, p2tog, p1 \(8 sts\)\nK4 \(to the centre of the heel\); this is the new beg of rnd\./.test(wp), 'the heel turn reads as short rows (30 taps, 8 sts), then k4 to the centre');
+  let su = 0; for (let r = 1; r <= ch.height; r++) if (ch.row(r).step && ch.row(r).step.kind === 'setup') su = r;
+  const S = ch.row(su);
+  ok(S.map.length === 30 && S.map.filter((e) => e.stitch === 'u').length === 10 && S.map.filter((e) => e.stitch === 'u').every((e) => !e.takes.length) && S.ring.length === 30, 'the gusset set-up round: 30 taps, 5 + 5 picked up (u) taking nothing');
+  ok(rowWording(ch, su).text.startsWith('Set-up rnd: k4, pick up and k 5 sts along the edge of the heel flap, k12'), 'its line: ' + rowWording(ch, su).text);
+  const H = ch.height, G = ch.row(H);
+  ok(G.step.kind === 'graft' && G.map.length === 4 && G.map.every((e) => e.takes.length === 2) && G.outCols.length === 0, 'the graft: half the remaining sts as taps, each taking a front and a back st');
+  ok(/Divide rem 8 sts onto 2 needles, 4 for the instep and 4 for the sole\. Graft with Kitchener stitch \(4 sts\)\./.test(wp), 'the graft line');
+  const bad = parseChart({ round: true, stitch: ['kkuk', 'kkkk'], repeat: { width: 1, edges: 0, rows: 1 } });
+  ok(bad.errors.some((e) => /only in a step row/.test(e)), "'u' outside a step row is rejected");
+  roundTrip(ch, 'sock');
+}
+
+// 13. a one-round gap (BO here, then CO over the gap), held sts and a mitten's thumb
+{
+  const b = new Round(24).castOn(seq(24)).needle({ kind: 'dpn', n: 3, counts: [8, 8, 8] }).join('A');
+  b.rounds(1, () => 'k').work('k'.repeat(10) + '_'.repeat(4) + 'k'.repeat(10)).work('k'.repeat(10) + '+'.repeat(4) + 'k'.repeat(10));
+  const ch = parseChart(rdef(b, { repeat: { width: 1, edges: 0, rows: 1 } }));
+  ok(!ch.errors.length, `the thumb hole parses (${ch.errors.join('; ')})`);
+  ok(rowWording(ch, 3).text === 'k10, bind off 4 sts, k to end' && ch.row(3).map.length === 20 && ch.row(3).ring.length === 20, `BO here: "${rowWording(ch, 3).text}" (20 taps; '_' is not a tap)`);
+  ok(rowWording(ch, 4).text === 'k10, cast on 4 sts over the gap, k to end', `CO over the gap: "${rowWording(ch, 4).text}"`);
+  ok(ch.row(3).map[9].boundOffAfter.length === 4, 'the bound-off sts go into the previous entry\'s boundOffAfter');
+  roundTrip(ch, 'thumb hole');
+  const m = parseChart(rdef({ def: () => mittenChart({ hA: 9, hB: 9, cuff: [2, ribOps('kp')], hand: [2, () => 'k'], top: { to: 8 }, thumb: 1 }) }.def(), { repeat: { width: 2, edges: 0, rows: 1, at: 2 } }));
+  ok(!m.errors.length, `mittenChart parses (${m.errors.slice(0, 2).join('; ')})`);
+  let hold = 0, thumb = 0, g1 = 0; for (let r = 1; r <= m.height; r++) { const st = m.row(r).step; if (st && st.kind === 'hold') hold = r; if (st && st.kind === 'thumb') thumb = r; if (st && st.kind === 'gather' && !g1) g1 = r; }
+  ok(m.row(hold).map.length === 1 && m.row(hold + 1).held.length === 8, 'the hold: one tap, then 8 held sts in the rows above');
+  ok(m.row(g1).outCols.length === 8 && m.row(g1).outCols.every((c) => m.row(hold + 1).held.includes(c)), 'the hand\'s gather leaves the held thumb sts live');
+  ok(m.row(thumb).map.length === 10 && m.row(thumb).map.filter((e) => e.stitch === 'u').length === 2, 'the thumb set-up round: k8 held sts and pick up 2 (10 taps)');
+  const badHeld = parseChart({ round: true, stitch: ['kk-k', 'kk.k'], repeat: { width: 1, edges: 0, rows: 1 } });
+  ok(badHeld.errors.some((e) => /isn't live/.test(e)), "'-' over a st that isn't live is rejected");
+  ok(parseChart({ stitch: ['kk_k', 'kkkk'] }).errors.some((e) => /only for round pieces/.test(e)), "'_' in a flat piece is rejected");
+  ok(parseChart({ round: true, stitch: ['kkk.', 'kkkk'], repeat: { width: 1, edges: 0, rows: 1 } }).errors.some((e) => /left unworked/.test(e)), 'a live st that is not taken, held or bound off is reported');
 }
 
 console.log(fails ? `\n${fails} FAILED` : '\nall checks passed');

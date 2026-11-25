@@ -20,11 +20,7 @@ const Y = (color, type = 'wool', label = 'Main') => ({ color, type, label });
 
 // ---------------------------------------------------------------- finishing texts
 const FLAT = 'Finishing: weave in the ends and block flat.';
-const RING = 'Finishing: sew the cast-on edge to the bind-off edge to make a ring, weave in the ends and block.';
-const TUBE = 'Finishing: bring the two side edges together, right sides facing, and seam them to make a tube. Turn out, weave in the ends and block.';
 // the back keeps the brim, cuff, heel, toe and stripe colors (they go all the way round)
-const backSeam = (open, mirrorIt) => `Finishing: work a back as the front${mirrorIt ? ' (the mirror image)' : ''}, in the same colors. Place the two pieces right sides together and seam round, leaving ${open} open. Turn out, weave in the ends and block.`;
-const pairOf = (s) => s + ' Make a second one the same for the pair.';
 // toys: the back is plain (no face) but keeps any color that goes round the body
 const TOY = 'Finishing: work a back as the front, but plain in A where the front has the face. Place the two pieces right sides together and seam round, leaving the cast-on edge open. Turn out, stuff lightly and sew the opening closed. Weave in the ends.';
 const SAFE = ' For a baby or a child under 3, embroider the eyes in black yarn instead of using buttons.';
@@ -169,31 +165,6 @@ add({ id: 'basketweave-mug-cozy', name: 'Basketweave Mug Cozy', chapter: 1, tech
 
 // hat front: straight sides, then a domed crown (decreases each side, faster near the top)
 const dome = (W, straight, steps) => widths(W, [...Array(straight).fill(W), ...steps]);
-// an elliptical crown of n rows over a straight body (widths kept even, so both edges step alike)
-const crown = (W, straight, n) => {
-  const steps = [];
-  for (let k = 1; k <= n; k++) { let w = 2 * Math.round((W * Math.sqrt(1 - (k / (n + 1)) ** 2)) / 2); steps.push(Math.min(W, Math.max(4, w))); }
-  // a 2-st step on each side is bound off on two rows (one per edge); on the top row there is no
-  // next row, so the top step is kept to 1 st a side (decreases on both edges)
-  if (n >= 2) steps[n - 1] = Math.max(steps[n - 1], steps[n - 2] - 2);
-  return dome(W, straight, steps);
-};
-// a sock in profile, drawn with square cells (toe at the left, heel at the right), then stretched
-const sockArt = (W, legW, toeW, heelW, footRows, legRows, cuffRows, rows) => {
-  const out = [];
-  const row = (a, b, f) => { let l = ''; for (let c = 0; c < W; c++) l += c < a || c > b ? '.' : f(c); return l; };
-  for (let i = 0; i < cuffRows; i++) out.push(row(W - legW, W - 1, () => 'B'));
-  for (let i = 0; i < legRows; i++) out.push(row(W - legW, W - 1, () => 'A'));
-  for (let k = W - legW - 1; k >= 1; k--) out.push(row(k, W - 1, () => 'A')); // the instep
-  for (let i = 0; i < footRows; i++) out.push(row(0, W - 1, (c) => (c < toeW || c >= W - heelW ? 'B' : 'A')));
-  out.push(row(1, W - 2, (c) => (c < toeW || c >= W - heelW ? 'B' : 'A')));
-  return stretch(out, rows);
-};
-const sockRows = (p, legL) => {
-  let leg = 1; while (p.span(leg).L !== legL) leg++;
-  let cuff = p.H; while (p.col[cuff - 1][p.W - 1] === 'B') cuff--;
-  return { leg, cuff };
-};
 
 add({ id: 'rolled-brim-beanie', name: 'Rolled-Brim Beanie', chapter: 2, technique: 'In the round, with crown decreases', ...ED2,
   source: 'Stockinette in the round (the cast-on edge rolls outward by itself), the crown decreased in 8 wedges (*k4, k2tog, one st fewer each time) and gathered',

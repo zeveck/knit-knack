@@ -10,6 +10,15 @@
 //     (Backspace presses and rip(n)), and a reload mid-piece (the piece must come back stitch for stitch);
 //   - finishes, then presses "Display it" or "Not now" (alternating), and checks the gallery copy's
 //     piece(id) equals the w- piece taken just before the last stitch plus that stitch's yarn (hash too);
+//   - (Change 2) on every round piece: a reload in the middle of a step (the hat's gather, the sock's
+//     set-up round, the mitten's hold…), a rip back across a step boundary and knitting it again (and
+//     un-joining: back to the cast-on and through the join again), with state().step checked against the
+//     chart row at each stop;
+//   - (Change 2) first, the migration replay: tools/fixtures/save-v1.json (a save from before the round
+//     editions) loads with its gallery pieces' piece and bake hashes and Pip's worn layer unchanged, its
+//     cozy sock in progress resumes at 150 of 273 on the flat edition, finishes after 123 taps and lands in
+//     the gallery as ed 1, "Knit again" starts the round edition, and with patterns-flat-v1.json blocked
+//     the piece shows "This piece needs its old pattern" with Try again and Back and nothing is lost;
 //   - records every unlock toast (a MutationObserver that survives reloads), and at the end checks each
 //     unlock toasted once, the ribbons, the "Book complete" page (once, and not again after a reload),
 //     then reaches the scarf and stitch goals with scarfAddRows / addStitches so every rule has fired.
@@ -17,6 +26,7 @@
 // With no --url it serves game/ itself (no-store) on a free port.
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
@@ -90,6 +100,83 @@ const INIT = () => {
 const FNV = (ys) => { let h = 2166136261; for (const y of ys) { const s = `${y.color}|${y.type};`; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } } return (h >>> 0).toString(16); };
 const SWATCHES = ['Sage', 'Honey', 'Navy', 'Cream', 'Plum', 'Teal'];
 
+// ---------------------------------------------------------------- (Change 2) the migration replay
+async function migration(browser, url, log) {
+  const fx = readFileSync(join(here, 'fixtures', 'save-v1.json'), 'utf8');
+  const hs = JSON.parse(readFileSync(join(here, 'fixtures', 'save-v1-hashes.json'), 'utf8'));
+  const out = { ok: true, notes: [] };
+  const bad = (m) => { out.ok = false; out.notes.push('FAIL ' + m); };
+  for (const blocked of [false, true]) {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const page = await ctx.newPage();
+    const errs = [];
+    page.on('pageerror', (e) => errs.push(String(e)));
+    let block = blocked;
+    await page.route('**/patterns-flat-v1.json', (r) => (block ? r.abort() : r.continue()));
+    await page.addInitScript((s) => { if (!sessionStorage.getItem('__fx')) { sessionStorage.setItem('__fx', '1'); localStorage.clear(); localStorage.setItem('knitknack', s); } }, fx);
+    const G = (fn, a) => page.evaluate(fn, a);
+    await page.goto(url);
+    await page.waitForFunction(() => window.__game && window.__game.state().screen === 'title', null, { timeout: 15000 });
+    await page.waitForTimeout(1500);
+    const st = () => G(() => window.__game.state());
+    if (!blocked) {
+      for (const [gid, h] of Object.entries(hs.gallery)) {
+        const p = await G((g) => window.__game.piece(g), gid);
+        const b = await G((g) => window.__game.bakeHash(g, 8), gid);
+        const ed = await G((g) => import('./src/state.js').then((S) => (S.galleryById(g) || {}).ed), gid);
+        if (!p || p.hash !== h.piece) bad(`${gid}: piece hash ${p && p.hash}, was ${h.piece}`);
+        if (b !== h.bake) bad(`${gid}: bake hash ${b}, was ${h.bake}`);
+        if (ed !== 1) bad(`${gid}: ed ${ed}`);
+      }
+      const worn = await G(() => window.__game.wornHash('g1', 'pip', 0.5));
+      if (worn !== hs.worn.layer) bad(`Pip's worn beanie ${worn}, was ${hs.worn.layer}`);
+      await G(() => window.__game.go('knit', 'cozy-sock'));
+      await page.waitForTimeout(300);
+      let s = await st();
+      if (s.screen !== 'knit' || s.stitch !== 150 || s.total !== 273 || s.edition !== 1) bad(`the sock resumes on ${s.screen} at ${s.stitch} of ${s.total} (ed ${s.edition})`);
+      await G(() => window.__game.knit(122, { fast: true }));
+      s = await st();
+      if (s.screen !== 'knit' || s.stitch !== 272) bad(`after 122 taps: ${s.screen} ${s.stitch}`);
+      await G(() => window.__game.knit(1, { fast: true }));
+      await page.waitForFunction(() => window.__game.state().screen === 'finished', null, { timeout: 8000 }).catch(() => bad('the old sock never finished'));
+      s = await st();
+      const gid = s.gallery[s.gallery.length - 1];
+      const g = await G((g) => import('./src/state.js').then((S) => { const x = S.galleryById(g); return x && { ed: x.ed, n: x.yarns.length, pattern: x.pattern }; }), gid);
+      if (!g || g.ed !== 1 || g.n !== 273 || g.pattern !== 'cozy-sock') bad(`the finished old sock: ${JSON.stringify(g)}`);
+      await G(() => window.__game.go('knit', 'cozy-sock'));
+      await page.waitForTimeout(300);
+      s = await st();
+      if (s.screen !== 'knit' || s.stitch !== 0 || s.edition !== 2 || !(s.total > 600)) bad(`Knit again: ${s.screen} ${s.stitch} of ${s.total} (ed ${s.edition})`);
+      out.notes.push(`hashes equal, Pip's fit equal, sock 150/273 -> finished as ed 1, Knit again ${s.total} sts`);
+    } else {
+      // the flat edition can't load: gallery pieces still show (plain swatches), the old piece asks
+      const n = (await st()).gallery.length;
+      await G(() => window.__game.go('gallery'));
+      await page.waitForTimeout(600);
+      await G(() => window.__game.go('knit', 'cozy-sock'));
+      await page.waitForTimeout(400);
+      let s = await st();
+      const text = await G(() => (document.querySelector('.sheet.in, .sheet') || {}).textContent || '');
+      if (s.sheet !== 'old-pattern' || !/needs its old pattern/.test(text) || !/Try again/.test(text) || !/Back/.test(text)) bad(`blocked: sheet ${s.sheet} "${text.slice(0, 80)}"`);
+      await G(() => [...document.querySelectorAll('.sheet button')].find((b) => b.textContent === 'Try again').click());
+      await page.waitForTimeout(600);
+      s = await st();
+      if (s.sheet !== 'old-pattern') bad('Try again (still blocked) closed the sheet');
+      block = false;
+      await G(() => [...document.querySelectorAll('.sheet button')].find((b) => b.textContent === 'Try again').click());
+      await page.waitForFunction(() => window.__game.state().screen === 'knit', null, { timeout: 5000 }).catch(() => {});
+      s = await st();
+      if (s.screen !== 'knit' || s.stitch !== 150 || s.total !== 273) bad(`Try again once it loads: ${s.screen} ${s.stitch} of ${s.total}`);
+      if (s.gallery.length !== n) bad('a gallery piece was lost');
+      out.notes.push('blocked: "This piece needs its old pattern · Try again · Back", then Try again resumes at 150/273');
+    }
+    if (errs.length) bad('page errors: ' + errs.slice(0, 3).join(' | '));
+    await ctx.close();
+  }
+  log(`migration replay ${out.ok ? 'OK' : 'FAIL'}: ${out.notes.join('; ')}`);
+  return out;
+}
+
 async function main() {
   const pw = await loadPlaywright();
   let srv = null, url = opt('--url');
@@ -106,6 +193,8 @@ async function main() {
 
   const t0 = Date.now();
   const log = (s) => console.log(`[${((Date.now() - t0) / 1000).toFixed(0).padStart(4)}s] ${s}`);
+  const mig = has('--no-migration') ? { ok: true } : await migration(browser, url, log);
+  if (has('--migration')) { await browser.close(); if (srv) srv.close(); process.exit(mig.ok ? 0 : 1); }
   const G = (fn, a) => page.evaluate(fn, a);
   const state = () => G(() => window.__game.state());
   const press = async (x, y) => { await page.mouse.move(x, y); await page.mouse.down(); await page.waitForTimeout(110); await page.mouse.up(); };
@@ -214,6 +303,38 @@ async function main() {
       const post = await G((id) => window.__game.piece(id), pid);
       s = await state();
       if (!post || post.hash !== pre.hash || post.count !== pre.count || s.stitch !== pre.count || s.pattern !== p.id) throw new Error(`reload lost the piece: ${pre.count}/${pre.hash} -> ${post && post.count}/${post && post.hash} (stitch ${s.stitch})`);
+      // ---- (Change 2) a round piece's steps: reload mid-step, rip back across a step boundary, un-join
+      const steps = await G((id) => Promise.all([import('./src/render.js'), import('./src/state.js')]).then(([R, S]) => {
+        const ch = R.chartOf(S.patternById(id));
+        const out = [];
+        if (ch.round) for (let r = 1; r <= ch.height; r++) { const row = ch.row(r); if (row.step) out.push({ r, kind: row.step.kind, start: ch.rowStart(r), n: row.map.length }); }
+        return out;
+      }), p.id);
+      if (steps.length) {
+        const goTo = async (i) => { const at = (await state()).stitch; if (i > at) await K(i - at); else if (i < at) await G((n) => window.__game.rip(n), at - i); const now = (await state()).stitch; if (now !== i) throw new Error(`could not get to stitch ${i} (at ${now})`); };
+        const checkStep = async (i, where) => {
+          const st = await state();
+          const sp = steps.find((x) => i >= x.start && i < x.start + x.n);
+          if ((st.step || null) !== (sp ? sp.kind : null) || (sp && st.stepTap !== i - sp.start)) throw new Error(`${where}: state().step ${st.step}/${st.stepTap} at ${i}, the chart has ${sp ? sp.kind + '/' + (i - sp.start) : 'none'}`);
+        };
+        const pref = ['gather', 'setup', 'hold', 'joining', 'thumb', 'graft', 'graftUnderarm', 'seam', 'centre', 'markers'];
+        const sp = pref.map((k) => steps.find((x) => x.kind === k)).find(Boolean) || steps[0];
+        const mid = sp.start + Math.floor(sp.n / 2);
+        await goTo(mid); await checkStep(mid, 'mid-step');
+        const pre2 = await G((id) => window.__game.piece(id), pid);
+        await page.reload(); await loadGame(); await pressSel('#tap-start'); await waitScreen('book'); await pressSel('[data-screen=book] .continue'); await waitScreen('knit');
+        const post2 = await G((id) => window.__game.piece(id), pid);
+        if (!post2 || post2.hash !== pre2.hash || (await state()).stitch !== mid) throw new Error(`reload mid-${sp.kind} lost the piece`);
+        await checkStep(mid, `after the reload mid-${sp.kind}`);
+        // rip back across the step's start, then knit through it again
+        if (sp.start > 0) { await goTo(sp.start - 1); await checkStep(sp.start - 1, `ripped back before the ${sp.kind}`); }
+        await goTo(Math.min(T - 1, sp.start + sp.n)); await checkStep(Math.min(T - 1, sp.start + sp.n), `knit through the ${sp.kind} again`);
+        // un-join: back to the cast-on, then through the join again
+        const join = steps.find((x) => x.kind === 'join');
+        if (join) { await goTo(0); await checkStep(0, 'ripped back to the join'); await goTo(2); await checkStep(2, 'joined again'); }
+        r.notes.push(`steps ${[...new Set(steps.map((x) => x.kind))].join(', ')}; reload mid-${sp.kind}${join ? ', un-joined' : ''}`);
+        s = await state();
+      }
       // ---- knit to the last stitch, then the last one
       await K(T - 1 - s.stitch);
       s = await state();
@@ -287,6 +408,7 @@ async function main() {
   console.log(JSON.stringify({ patterns: `${okN}/${results.length}`, ...end }, null, 1));
   await browser.close();
   if (srv) srv.close();
-  process.exit(okN === results.length && !(end.notOnce || []).length && !errors.length && !end.reportOpens ? 0 : 1);
+  console.log(`migration replay: ${mig.ok ? 'OK' : 'FAILED'}`);
+  process.exit(okN === results.length && mig.ok && !(end.notOnce || []).length && !errors.length && !end.reportOpens ? 0 : 1);
 }
 main().catch((e) => { console.error(e); process.exit(2); });
