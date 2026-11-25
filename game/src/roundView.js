@@ -135,8 +135,20 @@ export class RoundGeo {
       b.shear = null;
       if (b.mode !== 'round') continue;
       if (this.groupFirst.get(b.g) === b.ra) { b.shear = ch.yOf(b.ra) - 1; continue; }
-      let pb = b.i - 1; while (pb >= 0 && (this.bands[pb].g !== b.g || (this.bands[pb].fl && this.bands[pb].fl.cup))) pb--;
-      if (pb >= 0 && this.bands[pb].mode !== 'round') b.shear = ch.yOf(b.ra) - 1;
+      let pb = b.i - 1, cup = false;
+      while (pb >= 0 && (this.bands[pb].g !== b.g || (this.bands[pb].fl && this.bands[pb].fl.cup))) { if (this.bands[pb].g === b.g) cup = true; pb--; }
+      // (and the first round over a folded heel, the gusset: its jog would open a notch on the leg's flare)
+      if (pb >= 0 && (this.bands[pb].mode !== 'round' || cup)) b.shear = ch.yOf(b.ra) - 1;
+    }
+    // the rounds above, while the helix is still rising (SHEAR_ROWS), rise with it: no step between bands
+    for (const b of this.bands) {
+      if (b.shear == null || b.mode !== 'round') continue;
+      for (let i = b.i + 1; i < this.bands.length; i++) {
+        const nb = this.bands[i];
+        if (nb.g !== b.g || (nb.fl && nb.fl.cup)) continue;
+        if (nb.mode !== 'round' || ch.yOf(nb.ra) - 1 >= b.shear + SHEAR_ROWS) break;
+        if (nb.shear == null) nb.shear = b.shear;
+      }
     }
     this.maxN = [0, 0];
     for (const b of this.bands) this.maxN[b.g] = Math.max(this.maxN[b.g], b.n);
@@ -331,16 +343,23 @@ export class RoundView {
   // grows over its lowest rows
   liftAt(P, j, y) {
     const v = this.liftOf(P, j);
-    if (!v || P.b.shear == null) return v;
-    return v * clamp((y - P.b.shear) / SHEAR_ROWS, 0, 1);
+    return v ? v * this.liftK(P, y) : 0;
+  }
+  // how much of the helix shows at fabric height y: none below the level bottom, rising over
+  // SHEAR_ROWS; and it fades out where the tube narrows or widens steeply (a crown, a gusset, a
+  // mitten's top), where a column lifted past the marker would stand out of the ring's outline
+  liftK(P, y) {
+    let k = P.b.shear == null ? 1 : clamp((y - P.b.shear) / SHEAR_ROWS, 0, 1);
+    if (k > 0 && P.phi >= 0.999 && !this.isCup(P.b)) {
+      const yD = this.mapY(P.b, y), slope = Math.abs(this.radiusAt(P, yD + 0.75, y + 0.75) - this.radiusAt(P, yD - 0.25, y - 0.25));
+      k *= clamp(1 - slope / 0.35, 0, 1);
+    }
+    return k;
   }
   // the same at a fractional ring position jf (a strip's edge): the lift runs on smoothly round the
   // ring, so neighbouring strips (and the band above, whatever its count) meet without a step
-  liftF(P, jf, y) {
-    if (!P.lift) return 0;
-    const v = P.phi * (P.n - 0.5 - jf) / P.n;
-    return P.b.shear == null ? v : v * clamp((y - P.b.shear) / SHEAR_ROWS, 0, 1);
-  }
+  liftMean(P, y) { return P.lift ? P.phi * 0.5 * this.liftK(P, y) : 0; }
+  liftF(P, jf, y) { return P.lift ? P.phi * (P.n - 0.5 - jf) / P.n * this.liftK(P, y) : 0; }
 
   // ---- the vertical map (fabric y -> drawn y): a heel's flat rows fold into a cup once the rounds go on
   isCup(b) { return !!(b.fl && b.fl.cup); }
@@ -373,8 +392,8 @@ export class RoundView {
       const y0 = this.mapY(b, ch.yOf(b.ra) - 1), y1 = this.mapY(b, ch.yOf(b.rb));
       if (y1 - y0 < 0.01) continue;
       // (a short band, a crown's or a gusset's, gives one knot at its middle, so a run of them makes an
-      // even slope rather than steps; a tall one holds its ring to a row from either end)
-      if (y1 - y0 >= 3.5) K.push({ y: y0 + 1, R: P.Rc }, { y: y1 - 1, R: P.Rc }); else K.push({ y: (y0 + y1) / 2, R: P.Rc });
+      // even slope rather than steps; a tall one holds its ring to a row and a half from either end)
+      if (y1 - y0 >= 5) K.push({ y: y0 + 1.5, R: P.Rc }, { y: y1 - 1.5, R: P.Rc }); else K.push({ y: (y0 + y1) / 2, R: P.Rc });
     }
     return K.sort((a, b) => a.y - b.y);
   }
@@ -407,7 +426,7 @@ export class RoundView {
     const j = b.pos.get(c);
     if (j == null) return null;
     const th = this.theta(P, j + sub);
-    const yF = geo.topY(r), yD = this.mapY(b, yF), lf = this.liftAt(P, j, yF), R = this.radiusAt(P, yD + lf, yF);
+    const yF = geo.topY(r), yD = this.mapY(b, yF), lf = this.liftAt(P, j, yF), R = this.radiusAt(P, yD + this.liftMean(P, yF), yF);
     return { x: this.X(F, P.axis + R * Math.sin(th)), y: this.Y(F, yD + lf + P.gdy) + this.yE(F, P, th, R), th, cos: P.phi > 0.6 ? Math.cos(th) : 1, P, j, w: Math.abs(Math.cos(th)) * F.cp, R };
   }
 
@@ -538,11 +557,11 @@ export class RoundView {
       // and the outline's own strips are never overdrawn past the edge
       quads.sort((q1, q2) => (q1.x < 0 && q2.x < 0 ? q1.x - q2.x : q1.x >= 0 && q2.x >= 0 ? q2.x - q1.x : q1.x - q2.x));
       const dpr = this.w.dpr;
-      // (the radius is the tube's at the height the corner is drawn, its helix lift included: past the
-      // marker a column sits a row higher, and on a crown it must take the narrower ring there)
+      // (the radius is the tube's at the row's height with the helix's mean lift, the same all round, so
+      // each row stays a true ring on a crown or a gusset; the lift itself only moves a column up)
       const pt = (q, side, sl, top) => {
-        const t = side ? q.t1 : q.t0, yF = top ? sl.top : sl.bot, yD = (top ? sl.dTop : sl.dBot) + this.liftF(P, side ? q.j1 : q.j0, yF);
-        const R = this.radiusAt(P, yD, yF);
+        const t = side ? q.t1 : q.t0, yF = top ? sl.top : sl.bot, y0 = top ? sl.dTop : sl.dBot, yD = y0 + this.liftF(P, side ? q.j1 : q.j0, yF);
+        const R = this.radiusAt(P, y0 + this.liftMean(P, yF), yF);
         return [this.X(F, P.axis + R * Math.sin(t)), this.Y(F, yD + P.gdy) + this.yE(F, P, t, R)];
       };
       if (fade < 1) tg.globalAlpha = fade;
@@ -597,15 +616,14 @@ export class RoundView {
     if (cup) { for (let y = Math.ceil(bot / 2) * 2; y < top; y += 2) if (y > bot) cuts.push(y); } // (its bulge, every two rows)
     else {
       const kn = this.knots && this.knots[b.g];
-      // (a knot is cut where the unlifted and the fully lifted columns reach it: past the marker a column
-      // is drawn up to a row higher, at the radius there)
-      if (kn && b.mode !== 'leg' && P.phi >= 0.999) for (const k of kn) for (const yF of [toF(k.y), toF(k.y - (P.lift ? P.phi : 0))]) if (yF > bot && yF < top) cuts.push(yF);
+      // (a knot is cut where the rows reach it, at the helix's mean lift: the radius is taken there)
+      if (kn && b.mode !== 'leg' && P.phi >= 0.999) for (const k of kn) for (const yF of [toF(k.y), toF(k.y - (P.lift ? P.phi * 0.5 : 0))]) if (yF > bot && yF < top) cuts.push(yF);
       if (b.shear != null && P.lift) for (const yS of [b.shear, b.shear + SHEAR_ROWS]) if (yS > bot && yS < top) { cuts.push(yS); keep.add(yS); }
     }
     cuts.sort((a, z) => a - z);
     const out = [];
     const Rf = (yF, l = 0) => this.radiusAt(P, this.mapY(b, yF) + l, yF);
-    const L = P.lift ? P.phi : 0;
+    const L = P.lift ? P.phi * 0.5 : 0;
     // (a cut where the radius runs straight on through it is dropped: fewer, taller slices)
     if (!cup) for (let i = cuts.length - 2; i >= 1; i--) {
       const a = cuts[i - 1], c = cuts[i], z = cuts[i + 1];
