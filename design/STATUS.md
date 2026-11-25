@@ -77,7 +77,7 @@ Budget for this change: $20 (default).
 
 ## Fixes (request 7): issues #1–#4, then publish
 
-- [ ] #1 swipe back (history), #3 menu top-right / rip back top-left — small, own commits, second check
-- [ ] #2 cat coat/name/petting, #4 unlock-all setting
-- [ ] Replays, live publish
+- [x] #1 swipe back (cdcba51 + 60fb57f), #3 menu top-right / rip back top-left (a67bb0d) — second check done
+- [x] #2 cat coat/name/petting (ef81f17 + 4bd9a8b neutral captions), #4 unlock-all setting (e117309)
+- [ ] Replays 47/47 ✓, live publish
 Order: these land before changes 2 and 3 are built.

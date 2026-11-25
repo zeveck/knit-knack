@@ -91,9 +91,11 @@ the Leaning Tower of Pisa and, someday, the Moon, with a knitting fact every so 
   yarns, Y for the whole basket, and C to follow the chart again.
 - **Zoom:** − and + (0 fits the work), or the scroll wheel on a computer.
 - **Preview card:** tap it or press V. **Pattern glossary:** the "?" button or G.
-- **Menu:** Escape or P. **Mute:** M.
+- **Menu:** the button at the top right, or Escape or P. **Mute:** M.
+- **Your cat:** tap the cat in the basket to give it a pet. Each new game brings a cat with its own coat and knitting name; change both in Settings.
+- **Unlock everything:** a switch in Settings opens every pattern, yarn, needle, accessory and doll, if you'd rather just knit. Your earned progress is kept.
 - On a phone, just tap: every finger knits, so two-thumb drumming works. The yarn bar is along
-  the bottom, and Rip back is at the top, out of the way of your thumbs. You can install it
+  the bottom, and Rip back is at the top left, out of the way of your thumbs. Your phone's back gesture steps back inside the game. You can install it
   from your browser's menu to play full screen, even offline.
 
 There's no losing and no timer. Your pieces in progress, your gallery, your dolls and your scarf
@@ -113,6 +115,10 @@ plan, the game was built from this follow-up, which added unlockable needles and
 and the doll shelf:
 
 > --art-sheet --budget 50 --out knit-knack --feedback it's critical they be real patterns, real knits, and tapping produces good looking knit animations that track and help you feel like you're making the thing and it looks right and reflects your colors and yarn. you should be able to unlock needles and accessories and such. maybe small dolls to put your knits on. --publish --no-confirm
+
+Then four reports filed with the game's own "Report a bug" button (going back with a swipe, the menu's place, a cat of your own, and an unlock-everything switch) were fixed with:
+
+> --fix all --publish --no-confirm
 
 gamegen designed the game, had review agents polish the design, made the art, animation, music
 and sound with these plugins, built it, and play-tested it:
