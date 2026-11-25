@@ -72,7 +72,8 @@ function build() {
   dom.mute = ib('sound', 'Mute (M)');
   dom.rip = el('button', { class: 'rip-btn', 'aria-label': 'Rip back one stitch (Backspace)', title: 'Rip back (Backspace)' });
   dom.rip.innerHTML = ICON.rip + '<span>Rip back</span>';
-  dom.top = el('header', { class: 'topbar' }, dom.menu, dom.progress, el('div', { class: 'zoom' }, dom.zoomOut, dom.zoomIn), dom.mute, dom.rip);
+  // Rip back top left (away from where thumbs drum), the menu top right as on every screen
+  dom.top = el('header', { class: 'topbar' }, dom.rip, dom.progress, el('div', { class: 'zoom' }, dom.zoomOut, dom.zoomIn), dom.mute, dom.menu);
   dom.cardHost = el('div', { class: 'scarf-pop' });
   dom.workArea = el('div', { class: 'work-area' }, dom.cardHost);
   dom.basketCanvas = el('canvas');
