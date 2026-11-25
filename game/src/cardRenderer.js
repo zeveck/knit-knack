@@ -123,8 +123,24 @@ function wearable(g, info) {
   const [fw, fh] = dollSize(doll);
   g.save(); g.fillStyle = 'rgba(60,30,20,0.25)'; g.beginPath(); g.ellipse(ox + fw * k * 0.5, oy + (doll === 'purl' ? 494 : 722) * k, fw * k * 0.32, 10 * k, 0, 0, Math.PI * 2); g.fill(); g.restore();
   g.drawImage(c, ox, oy);
+  // a close crop that cuts the doll off at the waist (socks, mittens) fades softly into the backdrop at
+  // the top, so no torso is sliced by the card's edge
+  if (info.focus && cy0 >= 200) {
+    let fc = fadeCache;
+    if (!fc || fc.width !== Math.ceil(w) || fc.height !== Math.ceil(h) || fc._pip !== hasPip) {
+      fc = fadeCache = document.createElement('canvas'); fc.width = Math.ceil(w); fc.height = Math.ceil(h); fc._pip = hasPip;
+      const q = fc.getContext('2d');
+      q.fillStyle = bg; q.fillRect(0, 0, w, h);
+      q.globalCompositeOperation = 'destination-in';
+      const lg = q.createLinearGradient(0, 0, 0, h * 0.42);
+      lg.addColorStop(0, 'rgba(0,0,0,1)'); lg.addColorStop(0.3, 'rgba(0,0,0,0.92)'); lg.addColorStop(1, 'rgba(0,0,0,0)');
+      q.fillStyle = lg; q.fillRect(0, 0, w, h);
+    }
+    g.drawImage(fc, 0, 0);
+  }
   void fh;
 }
+let fadeCache = null;
 
 // ---------------------------------------------------------------- scenes
 const KIND = {
