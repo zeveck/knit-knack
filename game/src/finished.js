@@ -6,14 +6,15 @@ import { onTap, setKeyHandler } from './input.js';
 import * as S from './state.js';
 import * as audio from './audio.js';
 import * as toasts from './toasts.js';
-import { pieceRender, cellFor, recordChart } from './render.js';
+import { pieceRender, objectRender, cellFor, recordChart } from './render.js';
+import { shapeOf } from './tube.js';
 import { drawObject, objectReady } from './cardRenderer.js';
 import { isToy } from './plush.js';
 import { drawNook, drawStack, image, catHit } from './scene.js';
 import { pet } from './pet.js';
 import { yarnName, yarnKey } from './yarn.js';
 
-let root, canvas, g, ui, t0 = 0, gal = null, pat = null, art = null, confetti = [], steam = [], cheerDone = false;
+let root, canvas, g, ui, t0 = 0, gal = null, pat = null, art = null, artRound = false, confetti = [], steam = [], cheerDone = false;
 let btns;
 // the swatch turning into the thing: starts at T_OBJ ms, takes OBJ_MS
 const T_OBJ = 1350, OBJ_MS = 900;
@@ -84,7 +85,9 @@ function enter(id) {
   obj = { canvas: document.createElement('canvas'), done: false, key: '' };
   // art: the piece as knit, big
   const w = innerWidth, h = innerHeight;
-  art = pieceRender(gal, pat, cellFor(pat, w * 0.8, h * 0.5, 4, 26));
+  // (Change 2) a piece knit in the round comes off the needles as the tube it is, not a flat swatch
+  artRound = !!shapeOf(recordChart(gal, pat), pat);
+  art = artRound ? objectRender(gal, pat, cellFor(pat, w * 0.8, h * 0.5, 4, 26, gal)) : pieceRender(gal, pat, cellFor(pat, w * 0.8, h * 0.5, 4, 26));
   // confetti in the piece's own yarn colors
   confetti = [];
   for (let i = 0; i < 70; i++) {
@@ -158,7 +161,7 @@ export function frame(t) {
       const s2 = 1 - 0.15 * ease(qa);
       g.drawImage(art, cx - (aw * s2) / 2, cy - (ah * s2) / 2, aw * s2, ah * s2);
       // finishing touch (on the flat piece; the scenes add their own)
-      const touch = touchOf(pat);
+      const touch = artRound ? null : touchOf(pat); // a round piece's object has its own
       const ta = Math.min(1, Math.max(0, (el_ - 700) / 300));
       if (touch && ta > 0) {
         g.globalAlpha *= ta;

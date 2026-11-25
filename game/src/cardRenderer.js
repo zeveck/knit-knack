@@ -6,7 +6,8 @@
 // The small card uses the card's flat per-stitch canvas (about 4×3 device px a cell); the enlarged card
 // bakes the real stitch sprites (stitches still to come stay ghosts). The warp is redrawn at most once a
 // frame (the card itself throttles), never on the tap path.
-import { composeDoll, dollFor, dollSize, drawParts, loadDolls, dollsReady } from './worn.js';
+import { composeDoll, dollFor, dollSize, drawParts, loadDolls, dollsReady, roundObject, POSE_OF } from './worn.js';
+import { shapeOf, localBounds } from './tube.js';
 import { renderSwatch } from './work.js';
 import { image as sceneImage } from './scene.js';
 import * as S from './state.js';
@@ -45,7 +46,10 @@ function liveBake(info, W) {
   const M = Math.round(W * 1.2);
   let res;
   try { res = renderSwatch(chart, { yarnAt: (i) => piece.yarns[i] || slotYarn(i), cellPx: W, castOnYarn: piece.castOn || ghost, background: null, shadow: false, margin: M, bindOff: n >= total }); } catch { return flatBake(info); }
-  const c = res.canvas, H = res.H, x0 = M, y0 = M + 0.4 * H, gw = chart.width * W, gh = chart.height * H;
+  const c = res.canvas, H = res.H, x0 = M, y0 = M + 0.4 * H, gw = chart.width * W;
+  // (Change 2) rows sit by the row -> y table (a round chart's zero-height steps take no room)
+  const hy = chart.round ? (chart.heightY ?? chart.height) : chart.height, gh = hy * H;
+  const rowTop = (r) => y0 + (hy - (chart.round ? chart.yOf(r) : r)) * H;
   const out = document.createElement('canvas'); out.width = c.width; out.height = c.height;
   const g = out.getContext('2d');
   if (n < total) {
@@ -53,13 +57,12 @@ function liveBake(info, W) {
     // the faint ghost, then the real stitches over it, with stitches still to come erased from the real layer
     const q = c.getContext('2d');
     const L = chart.locate(n);
-    const rowTop = (r) => y0 + (chart.height - r) * H;
     q.clearRect(0, 0, c.width, rowTop(L.r) - (L.k === 0 ? -0.1 * H : 0));
     const R = chart.row(L.r);
     for (let k = L.k; k < R.map.length; k++) q.clearRect(x0 + R.map[k].col * W - 0.5, rowTop(L.r) - 0.25 * H, W + 1, H * 1.25);
   }
   g.drawImage(c, 0, 0);
-  live = { key, pid: piece.id, t: now, bake: { canvas: out, W, H, x0, y0, gw, gh, cols: chart.width, rows: chart.height, chart } };
+  live = { key, pid: piece.id, t: now, bake: { canvas: out, W, H, x0, y0, gw, gh, cols: chart.width, rows: chart.height, chart, rowTop: chart.round ? rowTop : undefined } };
   return live.bake;
 }
 
@@ -112,7 +115,7 @@ function wearable(g, info) {
   // the real stitch renderer, at a cell size where motifs survive, drawn down into the card
   const W = clamp(Math.round(k * 7), 6, 14);
   const bake = large || w >= 200 ? liveBake(info, W) : flatBake(info);
-  const item = { preview: { bake, chart: info.chart, pattern, slots: info.piece.slots } };
+  const item = { preview: { bake, chart: info.chart, pattern, slots: info.piece.slots, done: info.piece.yarns.length } };
   const an = info.finish != null && info.finish < 1 ? { slot, p: info.finish } : undefined;
   const c = composeDoll(doll, { [slot]: item }, k, { silhouette: !hasPip, maxStrips: large ? 999 : 40, anim: an });
   const ox = (w - (cx1 - cx0) * k) / 2 - cx0 * k, oy = (h - (cy1 - cy0) * k) / 2 - cy0 * k;
@@ -212,8 +215,52 @@ function flatOnTable(g, bake, cx, cy, maxW, tilt = 0.5) {
   return { pw, ph };
 }
 
+// (Change 2) a round piece that isn't worn (the Strawberry Pouch, the Holiday Stocking, the Dog Sweater): the object
+// itself, a true tube, hung on its peg, the mantel hook or a hanger
+function roundScene(g, info, Sh) {
+  const { w, h, large, pattern } = info;
+  const kind = sceneOf(pattern);
+  woodWall(g, w, h, kind === 'stocking' ? 0.45 : 0.3);
+  const b = localBounds(Sh, POSE_OF[Sh.kind] || 'hang');
+  const extra = Sh.kind === 'body' ? 1.5 : 1.2;
+  const cell = Math.max(2, Math.min((w * 0.72) / ((b.x1 - b.x0) * extra), (h * 0.66) / ((b.y1 - b.y0) * extra)));
+  const W = clamp(Math.round(cell * 1.05), 6, 16);
+  const bake = large || w >= 200 ? liveBake(info, W) : flatBake(info);
+  let c = null;
+  try { c = roundObject({ preview: { bake, chart: info.chart, slots: info.piece.slots, done: info.piece.yarns.length }, yarns: info.piece.yarns }, pattern, cell); } catch (e) { console.warn('round scene', e); }
+  const hookY = kind === 'stocking' ? h * 0.16 : h * 0.14;
+  if (kind === 'stocking') {
+    // the mantel shelf and a brass hook, drawn in code
+    const my = hookY;
+    const sh = g.createLinearGradient(0, my - h * 0.07, 0, my + h * 0.03); sh.addColorStop(0, '#8a5a34'); sh.addColorStop(0.5, '#a8743f'); sh.addColorStop(1, '#4a2a16');
+    g.fillStyle = sh; g.fillRect(0, my - h * 0.07, w, h * 0.1);
+    g.fillStyle = 'rgba(20,8,10,0.35)'; g.fillRect(0, my + h * 0.03, w, h * 0.025);
+  }
+  if (!c) return;
+  // at the finish it drops onto its hook
+  const f = info.finish != null ? 1 - Math.pow(1 - info.finish, 3) : 1;
+  const x = (w - c.width) / 2, y = Math.max(hookY + h * 0.08, (h - c.height) * 0.62) - (1 - f) * h * 0.08;
+  g.save(); g.globalAlpha = info.finish != null ? Math.min(1, info.finish * 2.5) : 1;
+  g.shadowColor = 'rgba(30,12,20,0.45)'; g.shadowBlur = Math.max(2, w * 0.02); g.shadowOffsetY = Math.max(1, w * 0.012);
+  g.drawImage(c, x, y);
+  g.restore();
+  // the loop up to the hook or peg
+  const hx = w * 0.5;
+  g.save();
+  g.strokeStyle = kind === 'stocking' ? '#efe4cf' : '#e8d6b0'; g.lineWidth = Math.max(1, w * 0.008); g.lineCap = 'round';
+  const ty = y + c.height * (Sh.kind === 'body' ? 0.05 : 0.08);
+  if (Sh.kind !== 'body') { g.beginPath(); g.moveTo(hx - c.width * 0.12, ty); g.lineTo(hx, hookY + h * 0.02); g.lineTo(hx + c.width * 0.12, ty); g.stroke(); }
+  if (kind === 'stocking') {
+    g.strokeStyle = '#c99a3a'; g.lineWidth = Math.max(2, w * 0.02);
+    g.beginPath(); g.moveTo(hx, hookY); g.lineTo(hx, hookY + h * 0.06); g.arc(hx - w * 0.025, hookY + h * 0.06, w * 0.025, 0, Math.PI * 0.9); g.stroke();
+  } else if (IMG.peg) { const s = w * 0.15; g.drawImage(IMG.peg, hx - s / 2, hookY - s / 2, s, s); }
+  g.restore();
+}
+
 function scene(g, info) {
   const { w, h, large, pattern } = info;
+  const sh0 = shapeOf(info.chart, pattern);
+  if (sh0) { roundScene(g, info, sh0); return; }
   const kind = sceneOf(pattern);
   const cols = info.chart.width;
   // the real stitch renderer at a cell size where motifs (garter ridges, eyelets, lace) survive, drawn

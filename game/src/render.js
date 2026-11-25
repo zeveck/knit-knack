@@ -4,6 +4,8 @@ import { pageZoom } from './ui.js';
 import { renderSwatch } from './work.js';
 import { normYarn } from './yarn.js';
 import { isToy, toyEyes, plushify } from './plush.js';
+import { shapeOf, localBounds } from './tube.js';
+import { roundObject, POSE_OF } from './worn.js';
 
 // Charts are cached by pattern and edition (Change 2, CHANGE_2.md G). Edition 1 of a pattern that
 // Change 2 rewrote for knitting in the round is built from patterns-flat-v1.json (loaded at boot only
@@ -98,7 +100,18 @@ export function pieceRender(g, pattern, cellPx) {
 
 // A Knitted Friend, finished: seamed, stuffed into a plush, eyes embroidered as French knots.
 // Anything else: the piece as knit.
-export function objectRender(g, pattern, cellPx) {
+// (Change 2) A piece knit in the round: the object itself, a true tube as it hangs (tube.js via worn.roundObject).
+// opts.spin turns it round its axis (the close-up). cellPx: device px per stitch (cellFor(..., rec) picks one for a box).
+export function objectRender(g, pattern, cellPx, opts = {}) {
+  if (shapeOf(recordChart(g, pattern), pattern)) {
+    const sp = opts.spin || 0;
+    const k = `o|${g.id}|${g.yarns.length}|${cellPx}`;
+    if (!sp && cache.has(k)) return cache.get(k);
+    let c = null;
+    try { c = roundObject(g, pattern, cellPx, { spin: sp }); } catch (e) { console.warn('round object', g.id, e); }
+    if (sp) return c || pieceRender(g, pattern, cellPx); // turning in the close-up: not kept
+    return remember(k, c || pieceRender(g, pattern, cellPx));
+  }
   if (!isToy(pattern)) return pieceRender(g, pattern, cellPx);
   const k = `t|${g.id}|${cellPx}`;
   if (cache.has(k)) return cache.get(k);
@@ -163,9 +176,18 @@ export function fitCanvas(src, maxW, maxH) {
   return c;
 }
 
-// cell size (device px) so a chart fits a box of CSS px
-export function cellFor(pattern, maxW, maxH, lo = 3, hi = 24) {
-  const chart = chartOf(pattern);
+// cell size (device px) so a chart fits a box of CSS px. A record (rec) with a round chart: the object's size
+// (a tube shows about half its stitches across)
+export function cellFor(pattern, maxW, maxH, lo = 3, hi = 24, rec = null) {
+  const chart = rec ? recordChart(rec, pattern) : chartOf(pattern);
+  const sh = rec ? shapeOf(chart, pattern) : null;
+  if (sh) {
+    const dpr = Math.min(3, window.devicePixelRatio || 1) * pageZoom();
+    const b = localBounds(sh, POSE_OF[sh.kind] || 'hang');
+    const extra = sh.kind === 'body' ? 1.5 : 1.15; // a hanger, sleeves, a pom-pom
+    const c = Math.min((maxW * dpr) / ((b.x1 - b.x0) * extra + 3), (maxH * dpr) / ((b.y1 - b.y0) * extra + 4));
+    return Math.max(lo, Math.min(hi * dpr, Math.floor(c)));
+  }
   const dpr = Math.min(3, window.devicePixelRatio || 1) * pageZoom();
   const c = Math.min((maxW * dpr) / (chart.width + 2), (maxH * dpr) / ((chart.height + 3) * 0.72));
   return Math.max(lo, Math.min(hi * dpr, Math.floor(c)));

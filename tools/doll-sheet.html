@@ -25,15 +25,16 @@
 import * as S from './src/state.js';
 import { loadScene, loadExtras } from './src/scene.js';
 import { setFibreTexture } from './src/stitches.js';
-import { chartOf, suggestedSlots, slotYarnAt } from './src/render.js';
+import { chartOf, suggestedSlots, slotYarnAt, objectRender } from './src/render.js';
 import { registerColorNames } from './src/yarn.js';
 import { endlessChart } from './src/chart.js';
 import { loadDolls, composeDoll, DOLLS, DOLL_NAMES, slotsOf, setScarfSource, dollBounds } from './src/worn.js';
 import { scarfRowSpec, segmentChart } from './src/scarfStore.js';
 
 const qs = new URLSearchParams(location.search);
-const only = qs.get('doll') ? qs.get('doll').split(',') : DOLLS;
+const only = qs.get('doll') ? qs.get('doll').split(',').filter((d) => DOLLS.includes(d)) : DOLLS; // ?doll=none: just the objects
 const H = +(qs.get('h') || 300);
+const onlyP = qs.get('p') ? qs.get('p').split(',') : null; // ?p=cozy-sock,bobble-hat: just these pieces
 const dpr = Math.min(2, window.devicePixelRatio || 1);
 
 const m = await import('./src/patterns.js');
@@ -46,7 +47,8 @@ S.get().equipped.purl = ['collar', 'bell'];
 
 // every wearable, finished in its suggested yarns, as a gallery piece
 const wear = PATTERNS.filter((p) => p.wear);
-for (const p of wear) {
+const roundOnes = PATTERNS.filter((p) => p.round);
+for (const p of [...wear, ...roundOnes.filter((q) => !q.wear)]) {
   const slots = suggestedSlots(p); const ch = chartOf(p); const at = slotYarnAt(ch, slots);
   const yarns = Array.from({ length: ch.total }, (_, i) => at(i));
   S.get().gallery.push({ id: 'g-' + p.id, pattern: p.id, name: p.name, yarns, slots, castOn: slots.A, finished: Date.now(), hung: true });
@@ -59,6 +61,24 @@ const scarfYarn = (i) => ({ color: stripes[Math.floor(i / 12 / 10) % 4], type: '
 setScarfSource(() => ({ version: 'sheet', rows: scarfRows, totalRows: 520, segment: (n) => segmentChart(runs, 1, n, scarfYarn) }));
 
 const out = document.getElementById('out');
+// (Change 2) every piece knit in the round, off the doll, as it hangs in the gallery (render.js objectRender)
+if (!qs.has('nobj')) {
+  const sec = document.createElement('section');
+  sec.innerHTML = '<h2>Knit in the round: the objects (gallery peg)</h2>';
+  const grid = document.createElement('div'); grid.className = 'grid'; sec.append(grid); out.append(sec);
+  const size = +(qs.get('obj') || 150) * dpr;
+  for (const p of roundOnes) {
+    if (onlyP && !onlyP.includes(p.id)) continue;
+    const g = S.get().gallery.find((x) => x.pattern === p.id);
+    const src = objectRender(g, p, Math.max(3, Math.round(size / 18)));
+    const k = Math.min(size / src.width, size / src.height, 1);
+    const v = document.createElement('canvas'); v.width = size; v.height = size; v.style.width = size / dpr + 'px'; v.style.height = size / dpr + 'px';
+    v.getContext('2d').drawImage(src, (size - src.width * k) / 2, (size - src.height * k) / 2, src.width * k, src.height * k);
+    const f = document.createElement('figure'); f.append(v);
+    const cap = document.createElement('figcaption'); cap.textContent = p.name; f.append(cap);
+    grid.append(f);
+  }
+}
 const k = (H * dpr) / 768;
 for (const d of only) {
   const sec = document.createElement('section');
@@ -78,10 +98,10 @@ for (const d of only) {
     const cap = document.createElement('figcaption'); cap.textContent = label; f.append(cap);
     grid.append(f);
   };
-  const fits = wear.filter((p) => slotsOf(d).includes(p.wear.slot));
+  const fits = wear.filter((p) => slotsOf(d).includes(p.wear.slot) && (!onlyP || onlyP.includes(p.id)));
   for (const p of fits) cell({ [p.wear.slot]: { gid: 'g-' + p.id } }, p.name);
-  cell({ neck: 'scarf' }, 'Infinite Scarf (3 m)');
-  if (d !== 'purl') cell({ head: { gid: 'g-bobble-hat' }, neck: { gid: 'g-broken-rib-cowl' }, body: { gid: 'g-yoke-sweater' }, hands: { gid: 'g-chunky-mitten' }, feet: { gid: 'g-argyle-sock' } }, 'Full outfit');
+  if (!onlyP) cell({ neck: 'scarf' }, 'Infinite Scarf (3 m)');
+  if (onlyP) { /* just the pieces asked for */ } else if (d !== 'purl') cell({ head: { gid: 'g-bobble-hat' }, neck: { gid: 'g-broken-rib-cowl' }, body: { gid: 'g-yoke-sweater' }, hands: { gid: 'g-chunky-mitten' }, feet: { gid: 'g-argyle-sock' } }, 'Full outfit');
   else cell({ head: { gid: 'g-bobble-hat' }, neck: { gid: 'g-honeycomb-cowl' } }, 'Hat and cowl');
   await new Promise((r) => setTimeout(r, 0));
 }

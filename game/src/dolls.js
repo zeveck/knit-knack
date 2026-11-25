@@ -9,7 +9,7 @@ import { setKeyHandler, onTap } from './input.js';
 import * as S from './state.js';
 import * as audio from './audio.js';
 import * as toasts from './toasts.js';
-import { pieceRender, objectRender, fitCanvas, cellFor, trimmed } from './render.js';
+import { objectRender, fitCanvas, cellFor, trimmed } from './render.js';
 import { pet } from './pet.js';
 import { EYES } from './catCoat.js';
 import { loadDolls, dressedDoll, composeDoll, outfitOf, dollSilhouette, dollBounds, dollSize, DOLLS, DOLL_NAMES, DOLL_ABOUT, SLOTS, SLOT_NAMES, slotsOf, itemSlot, dollFor } from './worn.js';
@@ -238,7 +238,7 @@ function itemName(it) { if (it === 'scarf') return 'Infinite Scarf'; const g = S
 function thumbInto(box, it, w, h) {
   if (it === 'scarf') { box.replaceChildren(el('span', { class: 'icw', html: ICON.scarf })); return; }
   const g = S.galleryById(it.gid); const p = g && S.patternById(g.pattern); if (!p) return;
-  box.replaceChildren(fitCanvas(pieceRender(g, p, cellFor(p, w, h, 2, 6)), w, h));
+  box.replaceChildren(fitCanvas(objectRender(g, p, cellFor(p, w, h, 2, 6, g)), w, h)); // (Change 2) round pieces as the object
 }
 async function drawDress() {
   await loadDolls();
@@ -286,7 +286,7 @@ function openSlot(slot) {
   requestAnimationFrame(() => requestAnimationFrame(() => {
     grid.querySelectorAll('.slot-piece').forEach((b, i) => {
       const pv = b.querySelector('.pv');
-      if (i < list.length) { const g = list[i]; const p = S.patternById(g.pattern); pv.replaceChildren(fitCanvas(pieceRender(g, p, cellFor(p, 96, 80, 2, 8)), 96, 80)); }
+      if (i < list.length) { const g = list[i]; const p = S.patternById(g.pattern); pv.replaceChildren(fitCanvas(objectRender(g, p, cellFor(p, 96, 80, 2, 8, g)), 96, 80)); }
       else pv.replaceChildren(el('span', { class: 'icw big', html: ICON.scarf }));
     });
   }));

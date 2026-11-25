@@ -6,7 +6,8 @@ import { fmtLen } from './scarfFacts.js';
 import * as S from './state.js';
 import * as audio from './audio.js';
 import * as toasts from './toasts.js';
-import { objectRender, fitCanvas, cellFor, trimmed } from './render.js';
+import { objectRender, fitCanvas, cellFor, trimmed, recordChart } from './render.js';
+import { shapeOf } from './tube.js';
 import { isToy } from './plush.js';
 
 let root, tab = 'wall', page = 0, arriving = null, afterDisplay = false, lightsOut = false;
@@ -101,7 +102,7 @@ function renderWall() {
       const box = peg.querySelector('.hang');
       const w = box.clientWidth - 6, h = box.clientHeight - 4;
       if (w < 10 || h < 10) continue;
-      box.replaceChildren(fitCanvas(trimmed(objectRender(g, p, cellFor(p, w, h, 3, 14))), w, h));
+      box.replaceChildren(fitCanvas(trimmed(objectRender(g, p, cellFor(p, w, h, 3, 14, g))), w, h));
     }
     if (arriving) { setTimeout(() => audio.play('peg'), 700); arriving = null; }
   });
@@ -122,7 +123,7 @@ function renderBasket() {
   requestAnimationFrame(() => {
     for (const pv of box.querySelectorAll('[data-gid]')) {
       const g = S.galleryById(pv.dataset.gid); const p = g && S.patternById(g.pattern);
-      if (p) pv.replaceChildren(fitCanvas(objectRender(g, p, cellFor(p, 130, 110, 3, 8)), 130, 110));
+      if (p) pv.replaceChildren(fitCanvas(objectRender(g, p, cellFor(p, 130, 110, 3, 8, g)), 130, 110));
     }
   });
 }
@@ -148,7 +149,26 @@ function detail(id) {
   const when = new Date(g.finished).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }).replace(/ /g, '\u00a0');
   openSheet('piece', el('div', { class: 'detail' }, big, el('div', { class: 'rename' }, input, save),
     el('div', { class: 'facts', text: `${p.name} · ${fmt(g.yarns.length)} stitches · ${used} yarn${used > 1 ? 's' : ''} · finished ${when}${wornBy(g.id) ? ' · worn by a doll' : ''}` }), acts), { title: g.name });
-  requestAnimationFrame(() => { const w = Math.min(big.clientWidth - 20, 520), h = Math.min(innerHeight * 0.45, 460); big.replaceChildren(fitCanvas(objectRender(g, p, cellFor(p, w, h, 4, 24)), w, h)); });
+  requestAnimationFrame(() => {
+    const w = Math.min(big.clientWidth - 20, 520), h = Math.min(innerHeight * 0.45, 460);
+    const cell = cellFor(p, w, h, 4, 24, g);
+    let spin = 0, raf = 0;
+    const draw = () => { raf = 0; big.replaceChildren(fitCanvas(objectRender(g, p, cell, { spin }), w, h)); };
+    draw();
+    // (Change 2) a hat, a band, a cowl or a sweater knit in the round turns round in your hands: drag, or the arrow keys
+    const sh = shapeOf(recordChart(g, p), p);
+    if (sh && ['dome', 'ring', 'body'].includes(sh.kind)) {
+      big.classList.add('turnable'); big.tabIndex = 0; big.style.touchAction = 'pan-y'; big.style.cursor = 'grab';
+      big.setAttribute('aria-label', 'The piece: drag or use the arrow keys to turn it round');
+      const turn = (d) => { spin = (((spin + d) % 1) + 1) % 1; if (!raf) raf = requestAnimationFrame(draw); };
+      let px = null;
+      big.addEventListener('pointerdown', (e) => { px = e.clientX; big.setPointerCapture && big.setPointerCapture(e.pointerId); });
+      big.addEventListener('pointermove', (e) => { if (px == null) return; turn(-(e.clientX - px) / (w * 2)); px = e.clientX; });
+      const up = () => { px = null; };
+      big.addEventListener('pointerup', up); big.addEventListener('pointercancel', up);
+      big.addEventListener('keydown', (e) => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); turn(e.key === 'ArrowLeft' ? 1 / 24 : -1 / 24); } });
+    }
+  });
 }
 
 function knitAnother() {

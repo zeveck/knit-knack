@@ -11,6 +11,8 @@ import { data as sceneData, image as sceneImage } from './scene.js';
 import * as S from './state.js';
 import { fmtLen } from './scarfFacts.js';
 import { catImage, coatNow } from './catCoat.js';
+import { shapeOf, drawTube, toScreen, localBounds } from './tube.js';
+import { parseChart, fill } from './chart.js';
 
 export const DOLLS = ['pip', 'clementine', 'bramble', 'juniper', 'basil', 'mabel', 'purl'];
 export const DOLL_NAMES = { pip: 'Pip', clementine: 'Clementine', bramble: 'Bramble', juniper: 'Juniper', basil: 'Basil', mabel: 'Mabel', get purl() { return S.catName(); } };
@@ -107,6 +109,8 @@ export function bakeChart(chart, yarnAt, W, { castOnYarn, bindOff = true, key = 
   let res;
   try { res = renderSwatch(chart, { yarnAt, cellPx: W, castOnYarn: castOnYarn || yarnAt(0), background: null, shadow: false, margin: M, bindOff }); } catch (e) { console.warn('bake', e); return null; }
   const b = { canvas: res.canvas, W: res.W, H: res.H, x0: M, y0: M + 0.4 * res.H, gw: chart.width * res.W, gh: chart.height * res.H, cols: chart.width, rows: chart.height, chart };
+  // (Change 2) rows sit by the chart's row -> y table (zero-height steps take no room): the top of row r
+  if (chart.round) { const hy = chart.heightY ?? chart.height; b.gh = hy * res.H; b.rowTop = (r) => b.y0 + (hy - chart.yOf(r)) * res.H; }
   return k ? rememberBake(k, b) : b;
 }
 export function bakeGallery(g, W) {
@@ -485,6 +489,13 @@ export function pieceLayer(item, dollId, k, opts = {}) {
     if (more > 0) label = { x: pl.label.x * kq, y: pl.label.y * kq, text: `+ ${fmtLen(more)} more` };
   } else {
     let chart, slots;
+    // (Change 2) a piece knit in the round wears as a true tube (tube.js): its own two-layer fit
+    {
+      const g0 = item.preview ? null : S.galleryById(item.gid || item);
+      const ch0 = item.preview ? item.preview.chart : recordChart(g0, pat);
+      const sh = shapeOf(ch0, pat);
+      if (sh) { const L = roundLayer(item, g0, sh, pat, slot, dollId, A, T, kq, opts); return key && L ? rememberLayer(key, L) : L; }
+    }
     if (item.preview) { bake = item.preview.bake; chart = item.preview.chart; slots = item.preview.slots; } else {
       const g = S.galleryById(item.gid || item);
       chart = recordChart(g, pat); slots = g.slots;
@@ -520,6 +531,316 @@ export function pieceLayer(item, dollId, k, opts = {}) {
   if (extra) drawTouch(g, extra, kq, x, y);
   const out = { canvas: c, x, y, slot, label, dollId };
   return key ? rememberLayer(key, out) : out;
+}
+
+// ---------------------------------------------------------------- (Change 2) round pieces: true tubes (CHANGE_2.md E)
+// The fit for a round piece is a list of tube places (tube.js) in doll px: the back half of each is drawn
+// behind the doll (darkened), the front half over it. Pairs mirror for the other side.
+function roundPlaces(Sh, slot, A, T, dollId) {
+  const out = [];
+  const P = Sh.prof.main; const top = P.S[P.S.length - 1];
+  const r0 = Sh.rho0;
+  if (slot === 'head') {
+    const [x0, , x1, y1] = A.head.box; const hw = x1 - x0;
+    const cx = (x0 + x1) / 2 + (T.hatDx || 0) * hw;
+    const domeTop = A.head.domeTopY;
+    if (Sh.kind === 'dome') {
+      const Wb = hw * (T.hatW ?? 1.06);
+      const yb = domeTop + (y1 - domeTop) * (T.brim ?? 0.37);
+      const s = Wb / (2 * r0);
+      const nat = top * s;
+      const target = yb - (domeTop - hw * (T.hatUp ?? 0.14));
+      const sy = clamp(target / nat, 0.6, 1.05);
+      out.push({ s, sy, ox: cx, oy: yb - 0.08 * r0 * s * sy, rot: 0, flip: false, pose: 'worn' });
+    } else {
+      // a headband or the ear warmer: a ring round the head, over the ears' roots
+      const Wb = hw * (T.bandW ?? 1.04);
+      const s = Wb / (2 * r0);
+      const sy = clamp((hw * 0.25) / (top * s), 0.45, 1);
+      const yc = A.head.bandY + hw * (T.bandDy ?? 0.03);
+      out.push({ s, sy, ox: cx, oy: yc + (top * s * sy) / 2, rot: 0, flip: false, pose: 'worn' });
+    }
+  } else if (slot === 'neck') {
+    const [nx0, , nx1] = A.neck.box; const nw = T.neckW || nx1 - nx0; const cx = (nx0 + nx1) / 2;
+    const ny = A.neck.y + (T.neckDy || 0);
+    const bw = A.body ? A.body.box[2] - A.body.box[0] : nw * 2.4;
+    const Wn = Math.max(nw * 2.4, bw * 1.04) * (T.cowlW ?? 1);
+    const s = Wn / (2 * r0);
+    const sy = clamp(clamp(top * s, Wn * 0.24, Wn * 0.34) / (top * s), 0.4, 1);
+    const Hn = top * s * sy;
+    // it rests on the shoulders, round the neck's base
+    out.push({ s, sy, ox: cx, oy: ny + Hn * 0.78, rot: 0, flip: false, pose: 'cowl' });
+  } else if (slot === 'hands') {
+    const bcx = A.body ? (A.body.box[0] + A.body.box[2]) / 2 : 256;
+    for (const side of ['L', 'R']) {
+      const [hx0, hy0, hx1, hy1] = A.hands[side];
+      const hc = [(hx0 + hx1) / 2, (hy0 + hy1) / 2], hr = (hx1 - hx0) / 2;
+      const sh = A.body['shoulder' + side];
+      let dx = hc[0] - sh[0], dy = hc[1] - sh[1]; const dl = Math.hypot(dx, dy); dx /= dl; dy /= dl;
+      const Wm = hr * 2 * (T.mitW ?? 1.42) * 0.96;
+      const s = Wm / (2 * r0);
+      const sy = clamp((hr * (Sh.hasThumb ? 3.6 : 3.0)) / (top * s), 0.4, 1);
+      const rot = Math.atan2(dy, dx) - Math.PI / 2;
+      // a mitten covers the hand; open-topped mitts stop at the knuckles, so the fingers show
+      const reach = Sh.gathered ? 0.92 : 0.05;
+      const tip = [hc[0] + dx * hr * reach, hc[1] + dy * hr * reach];
+      // the thumb at the outer side
+      const outward = Math.sign(hc[0] - bcx) || 1;
+      const lx = [Math.cos(rot), Math.sin(rot)];
+      const flip = Math.sign(lx[0]) * (Sh.thumbSide || -1) !== outward;
+      const L = top * s * sy;
+      out.push({ s, sy, ox: tip[0] - dx * L, oy: tip[1] - dy * L, rot, flip, pose: 'worn', side });
+    }
+  } else if (slot === 'feet') {
+    for (const side of ['L', 'R']) {
+      const f = A.feet[side]; const [fx0, , fx1, fy1] = f.box; const fw = fx1 - fx0;
+      const len = fw * (T.sockW ?? 1.1);
+      const span = Sh.anchors.toe[0] + r0;
+      const s = len / span;
+      const flip = f.toe === 'left';
+      const heelX = flip ? fx1 + fw * 0.02 : fx0 - fw * 0.02;
+      const ox = flip ? heelX - r0 * s : heelX + r0 * s;
+      out.push({ s, sy: 1, ox, oy: fy1 + fw * 0.03 - Sh.anchors.sole * s, rot: 0, flip, pose: 'profile', side });
+    }
+  } else if (slot === 'body') {
+    const [bx0, , bx1, by1] = A.body.box; const bw = bx1 - bx0; const bcx = (bx0 + bx1) / 2;
+    const s = (bw * (T.sweaterW ?? 1.1)) / (2 * r0);
+    const neckTop = A.neck ? A.neck.y - (A.neck.box[3] - A.neck.box[1]) * 0.25 : A.body.box[1];
+    const hem = by1 + bw * 0.05;
+    const sy = clamp((hem - neckTop) / (top * s), 0.7, 1.7);
+    out.push({ s, sy, ox: bcx, oy: hem - 0.1 * r0 * s * sy, rot: 0, flip: false, pose: 'worn' });
+  }
+  return out;
+}
+
+// the Yoke Sweater's sleeves: knit separately (written, not tapped), so drawn from a virtual plain sleeve chart
+// in the sweater's A yarn, 16 sts round, strip-warped along the doll's arms
+const sleeveCharts = new Map();
+function sleeveShape(rows) {
+  let v = sleeveCharts.get(rows);
+  if (!v) {
+    const st = fill(16, rows, 'stockinette');
+    const ch = parseChart({ id: 'virtual-sleeve', stitch: st, repeat: { width: 1, edges: 0, rows: 1 } });
+    v = { chart: ch, shape: shapeOf(ch, { id: 'virtual-sleeve', kind: 'ring' }, { asTube: true }) };
+    sleeveCharts.set(rows, v);
+  }
+  return v;
+}
+function sleevePlaces(Sh, bodyPl, A) {
+  if (!Sh.sleeveCols || !Sh.sleeveCols.length || !A.hands) return [];
+  const out = [];
+  const s = bodyPl.s; // the same yarn and gauge as the body
+  for (const side of ['L', 'R']) {
+    const [hx0, hy0, hx1, hy1] = A.hands[side];
+    const hc = [(hx0 + hx1) / 2, (hy0 + hy1) / 2], hr = (hx1 - hx0) / 2;
+    const sh = A.body['shoulder' + side];
+    let vx = sh[0] - hc[0], vy = sh[1] - hc[1]; const vl = Math.hypot(vx, vy); vx /= vl; vy /= vl;
+    const wrist = [hc[0] + vx * hr * 0.55, hc[1] + vy * hr * 0.55];
+    // from inside the shoulder (the yoke covers the sleeve's top) to the wrist
+    const top = [sh[0] - vx * hr * 0.1 + (side === 'L' ? 1 : -1) * hr * 0.75, sh[1] - hr * 0.15];
+    const len = Math.hypot(top[0] - wrist[0], top[1] - wrist[1]);
+    const rows = clamp(Math.round(len / (0.72 * s)), 6, 40);
+    const v = sleeveShape(rows);
+    const sy = len / (v.shape.prof.main.S[v.shape.prof.main.S.length - 1] * s);
+    out.push({ v, pl: { s, sy, ox: wrist[0], oy: wrist[1], rot: Math.atan2(vx, -vy), flip: false, pose: 'sleeve' } });
+  }
+  return out;
+}
+
+const scalePl = (pl, k) => ({ ...pl, s: pl.s * k, ox: pl.ox * k, oy: pl.oy * k });
+function plBox(Sh, pl) {
+  const b = localBounds(Sh, pl.pose);
+  const pts = [[b.x0, b.y0], [b.x1, b.y0], [b.x1, b.y1], [b.x0, b.y1]].map((p) => toScreen(pl, p));
+  return { x0: Math.min(...pts.map((p) => p[0])), y0: Math.min(...pts.map((p) => p[1])), x1: Math.max(...pts.map((p) => p[0])), y1: Math.max(...pts.map((p) => p[1])) };
+}
+
+function roundLayer(item, g, Sh, pat, slot, dollId, A, T, kq, opts) {
+  const pls = roundPlaces(Sh, slot, A, T, dollId);
+  if (!pls.length) return null;
+  let bake, slots;
+  if (item.preview) { bake = item.preview.bake; slots = item.preview.slots; } else {
+    if (!g) return null;
+    slots = g.slots;
+    // doll px per stitch -> output px per stitch: the bake's cell is about one stitch on the doll
+    const W = clamp(Math.ceil(pls[0].s * kq * 1.05), 4, opts.maxCell || 16);
+    bake = bakeGallery(g, W);
+  }
+  if (!bake) return null;
+  // the sweater's sleeves, in its A yarn
+  let sleeves = [];
+  if (Sh.kind === 'body' && slot === 'body') {
+    sleeves = sleevePlaces(Sh, pls[0], A);
+    const yarn = (slots && slots.A) || (g && g.yarns && g.yarns[0]) || { color: '#9e2a3a', type: 'wool' };
+    for (const sv of sleeves) {
+      const W = clamp(Math.ceil(sv.pl.s * kq * 1.05), 4, opts.maxCell || 16);
+      sv.bake = bakeChart(sv.v.chart, () => yarn, W, { castOnYarn: yarn, bindOff: false, key: `sleeve|${yarn.color}|${yarn.type}|${sv.v.chart.height}` });
+    }
+  }
+  const things = [...pls.map((pl) => ({ Sh, pl: scalePl(pl, kq), bake })), ...sleeves.filter((x) => x.bake).map((x) => ({ Sh: x.v.shape, pl: scalePl(x.pl, kq), bake: x.bake, sleeve: true }))];
+  // the finishing touches that show worn
+  const tch = pat.touch && (pat.touch.kind || pat.touch);
+  let extra = null;
+  const unfinished = item.preview && item.preview.done != null && item.preview.done < Sh.chart.total;
+  if (tch === 'pompom' && Sh.kind === 'dome' && !unfinished) {
+    const yarn = (slots && slots[pat.touch.slot || 'A']) || null;
+    const at = toScreen(pls[0], [Sh.anchors.top[0], Sh.anchors.top[1] + 0.25]);
+    extra = { kind: 'pompom', at, color: yarn ? yarn.color : '#efe4cf', size: (A.head.box[2] - A.head.box[0]) * 0.3 };
+  }
+  let box = null;
+  for (const t of things) { const b = plBox(t.Sh, t.pl); box = box ? { x0: Math.min(box.x0, b.x0), y0: Math.min(box.y0, b.y0), x1: Math.max(box.x1, b.x1), y1: Math.max(box.y1, b.y1) } : b; }
+  const pad = Math.ceil(6 + 2 * kq * 10);
+  const x = Math.floor(box.x0) - pad, y = Math.floor(box.y0) - pad - (extra ? Math.ceil(extra.size * kq) : 0);
+  const w = Math.ceil(box.x1) + pad - x, h = Math.ceil(box.y1) + pad - y;
+  // a piece in progress (the card): its back half shows only what's knit, so the faint stitches still to come
+  // don't let the inside show through them
+  const done = item.preview && item.preview.done != null ? item.preview.done : null;
+  const ch = Sh.chart;
+  const backOnly = done != null && done < ch.total ? (cl) => { const i = ch.indexOf(cl.r, cl.c); return i >= 0 && i < done; } : null;
+  const layer = (half) => {
+    const c = mk(w, h);
+    const q = c.getContext('2d');
+    q.imageSmoothingEnabled = true; q.imageSmoothingQuality = 'high';
+    q.translate(-x, -y);
+    // sleeves under the yoke; the thumb is on its own part inside the mitten's map
+    for (const t of [...things.filter((t) => t.sleeve), ...things.filter((t) => !t.sleeve)]) drawTube(q, t.bake, t.Sh, t.pl, { half, dark: 0.35, only: half === 'back' && !t.sleeve ? backOnly : null });
+    if (half === 'front' && Sh.cinch && !unfinished) drawCinch(q, Sh, things[0].pl, slots);
+    q.setTransform(1, 0, 0, 1, 0, 0);
+    if (half === 'front' && extra) drawTouch(q, extra, kq, x, y);
+    return c;
+  };
+  const front = layer('front');
+  const back = layer('back');
+  return { canvas: front, x, y, back: { canvas: back, x, y }, slot, label: null, dollId, round: true };
+}
+
+// ---------------------------------------------------------------- (Change 2) a round piece as the object (gallery, finish)
+// The piece off the doll, as it hangs: a hat by its gathered top, a sock and a mitten by the cuff in profile,
+// a headband or cowl as a loop, a sweater on a hanger (with its sleeves), the pouch by its drawstring.
+// rec: a gallery record, or {preview: {bake, chart, slots}}. cell: device px per stitch. Returns a canvas or null.
+export const POSE_OF = { dome: 'hang', ring: 'ring', sock: 'profile', mitten: 'hang', body: 'hang' };
+export function roundObject(rec, pattern, cell, opts = {}) {
+  const chart = rec.preview ? rec.preview.chart : recordChart(rec, pattern);
+  const Sh = shapeOf(chart, pattern);
+  if (!Sh) return null;
+  const W = clamp(Math.round(cell * 1.05), 3, 28);
+  const bake = rec.preview ? rec.preview.bake : bakeGallery(rec, W);
+  if (!bake) return null;
+  const slots = rec.preview ? rec.preview.slots : rec.slots;
+  const pose = opts.pose || POSE_OF[Sh.kind] || 'hang';
+  // a neck-down sweater (the Dog Sweater) hangs upside down from how it was knit
+  const invert = Sh.kind === 'body' && !Sh.sleeveCols;
+  const pl = { s: cell, sy: invert ? -1 : 1, ox: 0, oy: 0, rot: 0, flip: false, pose, spin: opts.spin || 0 };
+  const things = [{ Sh, pl, bake }];
+  // the Yoke Sweater's sleeves hang from its shoulders
+  if (Sh.kind === 'body' && Sh.sleeveCols && Sh.sleeveCols.length) {
+    const P = Sh.prof.main; const top = P.S[P.S.length - 1];
+    const yJ = Sh.F(0.25, Sh.yJoin ?? P.y1 * 0.45, 'main', pose)[1];
+    const len = top * 0.95 * cell;
+    const rows = clamp(Math.round(len / (0.72 * cell)), 6, 40);
+    const v = sleeveShape(rows);
+    const yarn = (slots && slots.A) || (rec.yarns && rec.yarns[0]) || { color: '#9e2a3a', type: 'wool' };
+    const sb = bakeChart(v.chart, () => yarn, W, { castOnYarn: yarn, bindOff: false, key: `sleeve|${yarn.color}|${yarn.type}|${rows}` });
+    if (sb) for (const sg of [-1, 1]) {
+      const sh = [sg * Sh.rho0 * 0.9 * cell, (yJ - 1.6) * cell];
+      const ang = sg * 0.42; // hanging down, a little out
+      const dir = [Math.sin(ang), Math.cos(ang)];
+      const wrist = [sh[0] + dir[0] * len, sh[1] + dir[1] * len];
+      const sy = len / (v.shape.prof.main.S[v.shape.prof.main.S.length - 1] * cell);
+      things.unshift({ Sh: v.shape, pl: { s: cell, sy, ox: wrist[0], oy: wrist[1], rot: -ang, flip: false, pose: 'sleeve' }, bake: sb, sleeve: true });
+    }
+  }
+  let box = null;
+  for (const t of things) { const b = plBox(t.Sh, t.pl); box = box ? { x0: Math.min(box.x0, b.x0), y0: Math.min(box.y0, b.y0), x1: Math.max(box.x1, b.x1), y1: Math.max(box.y1, b.y1) } : b; }
+  const unfinished = rec.preview && rec.preview.done != null && rec.preview.done < chart.total;
+  const tch = unfinished ? null : pattern.touch && (pattern.touch.kind || pattern.touch);
+  const pom = tch === 'pompom' && Sh.kind === 'dome';
+  const hanger = Sh.kind === 'body';
+  const padTop = pom ? cell * 5 : hanger ? cell * 4 : cell * 1.5;
+  const pad = Math.ceil(cell * 1.5 + 4);
+  const x = Math.floor(box.x0) - pad, y = Math.floor(box.y0 - padTop) - pad;
+  const c = mk(Math.ceil(box.x1) + pad - x, Math.ceil(box.y1) + pad - y);
+  const q = c.getContext('2d');
+  q.imageSmoothingEnabled = true; q.imageSmoothingQuality = 'high';
+  q.translate(-x, -y);
+  if (hanger) drawHanger(q, Sh, pl, cell, box);
+  const done = unfinished ? rec.preview.done : null;
+  const backOnly = done != null ? (cl) => { const i = chart.indexOf(cl.r, cl.c); return i >= 0 && i < done; } : null;
+  for (const half of ['back', 'front']) {
+    for (const t of things) drawTube(q, t.bake, t.Sh, t.pl, { half, dark: 0.35, only: half === 'back' && !t.sleeve ? backOnly : null });
+    if (half === 'front' && Sh.cinch && !unfinished) drawCinch(q, Sh, pl, slots);
+  }
+  if (pom) {
+    const yarn = (slots && slots[pattern.touch.slot || 'A']) || null;
+    const at = toScreen(pl, [Sh.anchors.top[0], Sh.anchors.top[1] + 0.25]);
+    q.setTransform(1, 0, 0, 1, 0, 0);
+    drawTouch(q, { kind: 'pompom', at: [at[0] - x, at[1] - y], color: yarn ? yarn.color : '#efe4cf', size: Sh.rho0 * 2 * cell * 0.36 }, 1, 0, 0);
+  }
+  q.setTransform(1, 0, 0, 1, 0, 0);
+  if (tch === 'drawstring') drawDrawstring(q, Sh, pl, slots, pattern, x, y);
+  return c;
+}
+// a code-drawn wooden hanger over the sweater's shoulders
+function drawHanger(q, Sh, pl, cell, box) {
+  const P = Sh.prof.main;
+  const topY = Math.min(...[0, 0.5, 1].map((u) => toScreen(pl, Sh.F(u, pl.sy < 0 ? P.y0 : P.y1, 'main', pl.pose))[1]));
+  const w = (box.x1 - box.x0) * 0.62, cx = pl.ox, y = topY + cell * 0.6;
+  q.save();
+  q.lineCap = 'round';
+  q.strokeStyle = '#b8b0a0'; q.lineWidth = Math.max(1.5, cell * 0.28);
+  q.beginPath(); q.moveTo(cx, y - cell * 1.6); q.lineTo(cx, y - cell * 3.2); q.arc(cx - cell * 0.9, y - cell * 3.2, cell * 0.9, 0, Math.PI * 1.1, true); q.stroke();
+  const gr = q.createLinearGradient(0, y - cell * 1.8, 0, y);
+  gr.addColorStop(0, '#c48a52'); gr.addColorStop(1, '#7a4e2a');
+  q.strokeStyle = gr; q.lineWidth = Math.max(2, cell * 0.8);
+  q.beginPath(); q.moveTo(cx - w / 2, y); q.quadraticCurveTo(cx, y - cell * 3.2, cx + w / 2, y); q.stroke();
+  q.restore();
+}
+// the pouch's i-cord drawstring, threaded through the eyelets and tied in a bow
+function drawDrawstring(q, Sh, pl, slots, pattern, x, y) {
+  const P = Sh.prof.main;
+  const yarn = (slots && slots[pattern.touch.slot || 'A']) || { color: '#5f7a52' };
+  const yy = P.y1 - 1.5;
+  q.save(); q.translate(-x, -y);
+  q.lineCap = 'round'; q.lineJoin = 'round';
+  const pts = []; for (let i = 0; i <= 24; i++) pts.push(toScreen(pl, Sh.F(0.25 + i / 48, yy, 'main', pl.pose)));
+  for (const [col, wd] of [[shadeHex(yarn.color, -0.45), 0.62], [yarn.color, 0.42]]) {
+    q.strokeStyle = col; q.lineWidth = Math.max(1.5, pl.s * wd);
+    q.beginPath(); pts.forEach((p, i) => (i ? q.lineTo(p[0], p[1]) : q.moveTo(p[0], p[1]))); q.stroke();
+    // a bow at the front
+    const m = pts[12];
+    q.beginPath(); q.ellipse(m[0] - pl.s * 1.1, m[1] - pl.s * 0.3, pl.s * 1.1, pl.s * 0.6, -0.3, 0, Math.PI * 2); q.stroke();
+    q.beginPath(); q.ellipse(m[0] + pl.s * 1.1, m[1] - pl.s * 0.3, pl.s * 1.1, pl.s * 0.6, 0.3, 0, Math.PI * 2); q.stroke();
+    q.beginPath(); q.moveTo(m[0], m[1]); q.lineTo(m[0] - pl.s * 0.8, m[1] + pl.s * 2.2); q.moveTo(m[0], m[1]); q.lineTo(m[0] + pl.s * 0.6, m[1] + pl.s * 2.4); q.stroke();
+  }
+  q.restore();
+}
+
+// the ear warmer's cinch: a short band wrapped round the front, gathering the ring
+function drawCinch(q, Sh, pl, slots) {
+  const P = Sh.prof.main;
+  const yarn = (slots && slots.A) || { color: '#9e2a3a' };
+  const pts = [];
+  for (const y of [P.y0, P.y1]) pts.push(toScreen(pl, Sh.F(0.5, y, 'main', pl.pose)));
+  const [b, t] = pts;
+  const cx = (b[0] + t[0]) / 2, hgt = Math.abs(b[1] - t[1]) * 1.02, wd = pl.s * 2.4;
+  const cy = (b[1] + t[1]) / 2;
+  q.save();
+  const gr = q.createLinearGradient(cx - wd / 2, 0, cx + wd / 2, 0);
+  gr.addColorStop(0, shadeHex(yarn.color, -0.45)); gr.addColorStop(0.45, shadeHex(yarn.color, 0.08)); gr.addColorStop(1, shadeHex(yarn.color, -0.5));
+  q.fillStyle = gr;
+  q.shadowColor = 'rgba(30,10,24,0.45)'; q.shadowBlur = pl.s * 0.8; q.shadowOffsetY = pl.s * 0.25;
+  q.beginPath(); q.roundRect ? q.roundRect(cx - wd / 2, cy - hgt / 2, wd, hgt, wd * 0.35) : q.rect(cx - wd / 2, cy - hgt / 2, wd, hgt); q.fill();
+  q.shadowColor = 'transparent';
+  // its knit ridges (the band is a few rows of garter, wrapped)
+  q.strokeStyle = 'rgba(40,14,30,0.35)'; q.lineWidth = Math.max(1, pl.s * 0.18);
+  const n = Math.max(3, Math.round(hgt / (pl.s * 0.9)));
+  for (let i = 1; i < n; i++) { const yy = cy - hgt / 2 + (hgt * i) / n; q.beginPath(); q.moveTo(cx - wd * 0.42, yy); q.quadraticCurveTo(cx, yy + pl.s * 0.25, cx + wd * 0.42, yy); q.stroke(); }
+  q.restore();
+}
+function shadeHex(hex, t) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || ''); if (!m) return hex || '#888';
+  const v = parseInt(m[1], 16); let r = v >> 16, g = (v >> 8) & 255, b = v & 255;
+  const f = (c) => Math.round(t < 0 ? c * (1 + t) : c + (255 - c) * t);
+  return `rgb(${f(r)},${f(g)},${f(b)})`;
 }
 
 const tintCache = new Map();
@@ -599,11 +920,24 @@ export function composeDoll(dollId, outfit, k, opts = {}) {
   const g = c.getContext('2d');
   g.imageSmoothingQuality = 'high';
   if (!im) return c;
-  g.drawImage(im, 0, 0, w * k, h * k);
-  if (opts.silhouette) {
-    g.globalCompositeOperation = 'source-atop';
-    g.fillStyle = 'rgba(52,30,58,0.93)'; g.fillRect(0, 0, c.width, c.height);
-    g.globalCompositeOperation = 'source-over';
+  // (Change 2) pieces knit in the round: their back halves go behind the doll, darkened, first
+  const layersOf = {};
+  for (const slot of ORDER) { const item = outfit && outfit[slot]; if (item) layersOf[slot] = pieceLayer(item, dollId, k, opts); }
+  const backs = ORDER.filter((s) => layersOf[s] && layersOf[s].back);
+  const animOf = (slot) => (opts.anim && opts.anim.slot === slot ? opts.anim.p : 1);
+  if (backs.length) {
+    for (const slot of backs) drawLayer(g, layersOf[slot].back, k, animOf(slot), false);
+    const d = mk(w * k, h * k); const dg = d.getContext('2d'); dg.imageSmoothingQuality = 'high';
+    dg.drawImage(im, 0, 0, w * k, h * k);
+    if (opts.silhouette) { dg.globalCompositeOperation = 'source-atop'; dg.fillStyle = 'rgba(52,30,58,0.93)'; dg.fillRect(0, 0, d.width, d.height); }
+    g.drawImage(d, 0, 0);
+  } else {
+    g.drawImage(im, 0, 0, w * k, h * k);
+    if (opts.silhouette) {
+      g.globalCompositeOperation = 'source-atop';
+      g.fillStyle = 'rgba(52,30,58,0.93)'; g.fillRect(0, 0, c.width, c.height);
+      g.globalCompositeOperation = 'source-over';
+    }
   }
   const A = anchors(dollId);
   const things = dollId === 'purl' ? (opts.things || S.get().equipped.purl || []) : [];
@@ -612,19 +946,9 @@ export function composeDoll(dollId, outfit, k, opts = {}) {
   for (const slot of ORDER) {
     const item = outfit && outfit[slot];
     if (item) {
-      const L = pieceLayer(item, dollId, k, opts);
+      const L = layersOf[slot];
       if (L) {
-        const an = opts.anim && opts.anim.slot === slot ? opts.anim.p : 1;
-        if (an >= 1) { contactShadow(g, L, k); g.drawImage(L.canvas, L.x, L.y); }
-        else {
-          // the piece drops on with a small squash (1.08 -> 1)
-          const e = 1 - Math.pow(1 - an, 3);
-          const sc = 1.08 - 0.08 * e, dy = (1 - e) * -18 * k;
-          const cx = L.x + L.canvas.width / 2, cy = L.y + L.canvas.height / 2;
-          g.save(); g.globalAlpha = Math.min(1, an * 3);
-          g.translate(cx, cy + dy); g.scale(sc, 2 - sc); g.translate(-cx, -cy);
-          g.drawImage(L.canvas, L.x, L.y); g.restore();
-        }
+        drawLayer(g, L, k, animOf(slot), true);
         if (L.label) labels.push(L.label);
       }
     }
@@ -636,6 +960,16 @@ export function composeDoll(dollId, outfit, k, opts = {}) {
   }
   for (const lb of labels) drawLabel(g, lb, k, dollBounds(dollId).x0 * k);
   return c;
+}
+function drawLayer(g, L, k, an, shadow) {
+  if (an >= 1) { if (shadow) contactShadow(g, L, k); g.drawImage(L.canvas, L.x, L.y); return; }
+  // the piece drops on with a small squash (1.08 -> 1)
+  const e = 1 - Math.pow(1 - an, 3);
+  const sc = 1.08 - 0.08 * e, dy = (1 - e) * -18 * k;
+  const cx = L.x + L.canvas.width / 2, cy = L.y + L.canvas.height / 2;
+  g.save(); g.globalAlpha = Math.min(1, an * 3);
+  g.translate(cx, cy + dy); g.scale(sc, 2 - sc); g.translate(-cx, -cy);
+  g.drawImage(L.canvas, L.x, L.y); g.restore();
 }
 function drawLabel(g, lb, k, minX = 0) {
   // at least 12 CSS px, and wholly above the ground line (the shelf board overlaps the canvas's bottom)
