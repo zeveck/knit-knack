@@ -179,3 +179,4 @@ registerScreen('gallery', {
   leave() { setKeyHandler(null); },
 });
 window.addEventListener('resize', () => { if (currentScreen() === 'gallery') render(); });
+window.addEventListener('kk-unlocks', () => { if (currentScreen() === 'gallery') render(); });

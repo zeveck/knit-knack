@@ -5,7 +5,7 @@ import { setKeyHandler } from './input.js';
 import * as S from './state.js';
 import * as audio from './audio.js';
 
-let hooks = { toggleMute: () => {}, resume: () => {}, onReset: () => {}, onSettings: () => {} };
+let hooks = { toggleMute: () => {}, resume: () => {}, onReset: () => {}, onSettings: () => {}, onUnlocks: () => {} };
 export const setMenuHooks = (h) => { hooks = { ...hooks, ...h }; };
 
 const item = (icon, label, fn, cls = '') => {
@@ -57,6 +57,8 @@ export function openSettings() {
   if ('vibrate' in navigator) box.append(toggle('Vibrate on each stitch', 'vibrate'));
   box.append(toggle('Hold to knit', 'hold', null, 'Holding a key, or a finger, knits 6 stitches a second.'));
   box.append(toggle('Big buttons', 'big', () => hooks.onSettings()));
+  // a view override: everything to play with; the earned progress is kept for when it's switched off
+  box.append(toggle('Unlock everything', 'unlockAll', () => { S.setUnlockAll(st.unlockAll); hooks.onUnlocks(); }, 'Every pattern, yarn, needle, doll and more, to play with. Switch it off to go back to what you have earned.'));
   if (window.gameReport && window.gameReport.shown()) box.append(item('bug', 'Report a bug', () => openReport()));
   // reset
   const input = el('input', { type: 'text', placeholder: 'Type RESET', 'aria-label': 'Type RESET to confirm' });

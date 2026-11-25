@@ -1,5 +1,5 @@
 // book.js — the Pattern Book (cover, front page, chapter tabs, cards, "Read the pattern") and Cast On.
-import { el, ICON, go, registerScreen, fmt, notice, openSheet, closeSheet } from './ui.js';
+import { el, ICON, go, registerScreen, currentScreen, fmt, notice, openSheet, closeSheet } from './ui.js';
 import { drawStack } from './scene.js';
 import { setKeyHandler } from './input.js';
 import { fmtLen } from './scarfFacts.js';
@@ -74,13 +74,13 @@ function renderBook() {
   page.append(tabs);
   page.append(el('h2', { class: 'chapter-title', text: `${chapter}. ${S.CHAPTERS[chapter - 1]}` }));
   const cards = el('div', { class: 'cards' });
-  const unlockedN = S.patternsUnlocked();
+  const unlockedN = S.patternsEarned();
   const list = S.BOOK.map((p, i) => ({ p, i })).filter((x) => x.p.chapter === chapter);
   for (const { p, i } of list) cards.append(card(p, i, unlockedN));
   if (!list.length) cards.append(el('p', { text: 'No patterns here yet.' }));
   page.append(cards);
   root.replaceChildren(page);
-  // the newly unlocked cards flip over, with a chime
+  // the newly unlocked cards flip over, with a chime (earned ones only: "Unlock everything" flips nothing)
   const fresh = [];
   for (let i = 0; i < unlockedN; i++) { const id = S.BOOK[i].id; if (!s.seenPatterns.includes(id)) { s.seenPatterns.push(id); if (s.piecesFinished > 0) fresh.push(id); } }
   if (fresh.length) {
@@ -105,7 +105,8 @@ function bagHasNew() {
 
 function card(p, i, unlockedN) {
   const s = S.get();
-  const locked = i >= unlockedN;
+  // with "Unlock everything" on nothing is locked; a piece on the needles or a pattern already knit stays open
+  const locked = !S.patternUnlocked(p.id);
   const chart = chartOf(p);
   const pv = el('div', { class: 'pv' });
   const c = el('div', { class: 'card' + (locked ? ' locked' : ''), 'data-id': p.id });
@@ -155,6 +156,8 @@ function queuePreviews(root) {
   requestAnimationFrame(step);
 }
 
+// Settings' "Unlock everything" switched: the cards open (or lock) at once
+window.addEventListener('kk-unlocks', () => { if (currentScreen() === 'book') renderBook(); });
 registerScreen('book', {
   enter(arg) {
     if (arg && arg.chapter) chapter = arg.chapter;

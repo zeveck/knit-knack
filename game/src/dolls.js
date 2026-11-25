@@ -316,6 +316,7 @@ function enter(arg, prev) {
 registerScreen('dolls', { enter, leave() { setKeyHandler(null); anim = null; } });
 registerScreen('dress', { el: 'dolls', enter: (arg, prev) => enter({ doll: (arg && arg.doll) || arg || S.get().lastDoll || 'pip' }, prev), leave() { setKeyHandler(null); anim = null; } });
 window.addEventListener('resize', () => { if (here()) render(); });
+window.addEventListener('kk-unlocks', () => { if (!here()) return; if (mode === 'dress' && !unlocked(doll)) { fromFinished = null; mode = 'shelf'; } render(); });
 export const dollsState = () => ({ mode, doll, page });
 void SLOTS; void onTap;
 // the browser's Back on the dressing view: to the shelf (true if it stepped)

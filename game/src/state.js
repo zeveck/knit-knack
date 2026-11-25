@@ -98,7 +98,7 @@ export const on = (ev, fn) => listeners[ev].push(fn);
 function fresh() {
   return {
     v: VERSION,
-    settings: { music: 0.55, sfx: 0.85, vibrate: true, hold: false, big: false, musicMuted: false, sfxMuted: false },
+    settings: { music: 0.55, sfx: 0.85, vibrate: true, hold: false, big: false, musicMuted: false, sfxMuted: false, unlockAll: false },
     lifetimeStitches: 0, piecesFinished: 0, finishedPatterns: [],
     seenUnlocks: [], bagSeen: [], tips: [],
     equipped: { needles: 'bamboo', marker: 'ring', counter: 'brass', holder: 'floor', decor: [], purl: [] },
@@ -229,7 +229,11 @@ export function ruleMet(rule) {
   if (rule.allPatterns) return BOOK.length > 0 && BOOK.every((p) => s.finishedPatterns.includes(p.id));
   return false;
 }
-export function isUnlocked(id) { if (unlockAllFlag) return true; const u = ruleById(id); return u ? ruleMet(u.rule) : false; }
+// what's earned (the counters): the toasts, the Bag's "new" badges and the book's card flips go by this
+export function isEarned(id) { const u = ruleById(id); return u ? ruleMet(u.rule) : false; }
+// what's available to use: earned, or everything while Settings' "Unlock everything" is on (a view
+// override only: the counters, seenUnlocks and the rest of the progress are left as they are)
+export function isUnlocked(id) { if (overrideOn()) return !!ruleById(id); return isEarned(id); }
 export const unlockedOf = (kind) => UNLOCK_RULES.filter((u) => u.kind === kind && isUnlocked(u.id)).map((u) => u.item);
 
 const fmt = (n) => Math.max(0, Math.round(n)).toLocaleString('en-US');
@@ -248,13 +252,39 @@ export function remainingText(rule) {
   return '';
 }
 
-let unlockAllFlag = false;
+let unlockAllFlag = false; // the debug hook's __game.unlockAll()
 export function unlockAll() { unlockAllFlag = true; }
-export const allUnlocked = () => unlockAllFlag;
+export const overrideOn = () => unlockAllFlag || !!(S && S.settings && S.settings.unlockAll);
+export const allUnlocked = overrideOn;
 
 // Patterns: 3 to start, one more per piece finished (Knit again counts), in book order.
-export function patternsUnlocked() { return unlockAllFlag ? BOOK.length : Math.min(BOOK.length, 3 + get().piecesFinished); }
-export const patternUnlocked = (id) => { const i = BOOK.findIndex((p) => p.id === id); return i >= 0 && i < patternsUnlocked(); };
+export function patternsEarned() { return Math.min(BOOK.length, 3 + get().piecesFinished); }
+export function patternsUnlocked() { return overrideOn() ? BOOK.length : patternsEarned(); }
+// open to knit: earned or unlocked-everything, and always a pattern with a piece on the needles or
+// one already knit (so switching "Unlock everything" off never strands a piece)
+export const patternUnlocked = (id) => {
+  const i = BOOK.findIndex((p) => p.id === id);
+  if (i < 0) return false;
+  if (i < patternsUnlocked()) return true;
+  const s = get();
+  return !!s.pieces[pieceId(id)] || s.finishedPatterns.includes(id);
+};
+
+// Settings' "Unlock everything". Switching it off puts back what's earned: anything equipped that
+// isn't earned goes back to the starting choice (decor and Purl's things that aren't earned come off).
+const DEFAULT_EQUIP = { needles: 'bamboo', marker: 'ring', counter: 'brass', holder: 'floor' };
+export function setUnlockAll(on) {
+  const s = get();
+  s.settings.unlockAll = !!on;
+  if (!on && !unlockAllFlag) {
+    const e = s.equipped;
+    for (const [k, def] of Object.entries(DEFAULT_EQUIP)) if (!isEarned(`${k}:${e[k]}`)) e[k] = def;
+    e.decor = e.decor.filter((d) => isEarned(`decor:${d}`));
+    e.purl = e.purl.filter((d) => isEarned(`purl:${d}`));
+    if (s.lastDoll && !isEarned(`doll:${s.lastDoll}`)) s.lastDoll = null;
+  }
+  saveSoon();
+}
 
 // New unlocks since last shown: ids not in seenUnlocks that are now unlocked.
 const toastQueue = [];

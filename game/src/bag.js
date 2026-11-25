@@ -21,7 +21,8 @@ let root = null, tab = 'needles', menuFn = () => {}, work = null, workCanvas = n
 export const setMenu = (fn) => { menuFn = fn; };
 const dpr = () => Math.min(3, window.devicePixelRatio || 1) * pageZoom();
 const itemsOf = (kind) => S.UNLOCK_RULES.filter((u) => u.kind === kind);
-const isNew = (u) => !u.rule.start && S.isUnlocked(u.id) && !S.get().bagSeen.includes(u.id);
+// "new" goes by what is earned: "Unlock everything" badges nothing and marks nothing seen
+const isNew = (u) => !u.rule.start && S.isEarned(u.id) && !S.get().bagSeen.includes(u.id);
 export const tabHasNew = (kind) => itemsOf(kind).some(isNew);
 export const bagHasNew = () => TABS.some(([k]) => tabHasNew(k));
 function equipped(u) {
@@ -289,4 +290,6 @@ registerScreen('bag', {
   leave() { setKeyHandler(null); work = null; },
 });
 window.addEventListener('resize', () => { if (currentScreen() === 'bag') render(); });
+// Settings' "Unlock everything" switched: redraw what's open
+window.addEventListener('kk-unlocks', () => { if (currentScreen() === 'bag') render(); });
 export const bagState = () => ({ tab });

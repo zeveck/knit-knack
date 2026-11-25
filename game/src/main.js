@@ -72,6 +72,8 @@ setMenuHooks({
   toggleMute,
   onReset: () => { S.resetSave(); features.resetScarf().finally(() => location.reload()); },
   onSettings: () => { applySettings(); knit.applySettings(); features.applySettings(); },
+  // "Unlock everything" switched: the open screen redraws (switching off may put back equipped things)
+  onUnlocks: () => { audio.setNeedles(S.get().equipped.needles); knit.onEquipChange(); window.dispatchEvent(new Event('kk-unlocks')); },
 });
 knit.setMenu(openMenu); book.setMenu(openMenu); gallery.setMenu(openMenu);
 features.init({ menu: openMenu });
@@ -99,7 +101,7 @@ async function boot() {
   // waits on it (the service worker keeps the music out of its install, see sw.js)
   loadSceneRest().then(() => loadYarnImages()).then(() => loadExtras()).catch(() => {}).then(() => { audio.prefetch(); registerSW(); });
   // a save from before Pip etc: queue nothing yet; checked as play goes on
-  S.get().seenPatterns.length || S.get().seenPatterns.push(...S.BOOK.slice(0, S.patternsUnlocked()).map((p) => p.id));
+  S.get().seenPatterns.length || S.get().seenPatterns.push(...S.BOOK.slice(0, S.patternsEarned()).map((p) => p.id));
   // the phone's Back steps back inside the game (history.js)
   initHistory({ overlayOpen: features.overlayOpen, closeOverlay: features.closeOverlay, busy: () => currentScreen() === 'knit' && knit.isFinishing() });
   go('title');
