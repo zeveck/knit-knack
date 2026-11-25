@@ -6,7 +6,7 @@
 // Caches: baked pieces (per piece and cell size), warped layers (per piece, doll, slot, size; LRU 60) and
 // dressed-doll composites (per doll, outfit and size). All separate from the stitch sprite LRU's own map.
 import { renderSwatch } from './work.js';
-import { chartOf } from './render.js';
+import { recordChart } from './render.js';
 import { data as sceneData, image as sceneImage } from './scene.js';
 import * as S from './state.js';
 import { fmtLen } from './scarfFacts.js';
@@ -113,7 +113,8 @@ export function bakeGallery(g, W) {
   const p = S.patternById(g.pattern);
   if (!p) return null;
   const ys = g.yarns;
-  return bakeChart(chartOf(p), (i) => ys[i] || ys[ys.length - 1], W, { castOnYarn: g.castOn || ys[0], key: `g|${g.id}|${ys.length}` });
+  const chart = recordChart(g, p);
+  return bakeChart(chart, (i) => ys[i] || ys[ys.length - 1], W, { castOnYarn: g.castOn || ys[0], key: `g|${g.id}|${ys.length}${chart.placeholder ? '|plain' : ''}` });
 }
 export function forgetBakes(prefix) { for (const k of [...bakes.keys()]) if (k.startsWith(prefix)) bakes.delete(k); for (const k of [...layers.keys()]) if (k.startsWith(prefix)) layers.delete(k); composites.clear(); }
 
@@ -486,7 +487,7 @@ export function pieceLayer(item, dollId, k, opts = {}) {
     let chart, slots;
     if (item.preview) { bake = item.preview.bake; chart = item.preview.chart; slots = item.preview.slots; } else {
       const g = S.galleryById(item.gid || item);
-      chart = chartOf(pat); slots = g.slots;
+      chart = recordChart(g, pat); slots = g.slots;
       const ci0 = chartInfo(chart);
       const p0 = planFit(slot, fit, A, T, ci0, { fullHand: /mitten/.test(pat.id) });
       // doll px per stitch -> output px per stitch

@@ -516,13 +516,13 @@ function drawSprite(kind, type, color, W, variant) {
     drawCablePiece(f.g, f.ox, f.oy, W, H, P, T, R, variant, ctype, i);
   } else {
     switch (kind) {
-      case 'k': case 'x':
+      case 'k': case 'x': case 's': case 'u': case 'v': // (Change 2) slip, picked-up and sleeve sts show as knit Vs for now
         f = frame(W, H, 0.22, 0.22, 0.2, 0.45);
         backing(f.g, f.ox, f.oy, W, H, P);
         drawKnitV(f.g, f.ox, f.oy, W, H, P, T, R, variant);
         fuzz(f.g, f.ox + W / 2, f.oy + H * 0.68, W * 0.45, H * 0.65, P, T, W, R);
         break;
-      case 'p': f = frame(W, H, 0.22, 0.22, 0.2, 0.4); drawPurl(f.g, f.ox, f.oy, W, H, P, T, R, variant); break;
+      case 'p': case 'q': f = frame(W, H, 0.22, 0.22, 0.2, 0.4); drawPurl(f.g, f.ox, f.oy, W, H, P, T, R, variant); break;
       case 'o': f = frame(W, H, 0.2, 0.2, 0.2, 0.4); drawYo(f.g, f.ox, f.oy, W, H, P, T, R); break;
       case '<': f = frame(W, H, 0.25, 0.4, 0.2, 0.45); drawDec(f.g, f.ox, f.oy, W, H, P, T, R, variant, 1); break;
       case '>': f = frame(W, H, 0.4, 0.25, 0.2, 0.45); drawDec(f.g, f.ox, f.oy, W, H, P, T, R, variant, -1); break;

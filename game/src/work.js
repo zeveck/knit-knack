@@ -4,7 +4,7 @@
 import { getSprite, yarnColorAt, palette, drawEffects, drawTwinkle, holeEllipse, hash, CELL_ASPECT, typeInfo } from './stitches.js';
 import { drapeOf } from './chart.js';
 
-const KNITLIKE = new Set(['k', 'x', '<', '>', 'm', '+', 'b']);
+const KNITLIKE = new Set(['k', 'x', '<', '>', 'm', '+', 'b', 's', 'u', 'v']);
 const RAMP = 3; // rows below the needle over which a drape reaches its full wave
 const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 const mk = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(1, Math.ceil(w)); c.height = Math.max(1, Math.ceil(h)); return c; };
@@ -162,7 +162,7 @@ class Fabric {
       for (let c = cLo; c <= cHi; c++) {
         const cl = cells[c];
         if (!cl) continue;
-        if (r === 1) spr('castOn', this.src.castOnYarn, 0, r, c, 0);
+        if (r === (ch.firstRow || 1)) spr('castOn', this.src.castOnYarn, 0, r, c, 0);
         else if (cl.s === '+' && this.knit(r, c)) { const i = this.idx(r, c); spr('castOn', this.yarnOf(i), i, r, c, 0); }
       }
       // a solid underlay so the work is never see-through between loops (eyelets are cut later)

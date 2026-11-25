@@ -14,9 +14,13 @@
 // with the review's rule that multi-stitch bind-offs and edge cast-ons happen at the
 // START of a row (right edge on RS, left edge on WS), except under / across a gap.
 
-export const USES = { k: 1, p: 1, b: 1, x: 1, '<': 2, '>': 2, o: 0, m: 0, '+': 0 };
+export const USES = { k: 1, p: 1, b: 1, x: 1, '<': 2, '>': 2, o: 0, m: 0, '+': 0, s: 1, '-': 1, _: 1, u: 0, v: 0, q: 2 };
 export const CABLES = { C2F: 2, C2B: 2, C4F: 4, C4B: 4, C6F: 6, C6B: 6 };
-export const STITCH_CHARS = 'kpo<>m+bx';
+export const STITCH_CHARS = 'kpo<>m+bxs-_uvq';
+// (Change 2) cells only round pieces may use; u and v only in step rows
+const ROUND_ONLY = '_uvq'; // q: p2tog worked from the right side (a crown's purl decrease)
+// steps drawn with no height of their own (their effect is an overlay at that y); the others are rounds
+export const ZERO_HEIGHT_STEPS = new Set(['join', 'seam', 'hold', 'gather', 'graft', 'graftUnderarm']);
 const MAX_SHIFT = 3;
 
 export const GLOSSARY = {
@@ -37,6 +41,30 @@ export const GLOSSARY = {
   C6F: 'cable 6 front: slip 3 to cable needle, hold in front, k3, k3 from cable needle',
   C6B: 'cable 6 back: slip 3 to cable needle, hold in back, k3, k3 from cable needle',
 };
+// (Change 2) knitting in the round: added to a pattern's abbreviations when its text uses them
+export const ROUND_GLOSSARY = {
+  'Rnd(s)': 'round(s)', 'beg of rnd': 'beginning of the round', pm: 'place marker', sm: 'slip marker',
+  'circular needle': 'a pair of needle tips joined by a flexible cable, for knitting in the round',
+  'DPN(s)': 'double-pointed needles; the stitches are divided over 3 or 4 and knit with one more',
+  'Join in the rnd': 'after casting on, knit the first st with the yarn from the last, closing the ring without twisting it',
+  'sl1 wyib': 'slip 1 st purlwise with yarn in back (on RS rows)', 'sl1 wyif': 'slip 1 st purlwise with yarn in front (on WS rows)',
+  'Heel flap': "a flat rectangle worked over the back of the leg's sts",
+  'Turn heel': 'short rows that shape the cup of the heel', turn: 'stop mid-row and turn the work, leaving the rest unworked',
+  'Pick up and k': 'draw a loop of new yarn through the edge and knit it',
+  Gusset: "the triangle of picked-up sts decreased back to the foot's count (and, on a mitten, the increases for the thumb)",
+  'Waste yarn': 'a scrap of yarn that holds live sts for later',
+  'Kitchener stitch (graft)': 'joins two sets of live sts invisibly with a needle, one grafted st per pair',
+  Jog: 'the step at the beginning of a round where one round ends a row above where it began; on stripes, knitters hide it by slipping the first st of the 2nd rnd of each new color',
+  'Mattress stitch': 'a seam worked from the right side, picking up the bars between the edge sts, so the seam disappears',
+  rem: 'remaining',
+};
+// which round terms a written pattern's text uses
+const ROUND_TERMS = [
+  ['Rnd(s)', /\bRnds?\b/], ['beg of rnd', /beg of rnd/], ['pm', /\bpm\b/], ['sm', /\bsm\b/], ['circular needle', /circular/], ['DPN(s)', /\bDPNs?\b/],
+  ['Join in the rnd', /Join to work in the rnd/], ['sl1 wyib', /sl1 wyib/], ['sl1 wyif', /sl1 wyif/], ['Heel flap', /Heel flap/], ['Turn heel', /Turn heel/],
+  ['turn', /, turn\b/], ['Pick up and k', /pick up and k/i], ['Gusset', /Gusset|gusset/], ['Waste yarn', /waste yarn/i],
+  ['Kitchener stitch (graft)', /Kitchener/], ['Jog', /\bjog\b/i], ['Mattress stitch', /mattress stitch/i], ['rem', /\brem\b/],
+];
 
 // ---------------------------------------------------------------- layers
 
@@ -46,7 +74,7 @@ export function toLines(layer) {
   return arr.map((s) => String(s).trim()).filter((s) => s.length > 0);
 }
 
-const isRS = (r) => r % 2 === 1;
+const isRS = (r) => r % 2 === 1; // flat pieces (and the flat textures); a chart's own side is chart.rsOf(r)
 
 // ---------------------------------------------------------------- Chart
 
@@ -59,6 +87,11 @@ export class Chart {
     this.rowStarts = [0, 0];
     this.endless = !!def.endless;
     this.slotsUsed = new Set();
+    // (Change 2) round pieces: def.round, def.flat ranges, def.sections, def.steps, def.needles
+    this.round = !!def.round && !def.endless;
+    this.flatRanges = this.round ? (def.flat || []).map((f) => ({ from: f.from, to: f.to, first: f.first || 'RS', cut: f.cut ?? 0, span: f.span || 0 })) : [];
+    this.stepDefs = new Map();
+    if (this.round) for (const st of def.steps || []) this.stepDefs.set(st.row, st);
     if (this.endless) this._initEndless(def);
     else this._initFixed(def);
   }
@@ -88,6 +121,7 @@ export class Chart {
         if (sh !== '#') { this.errors.push(`row ${r} col ${c}: bad shape char '${sh}'`); continue; }
         if (s === '.') { this.errors.push(`row ${r} col ${c}: shape '#' but stitch '.'`); continue; }
         if (!STITCH_CHARS.includes(s)) { this.errors.push(`row ${r} col ${c}: unknown stitch '${s}'`); continue; }
+        if (!this.round && (ROUND_ONLY.includes(s) || s === '-')) { this.errors.push(`row ${r} col ${c}: '${s}' is only for round pieces`); continue; }
         if (!slotNames.includes(slot)) this.errors.push(`row ${r} col ${c}: unknown slot '${slot}'`);
         this.slotsUsed.add(slot);
         row[c] = { r, c, s, slot, cable: null };
@@ -96,9 +130,11 @@ export class Chart {
     }
     this._cells = cells;
     this._attachCables(def.cables || [], (r) => cells[r]);
+    if (this.round) this._initRound();
     for (let r = 1; r <= H; r++) this._buildRow(r);
     this.total = this.rowStarts[H + 1];
     this._checkRepeat();
+    if (this.round) this._finishRound();
   }
 
   _initEndless(def) {
@@ -134,7 +170,7 @@ export class Chart {
       const n = CABLES[sp.type];
       const tag = `cable ${sp.type} at row ${sp.row} col ${sp.col}`;
       if (!n) { this.errors.push(`${tag}: unknown type`); continue; }
-      if (!isRS(sp.row)) this.errors.push(`${tag}: cables only on RS (odd) rows`);
+      if (!this.rsOf(sp.row)) this.errors.push(`${tag}: cables only on RS rows`);
       const row = rowOf(sp.row);
       if (!row) { this.errors.push(`${tag}: row out of range`); continue; }
       const span = { row: sp.row, col: sp.col, type: sp.type, n, half: n / 2, front: sp.type.endsWith('F') ? 'F' : 'B' };
@@ -156,7 +192,170 @@ export class Chart {
 
   cell(r, c) { const row = this.cells(r); return row ? row[c] || null : null; }
 
+  // ---- (Change 2) sides, sections, steps and the round row map
+  // rsOf(r): is row r worked from the right side? Flat pieces: odd rows. Round pieces: every round, and
+  // in a flat range its first row is `first` and the sides alternate from there.
+  rsOf(r) {
+    if (!this.round) return r % 2 === 1;
+    const f = this.flatAt(r);
+    if (!f) return true;
+    return ((r - f.from) % 2 === 0) === (f.first === 'RS');
+  }
+  flatAt(r) { return this.round ? this.flatRanges.find((f) => r >= f.from && r <= f.to) || null : null; }
+  isRound(r) { return this.round && !this.flatAt(r); }
+  stepAt(r) { return this.round ? this.stepDefs.get(r) || null : null; }
+  // the section a row is in: {i, from, to, label} (round pieces; flat pieces have one unnamed section)
+  sectionAt(r) { const L = this.sections || []; let s = null; for (const x of L) if (x.from <= r) s = x; return s; }
+  // the needles in use on row r: {from, kind, len, n, counts}
+  needleAt(r) { const L = this.def.needles || []; let n = null; for (const x of L) if (x.from <= r) n = x; return n; }
+  // row -> y: the top of row r in row heights from the cast-on edge (zero-height steps take none)
+  yOf(r) { if (!this._y) return Math.max(0, Math.min(r, this.height)); return this._y[Math.max(0, Math.min(r, this.height))]; }
+  rowHeight(r) { const st = this.stepAt(r); return st && ZERO_HEIGHT_STEPS.has(st.kind) ? 0 : 1; }
+
+  _initRound() {
+    const def = this.def, H = this.height;
+    // sections: [{from, label}] -> {i, from, to, label}
+    const secs = (def.sections || []).slice().sort((a, b) => a.from - b.from);
+    this.sections = secs.map((x, i) => ({ i, from: x.from, to: (secs[i + 1] ? secs[i + 1].from : H + 1) - 1, label: x.label }));
+    for (const [r, st] of this.stepDefs) {
+      if (r < 1 || r > H) { this.errors.push(`step ${st.kind} at row ${r}: out of range`); continue; }
+      if (ZERO_HEIGHT_STEPS.has(st.kind) && this._cells[r].some(Boolean)) this.errors.push(`row ${r}: a ${st.kind} step row has cells (its taps are listed in the step)`);
+    }
+    for (let r = 1; r <= H; r++) {
+      const st = this.stepAt(r);
+      for (const cl of this._cells[r]) if (cl && (cl.s === 'u' || cl.s === 'v') && !st) this.errors.push(`row ${r} col ${cl.c}: '${cl.s}' only in a step row (a set-up or joining round)`);
+    }
+    // the cast-on: the first worked row's stitches
+    let f = 1; while (f <= H && this.stepAt(f) && ZERO_HEIGHT_STEPS.has(this.stepAt(f).kind)) f++;
+    this.firstRow = f;
+    this.castOnCols = f <= H ? this._cells[f].map((cl, c) => (cl ? c : -1)).filter((c) => c >= 0) : [];
+  }
+  _finishRound() {
+    const H = this.height;
+    this._y = new Float32Array(H + 1);
+    for (let r = 1; r <= H; r++) this._y[r] = this._y[r - 1] + this.rowHeight(r);
+    this.heightY = this._y[H];
+    // numbering restarts in each section; step rows take no number
+    this._no = [null];
+    let n = 0, sec = null;
+    for (let r = 1; r <= H; r++) {
+      const s = this.sectionAt(r);
+      if (s !== sec) { sec = s; n = 0; }
+      const st = this.stepAt(r);
+      this._no.push(st ? { n: 0, unit: 'step', section: s } : { n: ++n, unit: this.flatAt(r) ? 'Row' : 'Rnd', section: s });
+    }
+    for (const f of this.flatRanges) if (f.from < 1 || f.to > H || f.to < f.from) this.errors.push(`flat range ${f.from}-${f.to} out of range`);
+  }
+  // row r's number in its section and its unit: {n, unit: 'Row' | 'Rnd' | 'step', section}
+  rowNo(r) { return this.round ? this._no[r] : { n: r, unit: 'Row', section: null }; }
+
+  // ring position of col c in a row cut at `cut` (the ring runs cut, cut+1, …, W−1, 0, …)
+  _pos(c, cut) { const W = this.width; return (((c - cut) % W) + W) % W; }
+
+  _buildRoundRow(r) {
+    const W = this.width;
+    const cells = this.cells(r);
+    const st = this.stepAt(r);
+    if (st && ZERO_HEIGHT_STEPS.has(st.kind)) return this._buildStepRow(r, st);
+    const err = (m) => this.errors.push(`row ${r}: ${m}`);
+    const prev = r === 1 ? this.castOnCols.slice() : this.rows[r - 1].cols;
+    const prevSet = new Set(prev);
+    const fr = this.flatAt(r);
+    const cut = fr ? fr.cut : 0;
+    const rs = this.rsOf(r);
+    const pos = (c) => this._pos(c, cut);
+    const claimed = new Array(prev.length).fill(false);
+    const prevIdx = new Map(prev.map((c, i) => [c, i]));
+    const held = [];
+    const entries = [], bound = []; // bound: {cell index in ring order, prev index}
+    const ringCells = [];
+    for (let c = 0; c < W; c++) if (cells[c]) ringCells.push(cells[c]);
+    ringCells.sort((a, b) => pos(a.c) - pos(b.c));
+    // held cells claim the stitch at their own column first
+    for (const cl of ringCells) {
+      if (cl.s !== '-') continue;
+      const i = prevIdx.get(cl.c);
+      if (i == null) { err(`col ${cl.c}: '-' holds a stitch that isn't live in the row below`); continue; }
+      claimed[i] = true; held.push(cl.c);
+    }
+    const queue = prev.map((c, i) => i).filter((i) => !claimed[i]).sort((a, b) => pos(prev[a]) - pos(prev[b]));
+    let qp = 0;
+    const order = []; // ring-order list of {cell, e|null, takes}
+    for (const cl of ringCells) {
+      if (cl.s === '-') continue;
+      if (cl.s === 'x' && !cl.cable) err(`col ${cl.c}: 'x' not in a cable span`);
+      if (r === this.firstRow && cl.s !== 'k' && cl.s !== 'p') err(`the first row may only hold k and p (col ${cl.c} is '${cl.s}')`);
+      if (!rs && (cl.s === 'o' || cl.s === 'b' || cl.s === 'x')) err(`col ${cl.c}: '${cl.s}' only allowed on RS rows`);
+      if (cl.s === '+' && prevSet.has(cl.c) && !held.includes(cl.c)) err(`col ${cl.c}: '+' must sit over a gap (no live stitch below it)`);
+      const u = USES[cl.s];
+      const takes = queue.slice(qp, qp + u); qp += u;
+      if (takes.length < u) err(`col ${cl.c} '${cl.s}' has no stitch to work (the row below has ${queue.length})`);
+      for (const t of takes) {
+        claimed[t] = true;
+        if (Math.abs(pos(prev[t]) - pos(cl.c)) > MAX_SHIFT) err(`col ${cl.c} takes a stitch from col ${prev[t]} (more than ${MAX_SHIFT} away)`);
+      }
+      if (cl.s === '_') { bound.push(...takes); order.push({ cl, e: null, takes }); continue; }
+      const e = { r, col: cl.c, stitch: cl.s, slot: cl.slot, takes, boundOffAfter: [] };
+      entries.push(e); order.push({ cl, e, takes });
+    }
+    if (qp < queue.length) err(`${queue.length - qp} stitch(es) of the row below left unworked (hold them with '-', or bind them off with '_')`);
+    // knitting order: RS (every round) from the ring's high end down; WS from the low end up
+    const ko = rs ? order.slice().reverse() : order.slice();
+    const before = [];
+    let last = null;
+    for (const o of ko) {
+      if (o.e) { last = o.e; continue; }
+      if (last) last.boundOffAfter.push(...o.takes); else before.push(...o.takes);
+    }
+    const map = ko.filter((o) => o.e).map((o) => o.e);
+    map.forEach((e, k) => (e.k = k));
+    const cols = [];
+    for (let c = 0; c < W; c++) if (cells[c] && cells[c].s !== '_') cols.push(c);
+    const heldSet = new Set(held);
+    const runs = [];
+    for (let c = 0; c < W; c++) {
+      if (!cells[c]) continue;
+      if (runs.length && runs[runs.length - 1].b === c - 1) runs[runs.length - 1].b = c; else runs.push({ a: c, b: c });
+    }
+    const boundOff = bound.slice().sort((a, b) => a - b);
+    this.rows[r] = { r, rs, round: !fr, flat: fr, cut, cols, runs, map, boundOffBefore: before, boundOff, prevCols: prev,
+      held: held.sort((a, b) => a - b), ring: cols.filter((c) => !heldSet.has(c)), step: st ? { kind: st.kind, label: st.label || '', text: st.text } : null };
+    if (map.length) map[0].boundOffBefore = before;
+    this.rowStarts[r + 1] = this.rowStarts[r] + map.length;
+    if (!map.length) err('row has no stitches');
+  }
+
+  // A step row (C.4): one entry per tap, listed in the step's own order, each taking the live stitches at
+  // the columns it names; what no entry takes is still live after it (outCols).
+  _buildStepRow(r, st) {
+    const err = (m) => this.errors.push(`row ${r} (${st.kind}): ${m}`);
+    const prev = r === 1 ? this.castOnCols.slice() : this.rows[r - 1].cols;
+    const prevIdx = new Map(prev.map((c, i) => [c, i]));
+    const used = new Set();
+    const map = (st.taps || []).map((t, k) => {
+      const takes = [];
+      for (const c of t.takes || []) {
+        const i = prevIdx.get(c);
+        if (i == null) err(`tap ${k + 1} takes col ${c}, which isn't live`);
+        else if (used.has(i)) err(`tap ${k + 1} takes col ${c} twice`);
+        else { used.add(i); takes.push(i); }
+      }
+      const slot = t.slot || 'A';
+      this.slotsUsed.add(slot);
+      return { r, col: t.col, stitch: t.stitch || 'k', slot, takes, boundOffAfter: [], k, step: st.kind };
+    });
+    if (!map.length) err('a step needs at least one tap');
+    const outCols = prev.filter((c, i) => !used.has(i));
+    const prevRow = r > 1 ? this.rows[r - 1] : null;
+    const heldBelow = new Set(prevRow ? prevRow.held || [] : []);
+    this.rows[r] = { r, rs: this.rsOf(r), round: !this.flatAt(r), flat: this.flatAt(r), cut: 0, cols: outCols, outCols, runs: [], map, boundOffBefore: [], boundOff: [],
+      prevCols: prev, held: outCols.filter((c) => heldBelow.has(c)), ring: outCols.filter((c) => !heldBelow.has(c)), step: { kind: st.kind, label: st.label || '', text: st.text } };
+    if (map.length) map[0].boundOffBefore = [];
+    this.rowStarts[r + 1] = this.rowStarts[r] + map.length;
+  }
+
   _buildRow(r) {
+    if (this.round) return this._buildRoundRow(r);
     const W = this.width;
     const cells = this.cells(r);
     const cols = [];
@@ -239,7 +438,7 @@ export class Chart {
         }
       }
     }
-    this.rows[r] = { r, rs, cols, runs, map: entries, boundOffBefore: before, boundOff, prevCols: prev };
+    this.rows[r] = { r, rs, round: false, flat: null, cut: 0, cols, runs, map: entries, boundOffBefore: before, boundOff, prevCols: prev, held: [], ring: cols, step: null };
     if (entries.length) entries[0].boundOffBefore = before;
     this.rowStarts[r + 1] = this.rowStarts[r] + entries.length;
     if (!entries.length && !this.endless) err('row has no stitches');
@@ -290,15 +489,23 @@ export class Chart {
     const R = this.row(L.r);
     const used = new Set(R.boundOffBefore);
     for (let k = 0; k < L.k; k++) { const e = R.map[k]; e.takes.forEach((t) => used.add(t)); e.boundOffAfter.forEach((t) => used.add(t)); }
-    const left = R.prevCols.filter((_, idx) => !used.has(idx));
+    const heldSet = new Set(R.held || []);
+    const left = R.prevCols.filter((c, idx) => !used.has(idx) && !heldSet.has(c));
     const right = R.map.slice(0, L.k).map((e) => e.col).sort((a, b) => a - b);
-    return { r: L.r, k: L.k, rs: R.rs, done: false, next: L.entry, left, right, leftRow: L.r - 1, rightRow: L.r };
+    return { r: L.r, k: L.k, rs: R.rs, done: false, next: L.entry, left, right, leftRow: L.r - 1, rightRow: L.r, held: R.held || [], round: !!R.round, step: R.step ? R.step.kind : null };
   }
 
   // Stitch markers: column boundaries (a marker sits between col b-1 and col b).
   markers(r) {
     const R = this.row(r); if (!R) return [];
     const rep = this.def.repeat;
+    if (this.round) {
+      // round rows: repeat markers every rep.width columns when the row is the whole ring, unbroken
+      if (!R.round || R.step || !rep || rep.width < 4 || R.held.length || R.runs.length !== 1 || R.cols.length % rep.width || R.cols.length / rep.width < 2) return [];
+      const lo = R.cols[0], hi = R.cols[R.cols.length - 1] + 1, out = [];
+      for (let b = lo + rep.width; b < hi; b += rep.width) out.push(b);
+      return out;
+    }
     if (rep && rep.width) {
       const [el, er] = edgePair(rep.edges);
       const lo = Math.min(...R.cols), hi = Math.max(...R.cols) + 1;
@@ -329,7 +536,8 @@ export class Chart {
     const [el, er] = edgePair(rep.edges);
     const at = rep.at || 1;
     const R = this.row(at);
-    const n = R ? R.cols.length : this.width;
+    const n = R ? (this.round ? R.ring.length : R.cols.length) : this.width;
+    if (this.round && R && R.round && el + er) this.errors.push('repeat: a round piece has no edge stitches (edges 0)');
     if ((n - el - er) % rep.width !== 0) this.errors.push(`repeat: (${n} sts on row ${at} - edges ${el + er}) is not a multiple of ${rep.width}`);
   }
 
@@ -370,7 +578,7 @@ export class Chart {
     if (this.__parts) return this.__parts;
     const nodes = [], rowNodes = [null];
     const out = { nodes, rowNodes };
-    if (this.endless || this.errors.length) { for (let r = 1; r <= (this.endless ? 0 : this.height); r++) rowNodes.push((this.rows[r] ? this.rows[r].runs : []).map(() => 0)); return (this.__parts = out); }
+    if (this.endless || this.errors.length || this.round) { for (let r = 1; r <= (this.endless ? 0 : this.height); r++) rowNodes.push((this.rows[r] ? this.rows[r].runs : []).map(() => 0)); return (this.__parts = out); }
     const mk = (r, run, parents, kind) => {
       const n = { id: nodes.length, from: r, to: r, runs: new Map([[r, run]]), parents, children: [], kind, end: null };
       nodes.push(n); for (const p of parents) nodes[p].children.push(n.id);
@@ -407,7 +615,7 @@ export class Chart {
     const layout = [], rows = new Map(), names = new Map();
     const plan = { layout, rows, names, warnings: [] };
     this.__plan = plan;
-    if (this.endless || this.errors.length || !this.height) return plan;
+    if (this.endless || this.errors.length || !this.height || this.round) return plan;
     const { nodes } = this._parts();
     const def = this.def, H = this.height;
     // def.parts: a noun, or one noun per group of parts in the order they appear (['leg', 'ear']);
@@ -559,6 +767,15 @@ function mLean(chart, r, col) {
   return col * 2 < lo + hi ? 'L' : 'R';
 }
 
+// in a round, two M1s are a pair: the right one (worked first) is M1L, the left one M1R (a thumb
+// gusset: "sm, M1L, k to m, M1R, sm"); M1s spread round a round (*k1, M1L) are all M1L
+function roundLean(chart, r, col) {
+  const R = chart.row(r);
+  const ms = R.map.filter((e) => e.stitch === 'm');
+  if (ms.length !== 2) return 'L';
+  return col < Math.max(ms[0].col, ms[1].col) ? 'R' : 'L';
+}
+
 function opOf(e, rs, chart) {
   const s = e.stitch;
   if (s === 'x') { const cl = chart.cell(e.r, e.col); return cl && cl.cable ? cl.cable.span.type : 'k'; }
@@ -568,13 +785,17 @@ function opOf(e, rs, chart) {
   if (s === '<') return rs ? 'k2tog' : 'p2tog';
   if (s === '>') return rs ? 'ssk' : 'ssp';
   if (s === 'b') return 'MB';
+  if (s === 's') return rs ? 'sl1 wyib' : 'sl1 wyif';
+  if (s === 'q') return rs ? 'p2tog' : 'k2tog';
+  if (s === 'u') return 'pick up and k';
+  if (s === 'v') return 'k sleeve st';
   if (s === '+') return 'CO';
   if (s === 'm') {
     // worked purlwise when the stitches beside it are purled (WS stockinette, RS reverse stockinette)
     const map = chart.row(e.r).map;
     const nb = [map[e.k - 1], map[e.k + 1]].find((x) => x && (x.stitch === 'k' || x.stitch === 'p'));
     const purled = nb ? (nb.stitch === 'k') !== rs : !rs;
-    return 'M1' + mLean(chart, e.r, e.col) + (purled ? 'P' : '');
+    return 'M1' + (chart.round && chart.row(e.r).round ? roundLean(chart, e.r, e.col) : mLean(chart, e.r, e.col)) + (purled ? 'P' : '');
   }
   return s;
 }
@@ -618,7 +839,7 @@ function rowAtoms(chart, r) {
       let a = e.col, b = e.col;
       while (a - 1 >= run.a && stitchAt(chart, r, a - 1) === '+') a--;
       while (b + 1 <= run.b && stitchAt(chart, r, b + 1) === '+') b++;
-      gap = a > run.a && b < run.b;
+      gap = R.round ? true : a > run.a && b < run.b;
     }
     atoms.push({ op: opOf(e, rs, chart), slot: e.slot, cells: [k], uses: e.takes.length, gap, node: nodeOf(e.col) });
     bo(e.boundOffAfter);
@@ -682,7 +903,7 @@ function groupAtoms(atoms, colored) {
 }
 
 const sts = (n) => `${n} st${n === 1 ? '' : 's'}`;
-function groupText(gp, colored, rs) {
+function groupText(gp, colored, rs, round = false) {
   const sl = colored ? ' ' + gp.slot : '';
   if (gp.op === 'BO') {
     const n = gp.atoms.filter((a) => a.op === 'BO').length;
@@ -695,7 +916,7 @@ function groupText(gp, colored, rs) {
   }
   const n = gp.atoms.length;
   if (COUNTABLE.has(gp.op)) return `${gp.op}${n}${sl}`;
-  if (gp.op === 'CO') return gp.edge ? `cast on ${sts(n)}${sl}` : `turn, cast on ${sts(n)}${sl}, turn`;
+  if (gp.op === 'CO') return gp.edge ? `cast on ${sts(n)}${sl}` : round ? `cast on ${sts(n)}${sl} over the gap` : `turn, cast on ${sts(n)}${sl}, turn`;
   if (n === 1) return gp.op + sl;
   if (n === 2) return `${gp.op}${sl}, ${gp.op}${sl}`; // never "yo twice": that means a double wrap
   return `[${gp.op}${sl}] ${n} times`;
@@ -783,9 +1004,25 @@ function bracketTokens(toks) {
 //   part: a part id or a list of ids (see Chart._plan), or -1 / none for the whole row.
 //   tokens map onto knitting-order cell indices [from, to); rep: true for tokens inside the repeat
 //   (they describe the FIRST repeat; use wordingCursor for the live position).
+const STEP_NAMES = { join: 'Join', seam: 'Seam', hold: 'Hold', gather: 'Gather', graft: 'Graft', graftUnderarm: 'Graft the underarms', setup: 'Set-up rnd', thumb: 'Thumb set-up rnd', joining: 'Joining rnd', centre: 'To the centre of the heel' };
+// a step row's wording: its own text, one token over all its taps
+function stepWording(chart, r) {
+  const R = chart.row(r), st = R.step;
+  const no = chart.rowNo(r);
+  const sec = no.section && no.section.label ? no.section.label.replace(/ \(.*\)$/, '').replace(/:$/, '') : '';
+  const name = st.label || STEP_NAMES[st.kind] || st.kind;
+  return { r, rs: R.rs, label: (sec && sec !== name ? sec + ' · ' : '') + name, text: st.text, tokens: [{ text: st.text, from: 0, to: R.map.length, rep: false }], repeat: null,
+    count: R.ring.length, prevCount: R.prevCols.length, countChanged: false, islands: false, part: -1, slot: null, atoms: [], warnings: [], step: st.kind };
+}
+
 export function rowWording(chart, r, opts = {}) {
   const R = chart.row(r);
   const rs = R.rs;
+  if (R.step) return stepWording(chart, r);
+  const round = !!R.round; // (Change 2) a round: no side, never inverted, "rep from * around"
+  // a flat row of a round piece that leaves stitches of its range unworked ends "turn" (a short row)
+  const fr = R.flat;
+  const shortRow = !!(fr && fr.span && R.held.some((c) => chart._pos(c, fr.cut) < fr.span));
   const colored = chart.slotsUsed.size > 1;
   const ids = opts.part == null || opts.part === -1 || chart.endless ? null : [].concat(opts.part);
   let raw = rowAtoms(chart, r);
@@ -796,18 +1033,27 @@ export function rowWording(chart, r, opts = {}) {
   const uniformSlot = allSlots.size === 1 ? [...allSlots][0] : null;
   const perAtomColor = colored && !uniformSlot;
   const name = opts.name != null ? opts.name : ids && ids.length === 1 ? chart.partName(r, ids[0]) : '';
-  const label = (name ? name + ' · ' : '') + `Row ${r} (${rs ? 'RS' : 'WS'})`;
+  let label = (name ? name + ' · ' : '') + `Row ${r} (${rs ? 'RS' : 'WS'})`;
+  if (chart.round) {
+    const no = chart.rowNo(r);
+    const sec = no.section && no.section.label ? no.section.label.replace(/ \(.*\)$/, '').replace(/:$/, '') : '';
+    label = (sec ? sec + ' · ' : '') + (round ? `Rnd ${no.n}` : `Row ${no.n} (${rs ? 'RS' : 'WS'})`);
+  }
   const tokens = [];
   const cellsOf = (list) => list.flatMap((a) => a.cells);
   const tok = (gps, rep) => gps.map((gp) => {
     const cs = cellsOf(gp.atoms);
-    return { text: groupText(gp, perAtomColor, rs), from: cs.length ? cs[0] : null, to: cs.length ? cs[cs.length - 1] + 1 : null, rep,
+    return { text: groupText(gp, perAtomColor, rs, round), from: cs.length ? cs[0] : null, to: cs.length ? cs[cs.length - 1] + 1 : null, rep,
       need: needOf(gp.atoms), kind: gp.op === 'BO' ? 'BO' : gp.op === 'CO' ? 'CO' : COUNTABLE.has(gp.op) ? 'count' : 'op', op: gp.op, n: gp.atoms.length, lo: !!gp.lo };
   });
   let text, repeat = null;
   const groups = groupAtoms(atoms, perAtomColor);
-  if (groups.length === 1 && COUNTABLE.has(groups[0].op) && groups[0].atoms.length > 1) {
-    text = `${groups[0].op} to end`;
+  if (round && groups.length === 1 && !COUNTABLE.has(groups[0].op) && groups[0].atoms.length > 2 && groups[0].op !== 'CO' && groups[0].op !== 'BO') {
+    text = `${groups[0].op} around`; // "k2tog around (8 sts)"
+    const cs = cellsOf(groups[0].atoms);
+    tokens.push({ text, from: cs[0], to: cs[cs.length - 1] + 1, rep: false });
+  } else if (groups.length === 1 && COUNTABLE.has(groups[0].op) && groups[0].atoms.length > 1 && !shortRow) {
+    text = round ? (groups[0].op === 'k' ? 'knit' : 'purl') : `${groups[0].op} to end`;
     const cs = cellsOf(groups[0].atoms);
     tokens.push({ text, from: cs[0], to: cs[cs.length - 1] + 1, rep: false });
   } else {
@@ -819,7 +1065,9 @@ export function rowWording(chart, r, opts = {}) {
       const lo = Math.min(...atoms.filter((a) => a.cells.length).map((a) => R.map[a.cells[0]].col));
       aligned = (s) => { const a = atoms[s]; if (!a.cells.length) return false; const c = R.map[a.cells[0]].col, b = rs ? c + 1 : c; return ((b - lo - el) % rp.width + rp.width) % rp.width === 0; };
     }
-    const fr = findRepeat(atoms, perAtomColor, rp || null, aligned);
+    let fr = shortRow ? null : findRepeat(atoms, perAtomColor, rp || null, aligned);
+    // a round's own repeat (a crown's *k4, k2tog) may differ from the pattern's
+    if (!fr && round && rp) fr = findRepeat(atoms, perAtomColor, null, null);
     if (fr) {
       const pre = atoms.slice(0, fr.s), rep = atoms.slice(fr.s, fr.s + fr.L), suf = atoms.slice(fr.s + fr.n * fr.L);
       tokens.push(...bracketTokens(tok(groupAtoms(pre, perAtomColor), false)));
@@ -832,11 +1080,11 @@ export function rowWording(chart, r, opts = {}) {
       if (suf.length) {
         tokens.push({ text: `rep from * to last ${sufNeed === 1 ? 'st' : `${sufNeed} sts`}`, from: null, to: null, rep: false, glue: '; ' });
         tokens.push(...bracketTokens(tok(groupAtoms(suf, perAtomColor), false)));
-      } else tokens.push({ text: 'rep from * to end', from: null, to: null, rep: false, glue: '; ' });
+      } else tokens.push({ text: round ? 'rep from * around' : 'rep from * to end', from: null, to: null, rep: false, glue: '; ' });
     } else {
       const T = bracketTokens(tok(groups, false));
       // "to end" after a bind-off; "k to last n sts" for a long plain stretch near the end
-      if (!perAtomColor && T.length > 1) {
+      if (!perAtomColor && T.length > 1 && !shortRow) {
         const last = T[T.length - 1], before = T[T.length - 2];
         if (last.kind === 'count' && before.kind === 'BO' && before.lo) last.text = `${last.op} to end`;
         else {
@@ -853,12 +1101,14 @@ export function rowWording(chart, r, opts = {}) {
     }
     text = tokens.map((t, i) => (i ? t.glue || ', ' : '') + t.text).join('');
   }
+  if (shortRow) text += ', turn';
   if (colored && uniformSlot) text = `with ${uniformSlot}, ${text}`;
-  const count = ids ? atoms.reduce((t, a) => t + a.cells.length, 0) : R.map.length;
-  const prevCount = ids ? raw.reduce((t, a) => t + a.uses, 0) : R.prevCols.length;
+  let count = ids ? atoms.reduce((t, a) => t + a.cells.length, 0) : R.map.length;
+  let prevCount = ids ? raw.reduce((t, a) => t + a.uses, 0) : R.prevCols.length;
+  if (chart.round) { count = R.ring.length; prevCount = R.prevCols.length - R.held.length; }
   const islands = R.runs.length > 1;
   for (const t of tokens) { delete t.need; delete t.kind; delete t.op; delete t.n; delete t.lo; }
-  return { r, rs, label, text, tokens, repeat, count, prevCount, countChanged: count !== prevCount, islands, part: ids ? ids.join('+') : -1, slot: uniformSlot, atoms, warnings };
+  return { r, rs, label, text, tokens, repeat, count, prevCount, countChanged: count !== prevCount && !shortRow, round, shortRow, islands, part: ids ? ids.join('+') : -1, slot: uniformSlot, atoms, warnings };
 }
 
 // Where cell k of row r sits in the wording: {token, rep, reps, st, of}
@@ -899,38 +1149,43 @@ const TIMES = ['zero times', 'once', 'twice', 'three times', 'four times', 'five
 const times = (n) => TIMES[n] || `${n} times`;
 const rowText = (w, r) => w.text + (w.countChanged && r > 1 && w.count ? ` (${sts(w.count)})` : '');
 
-// pass 3: merge identical rows and repeating blocks of rows. list: [{r, t}] (consecutive rows)
+// pass 3: merge identical rows and repeating blocks of rows. list: [{r, t, n?, unit?, side?}] (consecutive
+// rows). n is the row's number as written (default r), unit 'Row' or 'Rnd' (default 'Row'), side 'RS' |
+// 'WS' for rows (default by parity) and none for rounds.
 function mergeRows(list) {
   const out = [];
-  const side = (x) => (x % 2 ? 'RS' : 'WS');
+  const L = list.map((x) => ({ ...x, n: x.n ?? x.r, unit: x.unit || 'Row' }));
+  const sideOf = (x) => (x.unit === 'Rnd' ? null : x.side || (x.n % 2 ? 'RS' : 'WS'));
+  const same = (x, y) => x.unit === y.unit;
   let i = 0;
-  while (i < list.length) {
+  while (i < L.length) {
     let best = null;
     // identical consecutive rows
-    let L = 1;
-    while (i + L < list.length && list[i + L].t === list[i].t && list[i + L].r === list[i].r + L) L++;
-    if (L >= 2) best = { p: 1, L };
+    let n1 = 1;
+    while (i + n1 < L.length && L[i + n1].t === L[i].t && L[i + n1].n === L[i].n + n1 && same(L[i + n1], L[i])) n1++;
+    if (n1 >= 2) best = { p: 1, L: n1 };
     // a block of p rows repeating the p rows before it
     for (let p = 2; p <= 8 && i - p >= 0; p++) {
       let n = 0;
-      while (i + n < list.length && list[i + n].t === list[i + n - p].t && list[i + n].r === list[i].r + n && list[i - p].r === list[i].r - p) n++;
+      while (i + n < L.length && L[i + n].t === L[i + n - p].t && L[i + n].n === L[i].n + n && L[i - p].n === L[i].n - p && same(L[i + n], L[i]) && same(L[i - p], L[i])) n++;
       if (n >= p && (!best || n > best.L)) best = { p, L: n };
     }
-    const a = list[i].r;
+    const a = L[i].n, u = L[i].unit, us = u === 'Rnd' ? 'Rnds' : 'Rows', lu = u === 'Rnd' ? 'rnd' : 'row';
     if (best && best.p === 1) {
-      const b = list[i + best.L - 1].r;
-      const sides = new Set(); for (let q = a; q <= b; q++) sides.add(side(q));
-      out.push({ rows: [a, b], label: `Rows ${a}–${b}${sides.size === 1 ? ` (${[...sides][0]})` : ''}`, text: list[i].t });
+      const b = L[i + best.L - 1].n;
+      const sides = new Set(); for (let q = i; q < i + best.L; q++) sides.add(sideOf(L[q]));
+      const sd = u === 'Rnd' ? '' : sides.size === 1 ? ` (${[...sides][0]})` : '';
+      out.push({ rows: [L[i].r, L[i + best.L - 1].r], label: `${us} ${a}–${b}${sd}`, text: L[i].t });
       i += best.L;
     } else if (best) {
-      const b = list[i + best.L - 1].r;
-      const s0 = list[i - best.p].r, s1 = list[i - 1].r;
+      const b = L[i + best.L - 1].n;
+      const s0 = L[i - best.p].n, s1 = L[i - 1].n;
       const full = Math.floor(best.L / best.p), q = best.L % best.p;
-      const then = q ? `, then ${q === 1 ? `row ${s0}` : `rows ${s0}–${s0 + q - 1}`} once more` : '';
-      out.push({ rows: [a, b], label: `Rows ${a}–${b}`, text: `rep rows ${s0}–${s1} ${times(full)}${then}` });
+      const then = q ? `, then ${q === 1 ? `${lu} ${s0}` : `${lu}s ${s0}–${s0 + q - 1}`} once more` : '';
+      out.push({ rows: [L[i].r, L[i + best.L - 1].r], label: `${us} ${a}–${b}`, text: `rep ${lu}s ${s0}–${s1} ${times(full)}${then}` });
       i += best.L;
     } else {
-      out.push({ rows: [a, a], label: `Row ${a} (${side(a)})`, text: list[i].t });
+      out.push({ rows: [L[i].r, L[i].r], label: u === 'Rnd' ? `Rnd ${a}` : `Row ${a} (${sideOf(L[i])})`, text: L[i].t });
       i++;
     }
   }
@@ -941,6 +1196,7 @@ function mergeRows(list) {
 // -> {lines: [{kind, label, text, rows, part, depth}], text, abbreviations, keys}
 //   keys: Map 'r' | 'r|part' -> {r, ids} (which stitches each row line describes; for roundTrip)
 export function writtenPattern(chart, opts = {}) {
+  if (chart.round) return writtenRound(chart, opts);
   const def = chart.def;
   const colored = chart.slotsUsed.size > 1;
   const noun0 = (() => { const p = def.parts || def.islands || 'part'; return Array.isArray(p) ? p[0] : p; })();
@@ -949,7 +1205,11 @@ export function writtenPattern(chart, opts = {}) {
   if (opts.name || def.name) lines.push({ kind: 'title', label: '', text: opts.name || def.name });
   if (opts.source || def.source) info(`Stitch pattern: ${opts.source || def.source}.`);
   const yarns = opts.yarns || def.slots;
-  if (yarns && typeof Object.values(yarns)[0] === 'string') info('Yarn: ' + [...chart.slotsUsed].sort().map((k) => `${k} ${yarns[k]}`).join(', ') + '.');
+  const named = yarns && typeof Object.values(yarns)[0] === 'string' ? [...chart.slotsUsed].sort().map((k) => `${k} ${yarns[k]}`).join(', ') : '';
+  // (Change 2) patterns rewritten in Change 2 name their yarn weight, needles and gauge
+  if (named || def.gauge) info(`Yarn: ${[named, yarnWeight(def.gauge)].filter(Boolean).join('; ')}.`);
+  if (def.gauge && needlesLine(def)) { const nl = needlesLine(def); info(`Needles: ${nl[0].toUpperCase() + nl.slice(1)}.`); }
+  if (def.gauge) info(`Gauge: ${def.gauge.sts} sts = ${def.gauge.per || 4}" (10 cm) in stockinette.`);
   info(`Size: ${chart.width} sts × ${chart.height} rows, scaled down for the game.`);
   for (const n of def.notes || []) info(`Note: ${n}`);
   const first = chart.row(1);
@@ -987,6 +1247,104 @@ export function writtenPattern(chart, opts = {}) {
   return { lines, text, abbreviations, keys, warnings };
 }
 
+// (Change 2) The written pattern of a round piece: Yarn, Needles, Gauge and Size lines, the cast-on and
+// join, then section by section ("Cuff:", "Heel flap (…):"), "Rnd n: …" for rounds, "Row n (RS|WS): …"
+// in flat sections, each step's own line, "Change to DPNs …" where the needles change, the bind-off when
+// stitches are left, and the finishing. Rounds and rows are numbered from 1 in each section.
+const yarnWeight = (g) => (g ? `${g.yarn} weight (${g.sts} sts = ${g.per || 4}" in stockinette)` : '');
+function needlesLine(def) {
+  if (def.needlesText) return def.needlesText;
+  const L = def.needles || [];
+  const parts = [];
+  for (const n of L) {
+    const t = n.kind === 'circular' ? `${n.len || 16}" circular needle` : n.kind === 'dpn' ? `a set of ${(n.n || 4) + 1} DPNs` : 'a pair of straight needles';
+    if (!parts.includes(t)) parts.push(t);
+  }
+  return parts.length ? parts.join(' and ') : '';
+}
+function needleChange(n) {
+  if (n.text) return n.text;
+  if (n.kind === 'dpn') {
+    const c = n.counts || [];
+    const even = c.length && c.every((x) => x === c[0]);
+    return `Change to DPNs${c.length ? ` (${even ? `${c[0]} sts on each of ${c.length} needles` : c.join(', ') + ' sts'})` : ''}.`;
+  }
+  if (n.kind === 'circular') return `Change to the ${n.len || 16}" circular needle.`;
+  return 'Change to straight needles.';
+}
+function roundEndText(chart, r) {
+  if (chart.def.bindOff) return chart.def.bindOff;
+  const R = chart.row(r);
+  const cells = R.map;
+  const kinds = new Set(cells.map((e) => e.stitch));
+  if (kinds.has('k') && kinds.has('p') && kinds.size === 2) {
+    const stacked = cells.every((e) => { const b = chart.cell(r - 1, e.col); return b && b.s === e.stitch; });
+    return stacked ? 'Bind off loosely in rib.' : 'Bind off in pattern.';
+  }
+  return 'Bind off loosely.';
+}
+function writtenRound(chart, opts = {}) {
+  const def = chart.def;
+  const colored = chart.slotsUsed.size > 1;
+  const lines = [];
+  const info = (text) => lines.push({ kind: 'info', label: '', text });
+  if (opts.name || def.name) lines.push({ kind: 'title', label: '', text: opts.name || def.name });
+  if (opts.source || def.source) info(`Stitch pattern: ${opts.source || def.source}.`);
+  const yarns = opts.yarns || def.slots;
+  const named = yarns && typeof Object.values(yarns)[0] === 'string' ? [...chart.slotsUsed].sort().map((k) => `${k} ${yarns[k]}`).join(', ') : '';
+  const wt = yarnWeight(def.gauge);
+  if (named || wt) info(`Yarn: ${[named, wt].filter(Boolean).join('; ')}.`);
+  const nl = needlesLine(def);
+  if (nl) info(`Needles: ${nl[0].toUpperCase() + nl.slice(1)}.`);
+  if (def.gauge) info(`Gauge: ${def.gauge.sts} sts = ${def.gauge.per || 4}" (10 cm) in stockinette.`);
+  let rnds = 0, rws = 0;
+  for (let r = 1; r <= chart.height; r++) { const u = chart.rowNo(r).unit; if (u === 'Rnd') rnds++; else if (u === 'Row') rws++; }
+  const co = chart.castOnCols.length;
+  const sz = rnds ? `${co} sts around × ${rnds} rnds${rws ? ` and ${rws} rows` : ''}` : `${co} sts × ${rws} rows`;
+  info(`Size: ${sz}, scaled down for the game.`);
+  for (const n of def.notes || []) info(`Note: ${n}`);
+  for (const l of def.preamble || []) info(l);
+  const firstCell = chart.cell(chart.firstRow, chart.castOnCols[chart.castOnCols.length - 1]);
+  info(`Cast on ${co} sts${colored && firstCell ? ` in ${firstCell.slot}` : ''}.`);
+  const keys = new Map(), warnings = [];
+  const used = new Set(['st', 'sts']);
+  let hdr = 0, list = [], depth = 0;
+  const flush = () => { for (const l of mergeRows(list)) lines.push({ kind: 'row', depth, ...l }); list = []; };
+  // the last row worked: its stitches are bound off if any are left at the end
+  const H = chart.height;
+  let lastWorked = H; while (lastWorked > 1 && chart.row(lastWorked).step && ZERO_HEIGHT_STEPS.has(chart.row(lastWorked).step.kind)) lastWorked--;
+  const leftAtEnd = chart.row(H).ring.length > 0;
+  let sec = null;
+  for (let r = 1; r <= H; r++) {
+    const s = chart.sectionAt(r);
+    if (s !== sec) { flush(); sec = s; if (s && s.label) { lines.push({ kind: 'section', label: '', text: s.label.endsWith(':') ? s.label : s.label + ':' }); hdr++; } }
+    const nd = chart.needleAt(r);
+    if (nd && nd.from === r && r > 1 && (def.needles || []).indexOf(nd) > 0) { flush(); lines.push({ kind: 'needles', label: '', text: needleChange(nd) }); }
+    const R = chart.row(r);
+    if (R.step) {
+      flush();
+      lines.push({ kind: 'step', label: '', text: R.step.text, rows: [r, r], step: R.step.kind });
+    } else {
+      const w = rowWording(chart, r);
+      for (const a of w.atoms) used.add(a.op);
+      if (w.atoms.some((a) => a.rem)) used.add('rem');
+      warnings.push(...w.warnings.map((m) => `row ${r}: ${m}`));
+      const no = chart.rowNo(r);
+      list.push({ r, n: no.n, unit: no.unit, side: no.unit === 'Row' ? (R.rs ? 'RS' : 'WS') : null, t: rowText(w, r) });
+      keys.set(hdr ? `${no.n}|${hdr}` : `${no.n}`, { r, ids: -1 });
+    }
+    if (r === lastWorked && leftAtEnd) { flush(); lines.push({ kind: 'end', label: '', text: roundEndText(chart, r) }); }
+  }
+  flush();
+  if (def.finishing) lines.push({ kind: 'end', label: '', text: def.finishing });
+  used.add('BO');
+  if ([...used].some((u) => u === 'k' || u === 'p')) { used.add('k'); used.add('p'); }
+  const text = lines.map((l) => (l.label ? `${l.label}: ` : '') + l.text).join('\n');
+  const abbreviations = [...used].filter((a) => GLOSSARY[a]).map((a) => ({ abbr: a, meaning: GLOSSARY[a] }));
+  for (const [term, re] of ROUND_TERMS) if (re.test(text) && !abbreviations.some((a) => a.abbr === term)) abbreviations.push({ abbr: term, meaning: ROUND_GLOSSARY[term] });
+  return { lines, text, abbreviations, keys, warnings };
+}
+
 // ---------------------------------------------------------------- round trip: text -> rows -> tokens
 
 // split "a, b, [c, d] 3 times, turn, cast on 2 sts, turn" into items at bracket depth 0
@@ -1011,17 +1369,22 @@ function splitItems(t) {
 
 // parseRowText('p2, *k2, p2; rep from * to end', 14, rs) -> [{op, slot}] (one per atom)
 // `width` = stitches on the left needle at the start of the row (for "to end" / "to last n").
-export function parseRowText(text, width, rs = true) {
-  let t = text.replace(/\s*\(\d+ sts?\)$/, '');
+export function parseRowText(text, width, rs = true, round = false) {
+  let t = text.replace(/\s*\(\d+ sts?\)$/, '').replace(/, turn$/, '');
   let slot = '';
   const wm = t.match(/^with (\w), /); if (wm) { slot = wm[1]; t = t.slice(wm[0].length); }
   const out = [];
   let left = width;
+  if (round && (t === 'knit' || t === 'purl')) { for (let i = 0; i < width; i++) out.push({ op: t[0], slot }); return out; }
+  { const am = round && t.match(/^(\S+) around$/); if (am) { const nd = NEED(am[1]); for (let i = 0; i < width / nd; i++) out.push({ op: am[1], slot }); return out; } }
+  t = t.replace(/; rep from \* around$/, '; rep from * to end');
   const plainOp = rs ? 'k' : 'p';
   const exec = (raw, sink) => {
     let m;
     const push = (op, sl, need) => { sink.push({ op, slot: sl }); left -= need; };
     if ((m = raw.match(/^turn, cast on (\d+) sts?(?: ([A-D]))?, turn$/))) { for (let i = 0; i < +m[1]; i++) push('CO', m[2] || slot, 0); return; }
+    if ((m = raw.match(/^cast on (\d+) sts?(?: ([A-D]))? over the gap$/))) { for (let i = 0; i < +m[1]; i++) push('CO', m[2] || slot, 0); return; }
+    if ((m = raw.match(/^(sl1 wyi[bf])(?: ([A-D]))?$/))) { push(m[1], m[2] || slot, 1); return; }
     if ((m = raw.match(/^cast on (\d+) sts?(?: ([A-D]))?$/))) { for (let i = 0; i < +m[1]; i++) push('CO', m[2] || slot, -1); return; }
     if ((m = raw.match(/^bind off rem (\d+) sts?$/))) { for (let i = 0; i < +m[1]; i++) push('BO', '', 1); return; }
     if (raw === 'fasten off') { push('BO', '', 1); return; }
@@ -1076,6 +1439,13 @@ export function parseWrittenPattern(text) {
     if (/^[A-Z][\w ,]*( \([^)]*\))?:$/.test(line)) { partNo++; part = partNo; continue; }
     const key = (r) => (part === null ? `${r}` : `${r}|${part}`);
     if ((m = line.match(/^Row (\d+) \((?:RS|WS)\): (.*)$/))) { rows.set(key(+m[1]), m[2]); continue; }
+    if ((m = line.match(/^Rnd (\d+): (.*)$/))) { rows.set(key(+m[1]), m[2]); continue; }
+    if ((m = line.match(/^Rnds (\d+)–(\d+): rep rnds (\d+)–(\d+) ([\w ]+?)(?:, then rnds? (\d+)(?:–(\d+))? once more)?$/))) {
+      const [a, b, s0, s1] = [+m[1], +m[2], +m[3], +m[4]];
+      for (let r = a; r <= b; r++) rows.set(key(r), rows.get(key(s0 + ((r - a) % (s1 - s0 + 1)))));
+      continue;
+    }
+    if ((m = line.match(/^Rnds (\d+)–(\d+): (.*)$/))) { for (let r = +m[1]; r <= +m[2]; r++) rows.set(key(r), m[3]); continue; }
     if ((m = line.match(/^Rows (\d+)–(\d+): rep rows (\d+)–(\d+) ([\w ]+?)(?:, then rows? (\d+)(?:–(\d+))? once more)?$/))) {
       const [a, b, s0, s1] = [+m[1], +m[2], +m[3], +m[4]];
       for (let r = a; r <= b; r++) rows.set(key(r), rows.get(key(s0 + ((r - a) % (s1 - s0 + 1)))));
@@ -1092,7 +1462,7 @@ export function roundTripRow(chart, r, text, part = -1) {
   if (text == null) text = w.text;
   const tag = `row ${r}${part !== -1 && part != null ? ` (${w.label.split(' · ')[0]})` : ''}`;
   let ops;
-  try { ops = parseRowText(text, w.prevCount, w.rs); } catch (e) { return `${tag}: ${e.message} in "${text}"`; }
+  try { ops = parseRowText(text, w.prevCount, w.rs, w.round); } catch (e) { return `${tag}: ${e.message} in "${text}"`; }
   const colored = chart.slotsUsed.size > 1;
   const want = w.atoms.map((a) => a.op + (colored && a.op !== 'BO' ? a.slot : ''));
   const got = ops.map((o) => o.op + (colored && o.op !== 'BO' ? o.slot : ''));
@@ -1110,10 +1480,11 @@ export function roundTrip(chart, opts) {
   for (const [key, { r, ids }] of wp.keys) {
     if (!rows.has(key)) { errs.push(`row ${r}: missing from the written pattern (${key})`); continue; }
     const e = roundTripRow(chart, r, rows.get(key), ids); if (e) errs.push(e);
-    const n = rowAtoms(chart, r).filter((a) => inPart(chart, r, a, ids)).length;
+    const n = ids == null || ids === -1 ? rowAtoms(chart, r).length : rowAtoms(chart, r).filter((a) => inPart(chart, r, a, ids)).length;
     cover.set(r, (cover.get(r) || 0) + n);
   }
   for (let r = 1; r <= chart.height; r++) {
+    if (chart.round && chart.row(r).step) continue; // step lines are checked by their counts instead (D.2, D.5)
     const n = rowAtoms(chart, r).length;
     if ((cover.get(r) || 0) !== n) errs.push(`row ${r}: the written pattern describes ${cover.get(r) || 0} of its ${n} stitches and bind-offs`);
   }

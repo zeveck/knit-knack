@@ -3,7 +3,7 @@
 // shape, stitch, color, cables, parts}. The three layers are built with patternKit.js from a
 // silhouette (ASCII art whose letters are the color slots), a texture and motifs, and every
 // one is checked by tools/check-patterns.mjs with chart.js (the code the game runs).
-import { knit, pic, rect, widths, symmetric, mirror, polygon, stretch, tile, framed, motif, TEX, rsCells } from './patternKit.js';
+import { knit, pic, rect, widths, symmetric, mirror, polygon, stretch, tile, framed, motif, TEX, rsCells, Round, ribOps, hatChart, sockChart, mittenChart } from './patternKit.js';
 import { parseChart, rowWording } from './chart.js';
 
 // ---------------------------------------------------------------- suggested yarn colors
@@ -37,6 +37,16 @@ const at = (fn) => (r, c, i) => fn(i.r, i.c, i);           // texture from absol
 const odd = (r) => r % 2 === 1;
 const garterRows = (p, a, b) => p.texture('garter', { rows: [a, b] });
 const ko = (s) => rsCells(s);                                  // an RS row written in knitting order -> chart cells
+
+// ---------------------------------------------------------------- (Change 2) knitting in the round
+// Yarn weights and gauges (CHANGE_2.md A): chunky for most round pieces, super bulky for the headband
+// and the yoke sweater, aran for the lace sock.
+const CHUNKY = { sts: 12, per: 4, yarn: 'chunky' }, SUPER = { sts: 10, per: 4, yarn: 'super bulky' }, ARAN = { sts: 18, per: 4, yarn: 'aran' };
+const JOG = 'Stripes knit in the round show a small step (the jog) where each round begins. To hide it, slip the first st of the 2nd rnd of each new color purlwise; the game knits it plain and shows the jog.';
+const ED2 = { edition: 2 };
+// a chart built by patternKit's round helpers, as the piece add() takes
+const roundPiece = (d) => ({ ragged: [], def: () => d });
+const seq = (n) => Array.from({ length: n }, (_, i) => i);
 
 // one friendly line per pattern (the book card and Cast On); the technical detail is in Read the pattern
 const BLURB = {
@@ -98,6 +108,11 @@ const add = (meta, piece) => {
     repeat: meta.repeat, wear: meta.wear || null, finishing: meta.finishing, slots: meta.slots, touch: meta.touch || null,
     shape: d.shape, stitch: d.stitch, color: d.color, cables: d.cables, parts: meta.parts || null,
     partLabels: meta.partLabels || null, notes: meta.notes || null, drape: meta.drape || null,
+    // (Change 2) the chart edition (2 for the patterns rewritten for knitting in the round), and for
+    // those: yarn weight and gauge, needles, the object's shape kind, the round chart's sections and steps
+    edition: meta.edition || 1, gauge: meta.gauge || null, needlesText: meta.needlesText || null, kind: meta.kind || null, bindOff: meta.bindOff || null,
+    preamble: meta.preamble || null,
+    ...(d.round ? { round: true, flat: d.flat, sections: d.sections, steps: d.steps, needles: d.needles } : {}),
   });
 };
 
@@ -122,16 +137,24 @@ add({ id: 'seed-bookmark', name: 'Seed Stitch Bookmark', chapter: 1, technique: 
   slots: { A: Y('honey', 'cotton') }, touch: { kind: 'tassel', at: 'top' } },
 knit(rect(7, 22)).texture('seed'));
 
-add({ id: 'ribbed-wristwarmer', name: 'Ribbed Wristwarmer', chapter: 1, technique: '1×1 rib',
-  source: '1×1 rib (k1, *p1, k1)', repeat: { width: 2, edges: 1, rows: 2 }, wear: { slot: 'hands', fit: 'pair' },
-  finishing: pairOf('Finishing: make a back the same. Place right sides together and seam both side edges, leaving a thumb gap on one side 3 rows below the top (3 rows long). Turn out, weave in the ends.'),
+add({ id: 'ribbed-wristwarmer', name: 'Ribbed Wristwarmer', chapter: 1, technique: '1×1 rib, seamed into a tube', ...ED2,
+  source: '1×1 rib over an even count (*k1, p1 on every row), knit flat and seamed once into a tube', repeat: { width: 2, edges: 0, rows: 1 },
+  wear: { slot: 'hands', fit: 'pair' }, kind: 'ring', gauge: CHUNKY, needlesText: 'a pair of straight needles',
+  finishing: 'Finishing: fold the piece with the right side out so the two side edges meet, and seam them with mattress stitch to make a tube, leaving a 2-row gap for the thumb 3 rows below the top. Weave in the ends. Make a second one the same for the pair.',
   slots: { A: Y('plum', 'wool'), B: Y('cream', 'wool', 'Stripe') } },
-knit(rect(13, 14)).texture('rib1').colors((r) => (r === 3 || r === 4 || r === 11 || r === 12 ? 'B' : null)));
+knit(rect(24, 12)).texture((r, c) => (c % 2 ? 'k' : 'p')).colors((r) => (r === 3 || r === 4 || r === 9 || r === 10 ? 'B' : null)));
 
-add({ id: 'striped-headband', name: 'Striped Headband', chapter: 1, technique: 'Stripes in 2×2 rib',
-  source: '2×2 rib (k2, *p2, k2), 4-row stripes in 3 slots', repeat: { width: 4, edges: 2, rows: 2 }, wear: { slot: 'head', fit: 'band' },
-  finishing: RING, slots: { A: Y('cranberry'), B: Y('cream', 'wool', 'Stripe 2'), C: Y('honey', 'wool', 'Stripe 3') } },
-knit(rect(10, 36)).texture('rib2').colors((r) => 'ABC'[Math.floor((r - 1) / 4) % 3]));
+{
+  const b = new Round(40).castOn(seq(40)).needle({ kind: 'circular', len: 16 }).join('A');
+  const SL = 'AABBCCBBAA';
+  b.rounds(10, ribOps('kkpp'), { slot: (j, s, i) => SL[i] });
+  add({ id: 'striped-headband', name: 'Striped Headband', chapter: 1, technique: 'Stripes in 2×2 rib, in the round', ...ED2,
+    source: '2×2 rib in the round (*k2, p2), 2-rnd stripes in 3 colors', repeat: { width: 4, edges: 0, rows: 2, at: 2 },
+    wear: { slot: 'head', fit: 'band' }, kind: 'ring', gauge: SUPER, notes: [JOG],
+    finishing: 'Finishing: weave in the ends and block lightly.',
+    slots: { A: Y('cranberry'), B: Y('cream', 'wool', 'Stripe 2'), C: Y('honey', 'wool', 'Stripe 3') } },
+  roundPiece(b.def()));
+}
 
 add({ id: 'basketweave-mug-cozy', name: 'Basketweave Mug Cozy', chapter: 1, technique: 'Knit and purl blocks',
   source: 'Basketweave (k4/p4 blocks, offset every 4 rows) between garter rows', repeat: { width: 8, edges: 4, rows: 8 },
@@ -172,85 +195,73 @@ const sockRows = (p, legL) => {
   return { leg, cuff };
 };
 
-add({ id: 'rolled-brim-beanie', name: 'Rolled-Brim Beanie', chapter: 2, technique: 'Crown decreases',
-  source: 'Stockinette with a rolled brim (4 rows of reverse stockinette that roll outward), crown decreases (ssk at the right edge, k2tog at the left)',
-  repeat: { width: 1, edges: 0, rows: 2 }, wear: { slot: 'head', fit: 'dome' },
-  finishing: backSeam('the brim (cast-on edge)'), slots: { A: Y('sage'), B: Y('cream', 'wool', 'Brim') } },
-knit(crown(18, 12, 8)).shape().texture('reverse', { rows: [1, 4] }).texture('stockinette', { rows: [5, 20] })
-  .colors((r) => (r <= 4 ? 'B' : null)));
+add({ id: 'rolled-brim-beanie', name: 'Rolled-Brim Beanie', chapter: 2, technique: 'In the round, with crown decreases', ...ED2,
+  source: 'Stockinette in the round (the cast-on edge rolls outward by itself), the crown decreased in 8 wedges (*k4, k2tog, one st fewer each time) and gathered',
+  repeat: { width: 1, edges: 0, rows: 1 }, wear: { slot: 'head', fit: 'dome' }, kind: 'dome', gauge: CHUNKY, notes: [JOG],
+  finishing: 'Finishing: weave in the ends. The brim rolls up by itself.', slots: { A: Y('sage'), B: Y('cream', 'wool', 'Brim') } },
+roundPiece(hatChart({ co: 48, brim: [9, () => 'k'], labels: { brim: 'Brim and body' }, crown: { wedges: 8, everyOther: 2 },
+  slot: (j, s, i, part) => (part === 'brim' && i < 4 ? 'B' : 'A') })));
 
-add({ id: 'moss-ear-warmer', name: 'Moss Stitch Ear Warmer', chapter: 2, technique: 'Edge increases and decreases',
-  source: 'Moss stitch (2-row blocks, 4-row repeat), ends tapered with M1 increases and k2tog/ssk decreases',
-  repeat: { width: 2, edges: 0, rows: 4 }, wear: { slot: 'head', fit: 'band' },
-  finishing: 'Finishing: weave in the ends and block. Sew the tapered ends together to make a ring.',
-  slots: { A: Y('plum') } },
-knit(widths(26, [20, 22, 24, 26, 26, 24, 22, 20])).shape().texture('moss', { origin: [1, 0] }));
+{
+  const b = new Round(56).castOn(seq(56)).needle({ kind: 'circular', len: 16 }).join('A');
+  b.rounds(8, (j, i) => ((j + Math.floor(i / 2)) % 2 ? 'p' : 'k'), { slot: 'A' });
+  add({ id: 'moss-ear-warmer', name: 'Moss Stitch Ear Warmer', chapter: 2, technique: 'Moss stitch in the round', ...ED2,
+    source: 'Moss stitch in the round (2 rnds *k1, p1, then 2 rnds *p1, k1; 4-rnd repeat), cinched at the front',
+    repeat: { width: 2, edges: 0, rows: 4, at: 2 }, wear: { slot: 'head', fit: 'band' }, kind: 'ring', gauge: CHUNKY, bindOff: 'Bind off in pattern.',
+    touch: { kind: 'cinch', at: 'front', slot: 'A' },
+    finishing: 'Finishing: wrap a short length of the yarn tightly round the front of the band 8 times to cinch it, sew the ends in on the inside, and weave in the ends.',
+    slots: { A: Y('plum') } },
+  roundPiece(b.def()));
+}
 
-add({ id: 'bobble-hat', name: 'Bobble Hat', chapter: 2, technique: 'Ribbed brim and pom-pom',
-  source: '2×2 rib brim, stockinette body with a stripe, crown decreases', repeat: { width: 4, edges: 2, rows: 2 },
-  wear: { slot: 'head', fit: 'dome' }, touch: { kind: 'pompom', at: 'top', slot: 'B' },
-  finishing: backSeam('the brim (cast-on edge)').replace('Weave in', 'Make a pom-pom in B and sew it to the top. Weave in'),
+add({ id: 'bobble-hat', name: 'Bobble Hat', chapter: 2, technique: 'Ribbed brim and pom-pom, in the round', ...ED2,
+  source: '2×2 rib brim, stockinette body with a stripe, crown decreased in 8 wedges and gathered, all in the round', repeat: { width: 4, edges: 0, rows: 1, at: 2 },
+  wear: { slot: 'head', fit: 'dome' }, kind: 'dome', gauge: CHUNKY, touch: { kind: 'pompom', at: 'top', slot: 'B' }, notes: [JOG],
+  finishing: 'Finishing: make a pom-pom in B and sew it to the gathered top. Weave in the ends.',
   slots: { A: Y('cranberry'), B: Y('cream', 'wool', 'Brim and stripe') } },
-knit(crown(18, 13, 9)).shape().texture('rib2', { rows: [1, 6] }).texture('stockinette', { rows: [7, 22] })
-  .colors((r) => (r <= 6 || r === 11 || r === 12 ? 'B' : null)));
-
-add({ id: 'broken-rib-cowl', name: 'Broken Rib Cowl', chapter: 2, technique: 'Broken rib',
-  source: 'Broken rib (RS: k1, *p1, k1; WS: purl)', repeat: { width: 2, edges: 1, rows: 2 }, wear: { slot: 'neck', fit: 'band' },
-  finishing: TUBE, slots: { A: Y('rust'), B: Y('cream', 'wool', 'Stripe') } },
-knit(rect(25, 14)).texture('brokenRib').colors((r) => (r === 3 || r === 4 || r === 11 || r === 12 ? 'B' : null)));
+roundPiece(hatChart({ co: 48, brim: [5, ribOps('kkpp')], body: [5, () => 'k'], crown: { wedges: 8, everyOther: 2 },
+  slot: (j, s, i, part) => (part === 'brim' || (part === 'body' && (i === 2 || i === 3)) ? 'B' : 'A') })));
 
 {
-  const mitt = (hole) => {
-    const a = rect(13, 18); a[18 - 12] = hole; // row 12: the thumb hole
-    return knit(a).shape().texture('rib1', { rows: [1, 5] }).texture('stockinette', { rows: [6, 14] }).texture('rib1', { rows: [15, 18] })
-      .colors((r) => (r <= 5 || r >= 15 ? 'B' : null));
-  };
-  const p = mitt('AAAAAAAA...AA');
-  // the second mitt has its thumb hole 2 sts from the other edge: its rows 12 and 13, worded by chart.js
-  const left = parseChart({ ...mitt('AA...AAAAAAAA').def(), slots: { A: 1, B: 1 } });
-  const lw = (r) => rowWording(left, r).text.replace(/^with \w, /, '');
-  add({ id: 'fingerless-mitts', name: 'Fingerless Mitts', chapter: 2, technique: 'A thumb hole',
-    source: '1×1 rib cuffs, stockinette, a one-row thumb hole (BO 3 under a gap, CO 3 across it)', repeat: { width: 2, edges: 1, rows: 2 },
-    wear: { slot: 'hands', fit: 'pair' },
-    finishing: `Finishing: work a back as the front, in the same colors, without the thumb hole. Place right sides together and seam both side edges, leaving the cuff and the top open. Turn out, weave in the ends. Make a second mitt the mirror image for the other hand: work its row 12 as "${lw(12)}" and its row 13 as "${lw(13)}".`,
+  const b = new Round(60).castOn(seq(60)).needle({ kind: 'circular', len: 16 }).join('A');
+  b.rounds(10, (j, i) => (i % 2 ? 'k' : 'kp'[j % 2]), { slot: (j, s, i) => (i === 2 || i === 3 || i === 6 || i === 7 ? 'B' : 'A') });
+  add({ id: 'broken-rib-cowl', name: 'Broken Rib Cowl', chapter: 2, technique: 'Broken rib in the round', ...ED2,
+    source: 'Broken rib in the round (Rnd 1: *k1, p1; Rnd 2: knit)', repeat: { width: 2, edges: 0, rows: 2, at: 2 },
+    wear: { slot: 'neck', fit: 'band' }, kind: 'ring', gauge: CHUNKY, notes: [JOG], bindOff: 'Bind off loosely.',
+    finishing: 'Finishing: weave in the ends and block lightly.', slots: { A: Y('rust'), B: Y('cream', 'wool', 'Stripe') } },
+  roundPiece(b.def()));
+}
+
+{
+  const b = new Round(24).castOn(seq(24)).needle({ kind: 'dpn', n: 3, counts: [8, 8, 8] }).join('B');
+  b.section('Cuff').rounds(5, ribOps('kp'), { slot: 'B' });
+  b.section('Hand and thumb hole').rounds(7, () => 'k', { slot: 'A' });
+  b.work('k'.repeat(10) + '_'.repeat(4) + 'k'.repeat(10), { slot: 'A' }); // the thumb hole: BO 4
+  b.work('k'.repeat(10) + '+'.repeat(4) + 'k'.repeat(10), { slot: 'A' }); // CO 4 over the gap
+  b.rounds(2, () => 'k', { slot: 'A' });
+  b.section('Top edge').rounds(3, ribOps('kp'), { slot: 'B' });
+  add({ id: 'fingerless-mitts', name: 'Fingerless Mitts', chapter: 2, technique: 'A thumb hole, in the round', ...ED2,
+    source: '1×1 rib cuffs, stockinette in the round on DPNs, a one-round thumb hole (BO 4, then CO 4 over the gap on the next round)', repeat: { width: 2, edges: 0, rows: 1, at: 2 },
+    wear: { slot: 'hands', fit: 'pair' }, kind: 'mitten', gauge: CHUNKY,
+    finishing: 'Finishing: weave in the ends, tidying the corners of the thumb hole. Make a second mitt the same: the thumb hole sits at the side, so the pair fits either hand.',
     slots: { A: Y('mustard'), B: Y('charcoal', 'wool', 'Cuffs') } },
-  p);
+  roundPiece(b.def()));
 }
 
-{
-  const p = knit(sockArt(14, 10, 3, 3, 4, 7, 3, 24)).shape();
-  const { cuff } = sockRows(p, 4);
-  p.texture('stockinette').texture('rib2', { rows: [cuff, p.H] });
-  add({ id: 'cozy-sock', name: 'Cozy Sock', chapter: 2, technique: 'Heel and toe shaping',
-    source: 'Stockinette sock in profile: rounded heel and toe shaped at the edges, the instep decreased to the ankle, 2×2 rib cuff',
-    repeat: { width: 4, edges: 2, rows: 2, at: cuff }, wear: { slot: 'feet', fit: 'pair' },
-    finishing: pairOf(backSeam('the cuff (bind-off edge)', true)), notes: [INTARSIA],
-    slots: { A: Y('sky'), B: Y('cream', 'wool', 'Heel, toe and cuff') } },
-  p);
-}
+add({ id: 'cozy-sock', name: 'Cozy Sock', chapter: 2, technique: 'Heel flap, gusset and toe', ...ED2,
+  source: 'Cuff-down sock in the round: 2×2 rib cuff, stockinette leg, slipped heel flap, heel turned with short rows, gusset picked up and decreased, wedge toe grafted with Kitchener stitch',
+  repeat: { width: 4, edges: 0, rows: 1, at: 2 }, wear: { slot: 'feet', fit: 'pair' }, kind: 'sock', gauge: CHUNKY,
+  finishing: 'Finishing: weave in the ends. Make a second sock the same for the pair.',
+  slots: { A: Y('sky'), B: Y('cream', 'wool', 'Heel, toe and cuff') } },
+roundPiece(sockChart({ co: 24, gusset: 5, cuff: 4, cuffOp: ribOps('kkpp'), leg: 6, flapRows: 9, heelTo: 8, foot: 4, toeTo: 8,
+  slots: { main: 'A', cuff: 'B', heel: 'B', toe: 'B' } })));
 
-// mitten: cuff, thumb gusset grown with M1s at the right edge, then thumb and hand separately
-const MITTEN = stretch(`
-..AAAAAAAA.......
-.AAAAAAAAAA......
-AAAAAAAAAAAA.....
-AAAAAAAAAAAA..AA.
-AAAAAAAAAAAA.AAAA
-AAAAAAAAAAAA.AAAA
-AAAAAAAAAAAAAAAA.
-AAAAAAAAAAAAAAA..
-AAAAAAAAAAAAAA...
-AAAAAAAAAAAAA....
-AAAAAAAAAAAAA....
-BBBBBBBBBBBBB....
-BBBBBBBBBBBBB....
-BBBBBBBBBBBBB....`, 22);
-add({ id: 'chunky-mitten', name: 'Chunky Mitten', chapter: 2, technique: 'Thumb gusset',
-  source: 'Stockinette, 1×1 rib cuff, thumb grown out with M1s, then thumb and hand worked separately',
-  repeat: { width: 2, edges: 1, rows: 2 }, wear: { slot: 'hands', fit: 'pair' }, parts: 'part', partLabels: ['Thumb', 'Hand'],
-  finishing: pairOf(backSeam('the cuff (cast-on edge)', true)),
+add({ id: 'chunky-mitten', name: 'Chunky Mitten', chapter: 2, technique: 'Thumb gusset, in the round', ...ED2,
+  source: 'Mitten in the round on DPNs: 1×1 rib cuff, a thumb gusset increased between markers, the thumb sts held on waste yarn, the hand decreased at both sides and gathered, then the thumb picked up and knit',
+  repeat: { width: 2, edges: 0, rows: 1, at: 2 }, wear: { slot: 'hands', fit: 'pair' }, kind: 'mitten', gauge: CHUNKY,
+  finishing: 'Finishing: weave in the ends, closing any little gap at the base of the thumb. Make a second mitten the same: the thumb sits at the side, so it fits either hand.',
   slots: { A: Y('teal', 'chunky'), B: Y('cream', 'chunky', 'Cuff') } },
-knit(MITTEN).shape().texture('rib1', { rows: [1, 5] }).texture('stockinette', { rows: [6, 22] }).colors((r) => (r <= 5 ? 'B' : 'A')));
+roundPiece(mittenChart({ hA: 9, hB: 9, cuff: [4, ribOps('kp')], hand: [6, () => 'k'], top: { to: 8, plain: 1 }, thumb: 3, slots: { main: 'A', cuff: 'B' } })));
 
 // =====================================================================================
 // Chapter 3. Colorwork
@@ -321,109 +332,93 @@ knit(rect(16, 16)).colors((r, c) => ((Math.floor((r - 1) / 4) + Math.floor(c / 4
 }
 
 {
-  const BERRY = pic(`
-  CCCCCCCCCCCCCCCC
-  CCCCCCCCCCCCCCCC
-  CCCCCCCCCCCCCCCC
-  ACCCACCCCCCACCCA
-  AACAAACCCCAAACAA
-  AAAAAAACCAAAAAAA
-  AAAAAAAAAAAAAAAA
-  AAAAAAAAAAAAAAAA
-  AAAAAAAAAAAAAAAA
-  AAAAAAAAAAAAAAAA
-  AAAAAAAAAAAAAAAA
-  AAAAAAAAAAAAAAAA
-  .AAAAAAAAAAAAAA.
-  .AAAAAAAAAAAAAA.
-  ..AAAAAAAAAAAA..
-  ..AAAAAAAAAAAA..
-  ...AAAAAAAAAA...
-  ....AAAAAAAA....`);
-  add({ id: 'strawberry-pouch', name: 'Strawberry Pouch', chapter: 3, technique: 'Stranded polka dots',
-    source: 'Stranded polka dots (single seed dots in B on stockinette, every 4th st, offset every 2 rows; carry B loosely behind), leafy top in C',
-    repeat: { width: 4, edges: 0, rows: 4, at: 1 },
-    finishing: 'Finishing: make a back the same. Place right sides together and seam the sides and the base, leaving the top open. Turn out. Thread a drawstring of C through the top rows.',
+  // knit from the tip: 8 sts every 4th column, increased to 32 (each M1 in the free column after its sts)
+  const b = new Round(32).castOn(seq(8).map((i) => 4 * i + 3)).needle({ kind: 'dpn', n: 3, counts: [3, 3, 2] }).join('A');
+  b.section('Tip');
+  b.work('k'.repeat(8), { slot: 'A' });
+  for (const k of [1, 2, 3]) { b.work(('k'.repeat(k) + 'm').repeat(8), { slot: 'A' }); b.work('k'.repeat(8 * (k + 1)), { slot: 'A' }); }
+  const seeds = b.r + 1;
+  b.section('Seeds');
+  b.rounds(6, () => 'k', { slot: (j, s, i) => (i % 2 === 0 && (j + (i % 4 === 2 ? 2 : 0)) % 4 === 1 ? 'B' : 'A') });
+  b.section('Leaves and eyelets');
+  b.rounds(2, () => 'k', { slot: 'C' });
+  b.work('<o'.repeat(16), { slot: 'C' });
+  b.rounds(2, () => 'k', { slot: 'C' });
+  add({ id: 'strawberry-pouch', name: 'Strawberry Pouch', chapter: 3, technique: 'Stranded dots, in the round', ...ED2,
+    source: 'Knit in the round from the tip: 8 sts increased to 32 (*k1, M1L; then *k2, M1L; then *k3, M1L), stranded seed dots in B (every 4th st, offset), leafy rounds in C with an eyelet round (*k2tog, yo) for the drawstring',
+    repeat: { width: 4, edges: 0, rows: 4, at: seeds }, kind: 'dome', gauge: CHUNKY,
+    notes: ['Strand the seeds: carry B loosely behind the work between the dots.'],
+    finishing: 'Finishing: thread the cast-on tail through the 8 cast-on sts at the tip, pull tight and fasten off on the inside. Make a twisted cord of C about 12" long and thread it in and out of the eyelets for the drawstring. Weave in the ends.',
     slots: { A: Y('red', 'cotton'), B: Y('honey', 'cotton', 'Seeds'), C: Y('leaf', 'cotton', 'Leaves') }, touch: { kind: 'drawstring', at: 'top', slot: 'C' } },
-  knit(BERRY).shape().colors((r, c, i) => {
-    const R = i.r, C = i.c;
-    if (R < 2 || R > 12) return null;
-    return ((R % 4 === 2 && C % 4 === 1) || (R % 4 === 0 && C % 4 === 3)) ? 'B' : null;
-  }, { where: (r, c) => true }));
+  roundPiece(b.def()));
 }
 
-const SNOW = pic(`
-B..B..B
-.B.B.B.
-..BBB..
-BBB.BBB
-..BBB..
-.B.B.B.
-B..B..B`);
-const MITTEN2 = stretch(`
-..AAAAAAAAAA.......
-.AAAAAAAAAAAA......
-AAAAAAAAAAAAAA.....
-AAAAAAAAAAAAAA..AA.
-AAAAAAAAAAAAAA.AAAA
-AAAAAAAAAAAAAA.AAAA
-AAAAAAAAAAAAAA.AAAA
-AAAAAAAAAAAAAAAAAA.
-AAAAAAAAAAAAAAAAA..
-AAAAAAAAAAAAAAAA...
-AAAAAAAAAAAAAAA....
-AAAAAAAAAAAAAAA....
-AAAAAAAAAAAAAAA....
-AAAAAAAAAAAAAAA....
-AAAAAAAAAAAAAAA....`, 24);
-add({ id: 'snowflake-mitten', name: 'Snowflake Mitten', chapter: 3, technique: 'Stranded motif',
-  source: 'Stranded snowflake motif (7 sts × 9 rows) on a stockinette mitten, 1×1 rib cuff with a stripe, thumb gusset',
-  repeat: { width: 2, edges: 1, rows: 2 }, wear: { slot: 'hands', fit: 'pair' }, parts: 'part', partLabels: ['Thumb', 'Hand'],
-  finishing: pairOf(backSeam('the cuff (cast-on edge)', true)),
-  slots: { A: Y('navy'), B: Y('cream', 'wool', 'Snowflake') } },
-knit(MITTEN2).shape().texture('rib1', { rows: [1, 5] }).texture('stockinette', { rows: [6, 24] })
-  .colors((r) => (r === 3 ? 'B' : null))
-  .paint(stretch(SNOW, 9), 4, 10).paint(['B.B.B.B.B.B.B.B'], 0, 7));
+{
+  const SNOW = pic(`
+  B..B..B
+  .B.B.B.
+  ..BBB..
+  BBB.BBB
+  ..BBB..
+  .B.B.B.
+  B..B..B`);
+  const snow = motif(SNOW, { tileX: false, tileY: false });
+  // the hand: the snowflake on the back of the hand (sts 1–12 of the round), a lice check on the palm
+  const hand = (j, i) => ({ s: 'k', slot: j < 12 ? (snow(i, j - 2) ? 'B' : 'A') : (i % 2 === 1 && (j - 12) % 4 === 1 ? 'B' : 'A') });
+  add({ id: 'snowflake-mitten', name: 'Snowflake Mitten', chapter: 3, technique: 'Stranded motif, in the round', ...ED2,
+    source: 'Stranded snowflake (7 sts × 7 rnds) on the back of the hand and a lice check on the palm, on a mitten in the round: 1×1 rib cuff with a stripe, thumb gusset between markers, thumb picked up and knit',
+    repeat: { width: 2, edges: 0, rows: 1, at: 2 }, wear: { slot: 'hands', fit: 'pair' }, kind: 'mitten', gauge: CHUNKY,
+    notes: ['Strand the snowflake and the lice, carrying the yarn not in use loosely behind.'],
+    finishing: 'Finishing: weave in the ends, closing any little gap at the base of the thumb. Make a second mitten the same, but with the snowflake on sts 13–24 of the hand rounds and the lice on sts 1–12, so the snowflake sits on the back of the left hand.',
+    slots: { A: Y('navy'), B: Y('cream', 'wool', 'Snowflake') } },
+  roundPiece(mittenChart({ hA: 11, hB: 11, cuff: [4, ribOps('kp'), (j, s, i) => (i === 2 ? 'B' : 'A')], hand: [8, hand], top: { to: 8, plain: 0 }, thumb: 4, slots: { main: 'A', cuff: 'A' } })));
+}
 
 {
   // argyle: 8-st × 12-row diamonds (rows 2, 4, 4, 6, 6, 8, 8, 6, 6, 4, 4, 2 sts wide, so they
-  // never pinch), alternating B and C, crossed by D overcheck lines
+  // never pinch), alternating B and C, crossed by D overcheck lines, across the whole flat leg
   const DW = [2, 4, 4, 6, 6, 8, 8, 6, 6, 4, 4, 2];
   const argyle = (r, c) => {
     const yi = ((r - 1) % 12 + 12) % 12, x = ((c % 8) + 8) % 8 + 0.5, y = yi + 0.5;
     const cx = Math.floor(c / 8), cy = Math.floor((r - 1) / 12);
-    // overcheck lines: each tile's diagonals, through the diamond centres and the corners
     const d1 = Math.abs(x - y * (8 / 12)), d2 = Math.abs(8 - x - y * (8 / 12));
     if (d1 < 0.5 || d2 < 0.5) return 'D';
     if (Math.abs(x - 4) >= DW[yi] / 2) return 'A';
     return (cx + cy) % 2 ? 'C' : 'B';
   };
-  const p = knit(sockArt(20, 16, 4, 4, 4, 10, 3, 28)).shape();
-  const { leg, cuff } = sockRows(p, 4);
-  p.texture('stockinette').texture('rib2', { rows: [cuff, p.H] });
-  // one band of diamonds on the leg, above a plain A foot and instep
-  p.colors((r, c) => argyle(r, c), { rows: [cuff - 12, cuff - 1], cols: [4, 19], origin: [cuff - 12, 4] });
-  add({ id: 'argyle-sock', name: 'Argyle Sock', chapter: 3, technique: 'Argyle',
-    source: 'Argyle (8-st × 12-row diamonds in two colors with diagonal overcheck lines), worked as intarsia on the leg of a profile sock',
-    repeat: { width: 8, edges: 0, rows: 12, at: cuff - 12 }, wear: { slot: 'feet', fit: 'pair' },
-    finishing: pairOf(backSeam('the cuff (bind-off edge)', true).replace('in the same colors', 'in the same colors (the argyle may be left off the back)')),
+  const LEG = [...seq(6), ...seq(12).map((i) => 11 + i), ...seq(6).map((i) => 28 + i)]; // the leg's columns, left to right
+  const leg = (j, i, N, rs, c) => {
+    const p = LEG.indexOf(c);
+    if (i < 4) return { s: (23 - p) % 4 < 2 ? 'k' : 'p', slot: 'B' }; // 2×2 rib, seen from the front
+    return { s: 'k', slot: argyle(i - 3, p) };
+  };
+  add({ id: 'argyle-sock', name: 'Argyle Sock', chapter: 3, technique: 'Argyle, then in the round', ...ED2,
+    source: 'Argyle (8-st × 12-row diamonds in two colors with diagonal overcheck lines) in intarsia on a leg knit flat, as argyle socks are, seamed up the back; then heel flap, turn, gusset, foot and wedge toe in the round',
+    repeat: { width: 8, edges: 0, rows: 12, at: 5 }, wear: { slot: 'feet', fit: 'pair' }, kind: 'sock', gauge: CHUNKY,
+    needlesText: 'a set of 4 DPNs (2 of them used as straight needles for the flat leg)',
     notes: ['Knit the diamonds in intarsia, with a bobbin for each diamond and each area of A between them; twist the yarns at every color change to avoid holes. Work the D overcheck lines afterwards in duplicate stitch, following the chart.'],
+    finishing: 'Finishing: weave in the ends. Make a second sock the same for the pair.',
     slots: { A: Y('navy'), B: Y('honey', 'wool', 'Diamonds, heel, toe, cuff'), C: Y('cranberry', 'wool', 'Diamonds 2'), D: Y('cream', 'wool', 'Lines') } },
-  p);
+  roundPiece(sockChart({ co: 24, gusset: 5, flapRows: 9, heelTo: 8, foot: 3, toeTo: 8, slots: { main: 'A', heel: 'B', toe: 'B' },
+    legFlat: { rows: 16, op: leg, seamText: 'Fold the leg so its side edges meet at the back, and seam them with mattress stitch from the cuff down to the needle.' } })));
 }
 
 // =====================================================================================
 // Chapter 4. Cables and Texture
 // =====================================================================================
 
-add({ id: 'cable-headband', name: 'Cable Headband', chapter: 4, technique: 'Rope cable',
-  source: 'Rope cable: C4F every 6th row, between p2 and edge stitches', repeat: { width: 4, edges: 6, rows: 6 },
-  wear: { slot: 'head', fit: 'band' }, finishing: RING, slots: { A: Y('cream') } },
-knit(rect(10, 36)).texture(at((r, c) => {
-  if (c === 0 || c === 9) return 'k';
-  if (c <= 2 || c >= 7) return 'p';
-  return r % 6 === 5 ? 'F' : 'k';
-})));
+{
+  const b = new Round(48).castOn(seq(48)).needle({ kind: 'circular', len: 16 }).join('A');
+  for (let i = 0; i < 10; i++) {
+    const cab = i === 2 || i === 8; // rnds 3 and 9: every 6th rnd
+    b.work(seq(8).flatMap(() => ['p', 'p', cab ? { s: 'x', cable: 'C4F' } : 'k', cab ? 'x' : 'k', cab ? 'x' : 'k', cab ? 'x' : 'k']), { slot: 'A' });
+  }
+  add({ id: 'cable-headband', name: 'Cable Headband', chapter: 4, technique: 'Rope cables, in the round', ...ED2,
+    source: 'Rope cables in the round: *p2, k4, with C4F every 6th rnd', repeat: { width: 6, edges: 0, rows: 6, at: 2 },
+    wear: { slot: 'head', fit: 'band' }, kind: 'ring', gauge: CHUNKY, bindOff: 'Bind off in pattern.',
+    finishing: 'Finishing: weave in the ends and block lightly.', slots: { A: Y('cream') } },
+  roundPiece(b.def()));
+}
 
 add({ id: 'aran-mug-cozy', name: 'Aran Mug Cozy', chapter: 4, technique: 'Cables on seed stitch',
   source: 'Aran rope cables (C4B every 4th row) framed by p1, on a seed-stitch ground', repeat: { width: 8, edges: 4, rows: 4 },
@@ -435,14 +430,20 @@ knit(rect(20, 12)).texture(at((r, c) => {
   return (r + c) % 2 === 1 ? 'k' : 'p';
 })));
 
-add({ id: 'honeycomb-cowl', name: 'Honeycomb Cowl', chapter: 4, technique: 'Two-stitch cables',
-  source: 'Honeycomb (C2B, C2F, then C2F, C2B 4 rows later; 8-row repeat) in a garter edge', repeat: { width: 4, edges: 4, rows: 8 },
-  wear: { slot: 'neck', fit: 'band' }, finishing: TUBE, slots: { A: Y('mint') } },
-(() => {
-  const p = knit(rect(24, 16)); garterRows(p, 1, 2); garterRows(p, 15, 16);
-  const hc = tile(['kkkk', 'RRFF', 'kkkk', 'kkkk', 'kkkk', 'FFRR', 'kkkk', 'kkkk']); // cables on rows 3 and 7 of 8
-  return p.texture(framed(hc, { left: 2, edge: 'garter' }), { rows: [3, 14] });
-})());
+{
+  const b = new Round(56).castOn(seq(56)).needle({ kind: 'circular', len: 16 }).join('A');
+  const k = 'k'.repeat(56), p = 'p'.repeat(56);
+  b.section('Garter ridge').work(p, { slot: 'A' }).work(k, { slot: 'A' });
+  b.section('Honeycomb');
+  const cross = (t1, t2) => seq(14).flatMap(() => [{ s: 'x', cable: t1 }, 'x', { s: 'x', cable: t2 }, 'x']);
+  for (let i = 0; i < 8; i++) b.work(i === 0 ? cross('C2B', 'C2F') : i === 4 ? cross('C2F', 'C2B') : k, { slot: 'A' });
+  b.section('Garter ridge').work(k, { slot: 'A' }).work(p, { slot: 'A' });
+  add({ id: 'honeycomb-cowl', name: 'Honeycomb Cowl', chapter: 4, technique: 'Two-stitch cables, in the round', ...ED2,
+    source: 'Honeycomb in the round (*C2B, C2F, then *C2F, C2B 4 rnds later; 8-rnd repeat) between garter ridges (a purl and a knit round)',
+    repeat: { width: 4, edges: 0, rows: 8, at: 4 }, wear: { slot: 'neck', fit: 'band' }, kind: 'ring', gauge: CHUNKY, bindOff: 'Bind off loosely.',
+    finishing: 'Finishing: weave in the ends and block lightly.', slots: { A: Y('mint') } },
+  roundPiece(b.def()));
+}
 
 add({ id: 'bobble-cushion', name: 'Bobble Cushion', chapter: 4, technique: 'Bobbles',
   source: 'Bobble diamonds: purl-stitch diamond outlines on stockinette with a bobble (MB) at each centre', repeat: { width: 10, edges: 1, rows: 10 },
@@ -455,14 +456,20 @@ knit(rect(21, 20)).texture((r, c) => {
   return d === 0 ? 'b' : d === 5 ? 'p' : 'k';
 }).colors((r, c) => (c % 10 === 5 && (r - 1) % 10 === 4 ? 'B' : null)));
 
-add({ id: 'fisherman-beanie', name: 'Fisherman Beanie', chapter: 4, technique: 'Cable in rib',
-  source: '2×2 rib with a centre rope cable (C4F every 6th row, between p3), crown decreases', repeat: { width: 4, edges: 2, rows: 2 },
-  wear: { slot: 'head', fit: 'dome' }, finishing: backSeam('the brim (cast-on edge)'), slots: { A: Y('oatmeal') } },
-knit(crown(22, 13, 9)).shape().texture(at((r, c) => {
-  if (c === 7 || c === 8 || c === 13 || c === 14) return 'p';
-  if (c >= 9 && c <= 12) return r % 6 === 5 ? 'F' : 'k';
-  return c % 4 < 2 ? 'k' : 'p';
-})));
+add({ id: 'fisherman-beanie', name: 'Fisherman Beanie', chapter: 4, technique: 'Cables in rib, in the round', ...ED2,
+  source: '2×2 rib brim, then *p2, k4 rope cables (C4F every 6th rnd) in the round, the crown decreased in the purls and then across the cables, and gathered',
+  repeat: { width: 6, edges: 0, rows: 6, at: 6 }, wear: { slot: 'head', fit: 'dome' }, kind: 'dome', gauge: CHUNKY,
+  finishing: 'Finishing: weave in the ends.', slots: { A: Y('oatmeal') } },
+roundPiece(hatChart({ co: 48, brim: [4, ribOps('kkpp')],
+  body: [8, (j, i) => { const u = j % 6; if (u < 2) return 'p'; if (i === 1 || i === 7) return u === 2 ? { s: 'x', cable: 'C4F' } : 'x'; return 'k'; }],
+  crown: (b) => {
+    b.work('qkkkk'.repeat(8)); // *p2tog, k4 (40)
+    b.work('pkkkk'.repeat(8));
+    b.work('p<>'.repeat(8)); // *p1, k2tog, ssk (24)
+    b.work('pkk'.repeat(8));
+    b.work('p<'.repeat(8)); // *p1, k2tog (16)
+    b.work('<'.repeat(8)); // k2tog around (8)
+  } })));
 
 add({ id: 'braided-scarf-panel', name: 'Braided Scarf Panel', chapter: 4, technique: 'Plait cable',
   source: '9-st plait (braid) cable: C6F, k3, then 4 rows later k3, C6B (8-row repeat), between p2', repeat: { width: 9, edges: 4, rows: 8 },
@@ -543,23 +550,14 @@ knit(rect(13, 40)).texture(at((r, c) => {
   })());
 }
 
-{
-  const p = knit(sockArt(17, 12, 4, 4, 4, 11, 3, 26)).shape();
-  const { leg, cuff } = sockRows(p, 5);
-  const A = ko('pp' + 'ko>pp'.repeat(2)), B = ko('pp' + '<okpp'.repeat(2)), WS = 'ppkkkppkkkpp';
-  p.texture('stockinette');
-  p.texture(at((r, c) => {
-    const lc = c - 5;
-    if (r >= cuff || r % 2 === 0 || r <= leg) return WS[lc];
-    return r % 4 === 1 ? A[lc] : B[lc];
-  }), { rows: [leg, p.H], cols: [5, 16] });
-  add({ id: 'lace-sock', name: 'Lace Sock', chapter: 5, technique: 'Lace rib',
-    source: 'Lace rib on the leg (RS rows: p2, *k1, yo, ssk, p2; then p2, *k2tog, yo, k1, p2), k3/p2 rib cuff, profile sock with shaped heel and toe',
-    repeat: { width: 5, edges: 2, rows: 4, at: leg }, wear: { slot: 'feet', fit: 'pair' },
-    finishing: pairOf(backSeam('the cuff (bind-off edge)', true)), notes: [INTARSIA],
-    slots: { A: Y('rose'), B: Y('plum', 'wool', 'Heel, toe and cuff') } },
-  p);
-}
+add({ id: 'lace-sock', name: 'Lace Sock', chapter: 5, technique: 'Lace rib, in the round', ...ED2,
+  source: 'Lace rib in the round on the leg and the instep (*k1, yo, ssk, p2; then *k2tog, yo, k1, p2), *p2, k3 rib cuff, heel flap and turn, gusset, wedge toe grafted',
+  repeat: { width: 5, edges: 0, rows: 2, at: 4 }, wear: { slot: 'feet', fit: 'pair' }, kind: 'sock', gauge: ARAN,
+  finishing: 'Finishing: weave in the ends and block lightly to open the lace. Make a second sock the same for the pair.',
+  slots: { A: Y('rose'), B: Y('plum', 'wool', 'Heel, toe and cuff') } },
+roundPiece(sockChart({ co: 30, gusset: 5, backSplit: [8, 7], cuff: 2, cuffOp: ribOps('ppkkk'), leg: 8, legOps: (i) => (i % 2 ? 'pp<ok' : 'ppko>').repeat(6),
+  flapRows: 9, heelTo: 9, foot: 3, toeTo: 10, instepOps: (i) => (i % 2 ? '<okpp' : 'ko>pp').repeat(3),
+  slots: { main: 'A', cuff: 'B', heel: 'B', toe: 'B' } })));
 
 {
   const chev = ko('k' + '>kkkkokokkkk<'.repeat(2) + 'k');
@@ -809,39 +807,40 @@ knit(dome(22, 10, [22, 22, 20, 20, 20, 20, 18, 18, 16, 16, 14, 14, 10, 10])).sha
   .BBBB.
   ..BB..
   .B..B.`);
-  const W = 20;
-  const rows = [];
-  // top first: cuff (garter, B), leg (14 sts, cols 6-19) with the band, foot (20 sts), sole CO 18
-  for (let i = 0; i < 7; i++) rows.push('......' + 'B'.repeat(14));
-  for (let i = 0; i < 15; i++) rows.push('......' + 'A'.repeat(14));
-  rows.push('...BB' + 'A'.repeat(15), '..BBB' + 'A'.repeat(15), '.BBBB' + 'A'.repeat(15));
-  for (let i = 0; i < 7; i++) rows.push('BBBBB' + 'A'.repeat(11) + 'BBBB');
-  rows.push('.BBBB' + 'A'.repeat(11) + 'BBB.');
-  const p = knit(rows).shape({ singles: (r) => (r >= 28 ? 'rs' : 'any') });
-  const H = rows.length; // 33
-  p.texture('stockinette', { rows: [1, H - 7] }).texture('garter', { rows: [H - 6, H] });
-  p.colors(motif(PEERIE), { rows: [17, 23], cols: [7, 18], origin: [17, 7] });
-  p.colors((lr, lc, i) => (p.col[i.r][i.c] === 'A' ? 'C' : null), { rows: [17, 23], cols: [6, 19] });
-  add({ id: 'holiday-stocking', name: 'Holiday Stocking', chapter: 7, technique: 'Stranded band on a stocking',
-    source: 'Stranded peerie band (6-st, 7-row diamond band) on stockinette, garter cuff; heel and toe shaped at the edges, the toe bound off at the ankle',
-    repeat: { width: 6, edges: 2, rows: 7, at: 17 }, touch: { kind: 'loop', at: 'top-right' },
-    notes: ['Work the heel and toe blocks in intarsia, with a separate bobbin of B for each; twist the yarns at every color change. Strand the peerie band, carrying the yarn not in use loosely behind.'],
-    finishing: 'Finishing: make a back the same (the mirror image). Place right sides together and seam round, leaving the top open. Turn out, add a hanging loop of B at the heel side of the cuff and weave in the ends.',
+  const peerie = motif(PEERIE);
+  add({ id: 'holiday-stocking', name: 'Holiday Stocking', chapter: 7, technique: 'A stranded band on a stocking, in the round', ...ED2,
+    source: 'Cuff-down stocking in the round: garter cuff (purl and knit rounds), stranded peerie band (6 sts × 7 rnds), heel flap and turn, gusset, foot, wedge toe grafted',
+    repeat: { width: 6, edges: 0, rows: 7, at: 6 }, touch: { kind: 'loop', at: 'top-right' }, kind: 'sock', gauge: CHUNKY,
+    notes: ['Strand the peerie band, carrying the yarn not in use loosely behind.'],
+    finishing: 'Finishing: make a hanging loop: a 3" twisted cord of B, sewn inside the back of the cuff. Weave in the ends.',
     slots: { A: Y('red'), B: Y('white', 'wool', 'Cuff, heel, toe, motif'), C: Y('forest', 'wool', 'Band') } },
-  p);
+  roundPiece(sockChart({ co: 36, gusset: 6, flapRows: 11, heelTo: 12, foot: 3, toeTo: 12, slots: { main: 'A', cuff: 'B', heel: 'B', toe: 'B' },
+    legParts: [
+      { label: 'Cuff', rnds: 4, op: (j, i) => (i % 2 ? 'k' : 'p'), slot: 'B' },
+      { label: 'Band', rnds: 7, op: (j, i) => ({ s: 'k', slot: peerie(i + 1, j) ? 'B' : 'C' }) },
+      { label: 'Leg', rnds: 1, op: () => 'k', slot: 'A' },
+    ] })));
 }
 
 {
-  // tail end at the cast-on, tapering to a ribbed neck; each leg hole is 2 rows tall
-  const a = widths(26, [...Array(18).fill(26), 24, 24, 22, 22, 22, 22, 22, 22]);
-  a[26 - 12] = 'AAA.....AAAAAAAAAA.....AAA'; // row 12: each leg hole bound off, then cast on across it in row 13
-add({ id: 'dog-sweater', name: 'Dog Sweater', chapter: 7, technique: 'Leg holes',
-    source: '2×2 rib edges, stockinette with two stripes, tapered to the neck, two leg holes worked like buttonholes (BO 5 sts for each, then CO 5 sts across each gap on the next row)',
-    repeat: { width: 4, edges: 2, rows: 2 },
-    finishing: 'Finishing: weave in the ends and block. Wrap round the dog with the rib at the neck and seam the side edges together under the belly, leaving the leg holes open. It\'s for a dog, so no doll can wear it.',
+  const b = new Round(48).castOn(seq(48)).needle({ kind: 'circular', len: 16 }).join('B');
+  const k = (n) => 'k'.repeat(n);
+  b.section('Neck').rounds(4, ribOps('kkpp'), { slot: 'B' });
+  b.section('Chest and leg openings').rounds(3, () => 'k', { slot: (j, s, i) => (i === 1 ? 'B' : 'A') });
+  b.work(k(4) + '_'.repeat(5) + k(14) + '_'.repeat(5) + k(20), { slot: 'A' });
+  b.work(k(4) + '+'.repeat(5) + k(14) + '+'.repeat(5) + k(20), { slot: 'A' });
+  b.section('Body').rounds(4, () => 'k', { slot: (j, s, i) => (i === 2 ? 'B' : 'A') });
+  b.section('Belly').work('_'.repeat(12) + k(36), { slot: 'A' });
+  b.section('Back (worked flat)').flatStart({ first: 'WS', cut: 0, span: 36 });
+  b.rounds(3, () => 'k', { slot: 'A' });
+  b.rounds(2, (j, i) => (i === 0 ? 'k' : 'p'), { slot: 'B' }); // garter: knit both rows
+  b.flatEnd();
+  add({ id: 'dog-sweater', name: 'Dog Sweater', chapter: 7, technique: 'Leg openings, in the round', ...ED2,
+    source: 'Neck-down tube in the round: 2×2 rib neck, stockinette with honey stripes, two one-round leg openings (BO 5, then CO 5 over each gap), the belly bound off and the back finished flat with a garter edge',
+    repeat: { width: 4, edges: 0, rows: 1, at: 2 }, kind: 'body', gauge: CHUNKY, bindOff: 'Bind off all sts knitwise.', notes: [JOG],
+    finishing: 'Finishing: weave in the ends and block. The flat part covers the dog\'s back and leaves the belly free. It\'s for a dog, so no doll can wear it.',
     slots: { A: Y('denim'), B: Y('honey', 'wool', 'Rib and stripes') } },
-  knit(a).shape().texture('rib2', { rows: [1, 4] }).texture('stockinette', { rows: [5, 22] }).texture('rib2', { rows: [23, 26] })
-    .colors((r) => (r <= 4 || r >= 23 || r === 7 || r === 8 || r === 16 || r === 17 ? 'B' : null)));
+  roundPiece(b.def()));
 }
 
 {
@@ -873,18 +872,13 @@ add({ id: 'dog-sweater', name: 'Dog Sweater', chapter: 7, technique: 'Leg holes'
 }
 
 {
-  // dolman front: body 24 sts, sleeves grown at the row starts and ends (an underarm at
-  // about 30 degrees), yoke band across body and sleeves, neck worked as two shoulders
-  const W = 40;
-  const rows = []; // bottom first, as [from, to] runs
-  for (let r = 1; r <= 24; r++) rows.push([[8, 31]]);
-  rows.push([[7, 33]], [[5, 34]], [[4, 36]], [[2, 37]], [[1, 39]], [[0, 39]]); // rows 25-30: the sleeves
-  for (let r = 31; r <= 40; r++) rows.push([[0, 39]]);
-  rows.push([[0, 34]], [[5, 34]], [[5, 15], [24, 30]], [[9, 15], [24, 30]], [[9, 14], [25, 30]], [[10, 14], [25, 29]]); // rows 41-46
-  const lines = rows.map((runs) => { let s = ''; for (let c = 0; c < W; c++) s += runs.some(([a, b]) => c >= a && c <= b) ? 'A' : '.'; return s; }).reverse();
+  // the body tube (48 sts) and the two sleeves' 12 sts each, joined into one yoke of 64. Columns from
+  // the left: 2 underarm sts, sleeve A, the back, sleeve B, 4 underarm sts, the front, 2 underarm sts
+  const W = 72;
+  const uA = [70, 71, 0, 1], uB = [46, 47, 48, 49];
+  const span = (a, n) => seq(n).map((i) => a + i);
+  const body = [0, 1, ...span(14, 20), ...uB, ...span(50, 20), 70, 71];
   const YOKE = pic(`
-  C.C.C.C.
-  ........
   ...B....
   ..BBB...
   .BB.BB..
@@ -892,19 +886,32 @@ add({ id: 'dog-sweater', name: 'Dog Sweater', chapter: 7, technique: 'Leg holes'
   .BB.BB..
   ..BBB...
   ...B....`);
-  const p = knit(lines).shape();
-  const rib = (r, c) => ((c + 1) % 4 < 2 ? 'k' : 'p');
-  p.texture('stockinette');
-  p.texture(rib, { rows: [1, 4] });
-  p.texture(at((r, c) => (c === 1 || c === 38 ? 'k' : 'p')), { rows: [27, 42], where: (r, c) => c <= 2 || c >= 37 }); // cuffs: p1, k1, p1
-  p.colors(motif(YOKE), { rows: [31, 39], origin: [31, 0], where: (r, c) => c > 2 && c < 37 });
-  add({ id: 'yoke-sweater', name: 'Yoke Sweater', chapter: 7, technique: 'Dolman sleeves and a yoke',
-    source: 'Stranded yoke band (8-st, 9-row diamond band) on a dolman front: 2×2 rib hem, sleeves grown over 6 rows (cast on at the row starts and M1 at the row ends, an underarm at about 30 degrees), 1×1 rib cuff columns, shoulders worked separately round the neck',
-    repeat: { width: 8, edges: 0, rows: 9, at: 31 }, wear: { slot: 'body', fit: 'body' }, parts: 'shoulder', partLabels: ['Left shoulder', 'Right shoulder'],
-    notes: ['Left and right are as worn: the left shoulder is on the right of the chart.', 'Strand the yoke band, carrying the yarn not in use loosely behind; on the cuff columns work in A only.'],
-    finishing: 'Finishing: make a back the same (or plain in A). Place right sides together and seam the shoulders and the tops of the sleeves, leaving the neck open, then seam the underarms and the sides, leaving the hem and the cuffs open. Turn out, weave in the ends and block.',
+  const yoke = motif(YOKE);
+  const b = new Round(W).castOn(body).needle({ kind: 'circular', len: 16 }).join('A');
+  b.section('Body').rounds(3, ribOps('kkpp'), { slot: 'A' }).rounds(5, () => 'k', { slot: 'A' });
+  b.hold([uA, uB], 'Place 4 sts at each underarm on waste yarn: the last 2 and first 2 sts of the rnd, and the 4 sts at the middle of the rnd.');
+  b.section('Yoke');
+  const kk = (n) => 'k'.repeat(n).split('');
+  b.work([...kk(20), ...seq(12).map((i) => ({ s: 'v', col: 45 - i })), ...kk(20), ...seq(12).map((i) => ({ s: 'v', col: 13 - i }))],
+    { slot: 'A', step: { kind: 'joining', label: 'Joining rnd', text: 'Joining rnd: k20 front sts, k12 sts of one sleeve, k20 back sts, k12 sts of the other sleeve (64 sts).' } });
+  b.rounds(1, () => 'k', { slot: (j) => (j % 4 === 1 ? 'C' : 'A') });
+  const band = b.r + 1;
+  b.rounds(7, (j, i) => ({ s: 'k', slot: yoke(i + 1, j) ? 'B' : 'A' }));
+  b.work('kk<'.repeat(16), { slot: 'A' });
+  b.rounds(1, () => 'k', { slot: 'A' });
+  b.needle({ kind: 'dpn', n: 4, counts: [8, 8, 8, 8] });
+  b.work('k<'.repeat(16), { slot: 'A' });
+  b.section('Neck').rounds(2, ribOps('kkpp'), { slot: 'A' });
+  b.graft([...uA, ...uB].map((c) => [c]), 'Graft the 4 held sts at each underarm to the 4 held sts of its sleeve with Kitchener stitch (8 sts).', 'A', 'graftUnderarm');
+  add({ id: 'yoke-sweater', name: 'Yoke Sweater', chapter: 7, technique: 'A yoke, joined in the round', ...ED2,
+    source: 'Bottom-up yoke sweater in the round: 2×2 rib hem, the body to the underarms, the sleeves joined on one circular needle, a stranded diamond band (8 sts × 7 rnds) between yoke decreases, 2×2 rib neck',
+    repeat: { width: 8, edges: 0, rows: 7, at: band }, wear: { slot: 'body', fit: 'body' }, kind: 'body', gauge: SUPER,
+    needlesText: '16" circular needle and a set of 5 DPNs (also for the sleeves)',
+    preamble: ['Sleeves (make 2, before the body, on DPNs): cast on 16 sts in A and join to work in the rnd. Work 3 rnds of *k2, p2 rib, then knit every rnd until the sleeve reaches the underarm. Place the last 2 and the first 2 sts of the rnd (4 sts) on waste yarn for the underarm, and leave the other 12 sts on a spare DPN. Make a second sleeve the same.'],
+    notes: ['Strand the yoke band and the dots, carrying the yarn not in use loosely behind.'],
+    finishing: 'Finishing: weave in the ends, closing any little gaps at the underarms, and block.',
     slots: { A: Y('cream'), B: Y('cranberry', 'wool', 'Yoke'), C: Y('sage', 'wool', 'Yoke dots') } },
-  p);
+  roundPiece(b.def()));
 }
 
 {

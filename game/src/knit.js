@@ -7,7 +7,7 @@ import { onRelease, onHold, markKnit, setKeyHandler, holdKnitter } from './input
 import * as S from './state.js';
 import * as audio from './audio.js';
 import * as toasts from './toasts.js';
-import { chartOf, suggestedSlots, pieceRender } from './render.js';
+import { recordChart, isOldEdition, flatV1Ready, loadFlatV1, suggestedSlots, pieceRender } from './render.js';
 import { yarnName, paintBallInto, sameYarn, normYarn } from './yarn.js';
 import { drawNook, drawStack, stackLayout, catHit } from './scene.js';
 import { pet, noteKnitTap } from './pet.js';
@@ -492,7 +492,7 @@ export function knitOne({ animate = true } = {}) {
     if (animate) {
       setTimeout(() => { audio.play('row'); audio.play('counter', { gain: 0.8 }); }, 130);
       if (res.r % 10 === 0) sparkleRow = { r: res.r, t0: performance.now() + 120 };
-      if (res.r === 1) tip('turn', 'The work turns. Now you knit back the other way.');
+      if (res.r === 1 && !chart.round) tip('turn', 'The work turns. Now you knit back the other way.');
       if (res.r === 3 && !S.get().tips.includes('purl-hello')) tip('purl-hello', `That's ${S.catName()} in the basket, a big fan of yarn. Tap the cat for a pet.`);
       if (res.r === 2) tip('yarn', `Tap a yarn ${layout === 'port' ? 'below' : 'on the right'} to change color, any time, on any stitch.`);
       if (res.finished) S.checkUnlocks(); else afterCounts(); // unlock toasts wait for the celebration
@@ -673,9 +673,12 @@ function equipWork() {
 export function enter(patternId) {
   if (!root) build();
   pattern = S.patternById(patternId) || S.BOOK[0];
-  chart = chartOf(pattern);
   piece = S.getPiece(pattern.id);
+  // (Change 2) a piece started before its pattern was rewritten for knitting in the round finishes flat,
+  // on its edition-1 chart; that needs patterns-flat-v1.json, which may not have loaded (offline)
+  if (piece && isOldEdition(piece, pattern) && !flatV1Ready()) { const pid = pattern.id; pattern = null; piece = null; chart = null; go('book'); needOldPattern(pid); return; }
   if (!piece) piece = S.startPiece(pattern, suggestedSlots(pattern));
+  chart = recordChart(piece, pattern);
   for (const k of Object.keys(suggestedSlots(pattern))) if (!piece.slots[k]) piece.slots[k] = suggestedSlots(pattern)[k];
   S.get().lastPiece = pattern.id;
   finishing = false; stripKey = ''; lastNextSlot = null; taps = 0;
@@ -733,5 +736,19 @@ export function knitState() {
 export function setSlotYarn(slot, y) { if (!piece) return false; piece.slots[slot] = y; S.pushRecent(y); refreshBar(); S.saveSoon(); return true; }
 export function setFreestyle(y) { if (!piece) return false; piece.follow = false; piece.free = y; S.pushRecent(y); refreshBar(); S.saveSoon(); return true; }
 export const activePiece = () => piece;
+
+// "This piece needs its old pattern." · Try again · Back. Nothing is deleted; every other piece still works.
+function needOldPattern(pid) {
+  const msg = el('p', { text: 'This piece needs its old pattern.' });
+  const again = el('button', { class: 'btn primary', text: 'Try again' });
+  const back = el('button', { class: 'btn', text: 'Back' });
+  again.addEventListener('click', async () => {
+    again.disabled = true; msg.textContent = 'Fetching the old pattern…';
+    if (await loadFlatV1()) { closeSheet(); go('knit', pid); return; }
+    again.disabled = false; msg.textContent = "This piece needs its old pattern. It couldn't be fetched just now.";
+  });
+  back.addEventListener('click', () => closeSheet());
+  openSheet('old-pattern', el('div', { class: 'detail old-pattern' }, msg, el('div', { class: 'acts' }, again, back)), { title: 'Its old pattern' });
+}
 
 registerScreen('knit', { enter: (id) => enter(id), leave });

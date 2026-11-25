@@ -20,22 +20,23 @@ const args = process.argv.slice(2);
 const has = (f) => args.includes(f);
 const quiet = has('--quiet');
 
-// the design's table: [w, h, stitches] (approximate for shaped pieces)
+// the design's table: [w, h, stitches] (approximate for shaped pieces; w, h unused). (Change 2) The 19
+// patterns knit in the round (and the wristwarmer, flat and seamed) take CHANGE_2.md A's table.
 const DESIGN = {
   'garter-dishcloth': [12, 12, 144], 'stockinette-coaster': [10, 10, 100], 'seed-bookmark': [7, 22, 154],
-  'ribbed-wristwarmer': [13, 14, 182], 'striped-headband': [10, 36, 360], 'basketweave-mug-cozy': [20, 12, 240],
-  'rolled-brim-beanie': [18, 20, 300], 'moss-ear-warmer': [26, 8, 180], 'bobble-hat': [18, 22, 340],
-  'broken-rib-cowl': [25, 14, 350], 'fingerless-mitts': [13, 18, 220], 'cozy-sock': [14, 24, 260], 'chunky-mitten': [16, 18, 230],
+  'ribbed-wristwarmer': [24, 12, 288], 'striped-headband': [40, 10, 401], 'basketweave-mug-cozy': [20, 12, 240],
+  'rolled-brim-beanie': [48, 16, 633], 'moss-ear-warmer': [56, 8, 449], 'bobble-hat': [48, 17, 681],
+  'broken-rib-cowl': [60, 10, 601], 'fingerless-mitts': [24, 19, 453], 'cozy-sock': [34, 0, 749], 'chunky-mitten': [30, 0, 516],
   'fair-isle-coaster': [13, 13, 169], 'checkerboard-washcloth': [16, 16, 256], 'heart-pillow': [20, 20, 400],
-  'star-ornament': [15, 15, 120], 'strawberry-pouch': [16, 18, 260], 'snowflake-mitten': [18, 20, 300], 'argyle-sock': [20, 28, 400],
-  'cable-headband': [10, 36, 360], 'aran-mug-cozy': [20, 12, 240], 'honeycomb-cowl': [24, 16, 384], 'bobble-cushion': [21, 20, 420],
-  'fisherman-beanie': [22, 22, 400], 'braided-scarf-panel': [13, 40, 520],
+  'star-ornament': [15, 15, 120], 'strawberry-pouch': [32, 17, 473], 'snowflake-mitten': [34, 0, 654], 'argyle-sock': [34, 0, 876],
+  'cable-headband': [48, 10, 481], 'aran-mug-cozy': [20, 12, 240], 'honeycomb-cowl': [56, 12, 673], 'bobble-cushion': [21, 20, 420],
+  'fisherman-beanie': [48, 18, 737], 'braided-scarf-panel': [13, 40, 520],
   'eyelet-dishcloth': [14, 14, 196], 'vine-lace-bookmark': [13, 28, 364], 'lace-doily': [21, 22, 462],
-  'feather-fan-shawlette': [38, 18, 684], 'lace-sock': [17, 26, 340], 'chevron-baby-blanket': [28, 28, 784],
+  'feather-fan-shawlette': [38, 18, 684], 'lace-sock': [40, 0, 869], 'chevron-baby-blanket': [28, 28, 784],
   'little-bunny': [16, 22, 220], 'cat-toy': [16, 18, 240], 'whale': [22, 14, 260], 'frog': [18, 16, 240], 'penguin': [14, 22, 260],
   'octopus': [18, 20, 280], 'fox': [18, 20, 280], 'teddy-bear': [18, 22, 300],
-  'tea-cosy': [24, 18, 380], 'holiday-stocking': [20, 34, 600], 'dog-sweater': [26, 26, 600], 'patchwork-blanket': [36, 36, 1296],
-  'yoke-sweater': [40, 40, 1200], 'cabled-cardigan': [41, 40, 1200], 'heirloom-afghan': [40, 40, 1600],
+  'tea-cosy': [22, 24, 462], 'holiday-stocking': [48, 0, 1258], 'dog-sweater': [48, 0, 831], 'patchwork-blanket': [36, 36, 1296],
+  'yoke-sweater': [72, 0, 1163], 'cabled-cardigan': [41, 48, 1191], 'heirloom-afghan': [40, 40, 1600],
 };
 const TYPES = ['wool', 'cotton', 'chunky', 'mohair', 'sparkle', 'stripe', 'velvet', 'glow'];
 const WEAR = { head: ['dome', 'band'], neck: ['band', 'hang'], body: ['body'], hands: ['pair'], feet: ['pair'], shoulders: ['drape'] };
@@ -79,13 +80,14 @@ for (const p of PATTERNS) {
   }
   // repeat rule, re-done here so it prints
   const rep = p.repeat, atRow = rep.at || 1, R = ch.row(atRow);
-  const n = R.cols.length;
+  const n = ch.round ? R.ring.length : R.cols.length;
+  if (ch.round && rep.edges) fail(id, 'a round piece has no edge stitches (repeat.edges 0)');
   if ((n - rep.edges) % rep.width) fail(id, `repeat: row ${atRow} has ${n} sts; ${n} − ${rep.edges} is not a multiple of ${rep.width}`);
   // RS-only special stitches, cable spans
   for (let r = 1; r <= ch.height; r++) {
     for (const cl of ch.cells(r)) {
       if (!cl) continue;
-      if (r % 2 === 0 && 'obx'.includes(cl.s)) fail(id, `row ${r} col ${cl.c}: '${cl.s}' on a WS row`);
+      if (!ch.rsOf(r) && 'obx'.includes(cl.s)) fail(id, `row ${r} col ${cl.c}: '${cl.s}' on a WS row`);
       if (cl.s === 'x' && !cl.cable) fail(id, `row ${r} col ${cl.c}: 'x' outside a cable span`);
     }
   }
@@ -97,8 +99,9 @@ for (const p of PATTERNS) {
       if (!below || !'kx'.includes(below.s)) fail(id, `cable ${sp.type} row ${sp.row}: col ${sp.col + i} below is not a knit column`);
     }
   }
-  // decreases lean with their edge: k2tog '<' at a run's left end, ssk '>' at its right end
-  for (let r = 2; r <= ch.height; r++) {
+  // decreases lean with their edge: k2tog '<' at a run's left end, ssk '>' at its right end (flat
+  // pieces; a round piece has no edges to shape: CHANGE_2.md D.3)
+  for (let r = 2; r <= (ch.round ? 0 : ch.height); r++) {
     for (const u of ch.row(r).runs) {
       const a = ch.cell(r, u.a).s, b = ch.cell(r, u.b).s;
       if (u.b > u.a && a === '>') fail(id, `row ${r}: ssk at the left edge (col ${u.a}) leans against the edge`);
@@ -119,7 +122,69 @@ for (const p of PATTERNS) {
   const wp = writtenPattern(ch, { name: p.name, source: p.source, yarns: yarnsOf(p) });
   if (!wp.text.includes(p.finishing)) fail(id, 'written pattern lacks the finishing');
   if (!/Cast on /.test(wp.text)) fail(id, 'written pattern lacks the cast-on');
-  if (/Rnd/.test(wp.text)) fail(id, 'written pattern says Rnd');
+  if (!ch.round && /Rnd/.test(wp.text)) fail(id, 'written pattern says Rnd');
+  if (ch.round) checkRound(p, ch, wp);
+  if ((p.edition || 1) > 1) for (const l of ['Yarn: ', 'Needles: ', 'Gauge: ', 'Size: ']) if (!wp.text.split('\n').some((x) => x.startsWith(l) && (l !== 'Size: ' || /scaled down for the game/.test(x)))) fail(id, `written pattern lacks its "${l.trim()}" line`);
+}
+
+// ---------------------------------------------------------------- (Change 2) round pieces: CHANGE_2.md D.2 and D.4
+function checkRound(p, ch, wp) {
+  const id = p.id;
+  if (!p.gauge) fail(id, 'a round piece needs a gauge {sts, per, yarn}');
+  const spi = p.gauge ? p.gauge.sts / (p.gauge.per || 4) : 3;
+  if (!wp.text.includes('Join to work in the rnd') && !ch.flatAt(1)) fail(id, 'no join');
+  // every round section's repeat: whole repeats, edges 0, on its repeat row (above) and steps
+  for (let r = 1; r <= ch.height; r++) {
+    const R = ch.row(r);
+    if (!R.step) continue;
+    const st = R.step, t = st.text, taps = R.map.length;
+    const num = (re) => { const m = t.match(re); return m ? +m[1] : null; };
+    const used = R.map.reduce((a, e) => a + e.takes.length, 0);
+    if (st.kind === 'join' || st.kind === 'seam' || st.kind === 'hold' || st.kind === 'gather' || st.kind === 'graft' || st.kind === 'graftUnderarm') {
+      // zero-height steps: the live count before − what they take = the live count after (outCols)
+      if (R.prevCols.length - used !== R.cols.length) fail(id, `row ${r} (${st.kind}): ${R.prevCols.length} live − ${used} taken ≠ ${R.cols.length} after`);
+    }
+    const want = {
+      join: () => 1,
+      seam: () => { const f = ch.flatRanges.find((x) => x.to === r - 1); return f ? Math.ceil((f.to - f.from + 1) / 2) : null; },
+      hold: () => { const nx = ch.row(r + 1); const n0 = (R.prevCols.length ? ch.row(r - 1).held.length : 0); const n = num(/(\d+) (?:thumb )?sts/); const each = /each/.test(t); return nx && n != null && nx.held.length - n0 === n * (each ? taps : 1) ? taps : -1; },
+      gather: () => { const n = num(/rem (\d+) sts/); return n === R.prevCols.length - R.held.length ? n : -1; },
+      graft: () => { const n = num(/Kitchener stitch \((\d+) sts?\)/), rem = num(/rem (\d+) sts/); return rem === 2 * n && used === rem ? n : -1; },
+      graftUnderarm: () => num(/\((\d+) sts\)/),
+    }[st.kind];
+    let expected;
+    if (want) expected = want();
+    else {
+      // rounds with their own text (set-up, joining, thumb, markers, to the centre): the k counts and the
+      // picked-up counts add up to the taps
+      const body = t.replace(/\(\d+ sts?\)/g, '');
+      expected = [...body.matchAll(/\b[kK](\d+)\b/g)].reduce((a, m) => a + +m[1], 0) + [...body.matchAll(/pick up and k (\d+)/g)].reduce((a, m) => a + +m[1], 0);
+      const tot = num(/\((\d+) sts\)\.?$/);
+      if (tot != null && tot !== R.ring.length) fail(id, `row ${r} (${st.kind}): says ${tot} sts, has ${R.ring.length}`);
+    }
+    if (expected !== taps) fail(id, `row ${r} (${st.kind}): ${taps} taps, its wording says ${expected} ("${t}")`);
+  }
+  // needles fit (D.4): a circular holds a round at least its length around; a DPN holds 2 to 14 sts
+  // (loosened from 3: an 8-st tip or crown on 3 or 4 DPNs is how real knitters work it)
+  const N = p.needles || [];
+  if (!N.length) fail(id, 'no needles');
+  N.forEach((n, i) => {
+    const to = i + 1 < N.length ? N[i + 1].from - 1 : ch.height;
+    if (n.kind === 'circular') {
+      for (let r = n.from; r <= to; r++) {
+        const R = ch.row(r);
+        if (!R.round || (R.step && !R.map.some((e) => e.takes.length || e.stitch !== 'k'))) continue;
+        const around = Math.max(R.ring.length, R.prevCols.length - R.held.length); // a one-round gap still goes all the way round
+        if (around / spi < (n.len || 16) - 1e-9) { fail(id, `row ${r}: ${around} sts is ${(around / spi).toFixed(1)}" round, too few for the ${n.len || 16}" circular (change to DPNs)`); break; }
+      }
+    }
+    if (n.kind === 'dpn' && n.counts) {
+      const R = ch.row(Math.max(1, n.from));
+      if (n.counts.some((c) => c < 2 || c > 14)) fail(id, `DPN counts ${n.counts} (each needle holds 2 to 14)`);
+      if (n.counts.reduce((a, b) => a + b, 0) !== R.ring.length) fail(id, `DPN counts ${n.counts} at row ${n.from} add to ${n.counts.reduce((a, b) => a + b, 0)}, the row has ${R.ring.length}`);
+    }
+  });
+  if (!wp.lines.some((l) => l.kind === 'section') && ch.height > 14) fail(id, 'a long round piece needs section headers');
 }
 
 // ---------------------------------------------------------------- real-knitting checks
@@ -146,23 +211,25 @@ try {
   note('textures: 2×2 rib stacked, seed alternates every row and stitch, moss 2-row blocks offset (4-row repeat), basketweave 4×4 blocks switching every 4 rows, garter k/p rows, broken rib knit (RS-appearance) between rib rows');
   // wording of the classics
   expect('garter-dishcloth', W('garter-dishcloth', 2) === 'k to end', `garter WS reads "${W('garter-dishcloth', 2)}"`);
-  expect('striped-headband', /^with A, k2, \*p2, k2; rep from \* to end$/.test(W('striped-headband', 1)) && /p2, \*k2, p2; rep from \* to end$/.test(W('striped-headband', 2)), `2×2 rib reads "${W('striped-headband', 1)}" / "${W('striped-headband', 2)}"`);
+  expect('striped-headband', /^with A, \*k2, p2; rep from \* around$/.test(W('striped-headband', 2)), `2×2 rib in the round reads "${W('striped-headband', 2)}"`);
   expect('seed-bookmark', W('seed-bookmark', 1) === 'k1, *p1, k1; rep from * to end' && W('seed-bookmark', 2) === 'k1, *p1, k1; rep from * to end', `seed reads "${W('seed-bookmark', 1)}" / "${W('seed-bookmark', 2)}"`);
-  expect('broken-rib-cowl', /k1, \*p1, k1; rep from \* to end$/.test(W('broken-rib-cowl', 1)) && /p to end$/.test(W('broken-rib-cowl', 2)), `broken rib: "${W('broken-rib-cowl', 1)}" / "${W('broken-rib-cowl', 2)}"`);
+  expect('broken-rib-cowl', /\*k1, p1; rep from \* around$/.test(W('broken-rib-cowl', 2)) && /knit$/.test(W('broken-rib-cowl', 3)), `broken rib: "${W('broken-rib-cowl', 2)}" / "${W('broken-rib-cowl', 3)}"`);
   expect('basketweave-mug-cozy', /k4, p4|p4, k4/.test(W('basketweave-mug-cozy', 3)) && W('basketweave-mug-cozy', 3) !== W('basketweave-mug-cozy', 7), `basketweave row 3: "${W('basketweave-mug-cozy', 3)}"`);
-  note(`garter row 2 (WS): "${W('garter-dishcloth', 2)}"; 2×2 rib: "${W('striped-headband', 1)}" / "${W('striped-headband', 2)}"; seed: "${W('seed-bookmark', 1)}"`);
-  note(`basketweave rows 3 / 7 (RS): "${W('basketweave-mug-cozy', 3)}" / "${W('basketweave-mug-cozy', 7)}"; moss rows 1-4 col 0: ${[1, 2, 3, 4].map((r) => C('moss-ear-warmer').cell(r, 3).s).join('')}`);
+  note(`garter row 2 (WS): "${W('garter-dishcloth', 2)}"; 2×2 rib in the round: "${W('striped-headband', 2)}"; seed: "${W('seed-bookmark', 1)}"`);
+  note(`basketweave rows 3 / 7 (RS): "${W('basketweave-mug-cozy', 3)}" / "${W('basketweave-mug-cozy', 7)}"; moss rnds 1-4 col 3: ${[2, 3, 4, 5].map((r) => C('moss-ear-warmer').cell(r, 3).s).join('')}`);
   // rope cable: C4F every 6th row on purl ground
-  const cab = C('cable-headband').spans.map((s) => s.row);
+  const cab = [...new Set(C('cable-headband').spans.map((s) => s.row))];
   expect('cable-headband', cab.every((r, i) => i === 0 || r - cab[i - 1] === 6) && C('cable-headband').spans.every((s) => s.type === 'C4F'), `cable rows ${cab}`);
-  expect('cable-headband', W('cable-headband', 5) === 'k1, p2, C4F, p2, k1', `cable row: "${W('cable-headband', 5)}"`);
-  note(`rope cable C4F on rows ${cab.join(', ')} (every 6th): "${W('cable-headband', 5)}"; WS "${W('cable-headband', 6)}"`);
+  const cr = cab[0];
+  expect('cable-headband', W('cable-headband', cr) === '*p2, C4F; rep from * around', `cable round: "${W('cable-headband', cr)}"`);
+  note(`rope cable C4F on chart rows ${[...new Set(cab)].join(', ')} (every 6th rnd): "${W('cable-headband', cr)}"; next "${W('cable-headband', cr + 1)}"`);
   const aran = C('aran-mug-cozy').spans.map((s) => s.row);
   note(`Aran C4B rows ${[...new Set(aran)].join(', ')} (every 4th): "${W('aran-mug-cozy', 3)}"`);
   // honeycomb alternates C2B, C2F then C2F, C2B
-  const hc3 = W('honeycomb-cowl', 5), hc7 = W('honeycomb-cowl', 9);
-  expect('honeycomb-cowl', /\*C2B, C2F;/.test(hc3) && /\*C2F, C2B;/.test(hc7), `honeycomb: "${hc3}" / "${hc7}"`);
-  note(`honeycomb row 5: "${hc3}"; row 9: "${hc7}"`);
+  const hc3 = W('honeycomb-cowl', 4), hc7 = W('honeycomb-cowl', 8);
+  expect('honeycomb-cowl', /^\*C2B, C2F; rep from \* around$/.test(hc3) && /^\*C2F, C2B; rep from \* around$/.test(hc7), `honeycomb: "${hc3}" / "${hc7}"`);
+  expect('honeycomb-cowl', W('honeycomb-cowl', 2) === 'purl' && W('honeycomb-cowl', 3) === 'knit', `garter in the round: "${W('honeycomb-cowl', 2)}" / "${W('honeycomb-cowl', 3)}"`);
+  note(`honeycomb rnd 3: "${hc3}"; rnd 7: "${hc7}"; garter ridge: "${W('honeycomb-cowl', 2)}" / "${W('honeycomb-cowl', 3)}"`);
   note(`plait: row 3 "${W('braided-scarf-panel', 3)}"; row 7 "${W('braided-scarf-panel', 7)}"`);
   // Old Shale: 18+2, count preserved on every row
   const fs = C('feather-fan-shawlette');
@@ -184,10 +251,25 @@ try {
   expect('fair-isle-coaster', fi.slotsUsed.size === 2, 'OXO uses 2 colors');
   // argyle: diamonds in B and C and lines in D on the leg
   const ag = C('argyle-sock');
-  const legSlots = new Set(); for (let r = 10; r <= 22; r++) for (let c = 4; c < 20; c++) { const cl = ag.cell(r, c); if (cl) legSlots.add(cl.slot); }
+  const legSlots = new Set(); for (let r = 5; r <= 16; r++) for (let c = 0; c < ag.width; c++) { const cl = ag.cell(r, c); if (cl) legSlots.add(cl.slot); }
   expect('argyle-sock', ['A', 'B', 'C', 'D'].every((s) => legSlots.has(s)), 'argyle leg needs A ground, B and C diamonds, D lines');
   // decreases: one k2tog right / ssk left pair on a shaped edge
-  note(`beanie crown row 15 (RS): "${W('rolled-brim-beanie', 15)}"; row 16 (WS): "${W('rolled-brim-beanie', 16)}"`);
+  // (Change 2) crowns decrease evenly round: "*k4, k2tog; rep from * around (40 sts)"
+  { const bc = C('rolled-brim-beanie'); let r = 1; while (r <= bc.height && !/k2tog/.test(W('rolled-brim-beanie', r))) r++;
+    const w = writtenPattern(bc).text;
+    expect('rolled-brim-beanie', /Rnd 1: with A, \*k4, k2tog; rep from \* around \(40 sts\)/.test(w), `crown rnd 1: "${W('rolled-brim-beanie', r)}"`);
+    note(`beanie crown: "${W('rolled-brim-beanie', r)}" … "${W('rolled-brim-beanie', bc.height - 1)}"; then "${W('rolled-brim-beanie', bc.height)}"`); }
+  // heels, gussets, thumbs and the yoke join read as real patterns
+  { const w = writtenPattern(C('cozy-sock')).text;
+    expect('cozy-sock', /Turn heel:\nRow 1 \(RS\): with B, sl1 wyib, k6, ssk, k1, turn\nRow 2 \(WS\): with B, sl1 wyif, p3, p2tog, p1, turn/.test(w), 'the cozy sock\'s heel turn reads "sl1, k6, ssk, k1, turn" / "sl1, p3, p2tog, p1, turn"');
+    expect('cozy-sock', /Set-up rnd: k4, pick up and k 5 sts along the edge of the heel flap, k12, pick up and k 5 sts along the other edge, k4 \(30 sts\)\./.test(w), 'the gusset set-up round');
+    note('cozy sock: ' + w.split('\n').filter((l) => /^(Row 1 \(RS\): with B, sl1|Set-up rnd|Divide rem)/.test(l)).join(' | ')); }
+  { const w = writtenPattern(C('yoke-sweater')).text;
+    expect('yoke-sweater', /Sleeves \(make 2/.test(w) && /Joining rnd: k20 front sts, k12 sts of one sleeve, k20 back sts, k12 sts of the other sleeve \(64 sts\)/.test(w), 'the yoke joins its sleeves'); }
+  { const w = writtenPattern(C('chunky-mitten')).text;
+    expect('chunky-mitten', /Place the 8 thumb sts/.test(w) && /k9, cast on 2 sts over the gap, k9 \(20 sts\)/.test(w) && /pick up and k 2 sts in the gap \(10 sts\)/.test(w), 'the mitten holds its thumb, casts over the gap and picks the thumb up'); }
+  { const w = writtenPattern(C('fingerless-mitts')).text;
+    expect('fingerless-mitts', /k10, bind off 4 sts, k to end \(20 sts\)/.test(w) && /k10, cast on 4 sts over the gap, k to end \(24 sts\)/.test(w), 'the mitts\' one-round thumb hole'); }
 } catch (e) { fail('checks', e.stack); }
 
 // ---------------------------------------------------------------- --solve: the whole stitch order
@@ -201,8 +283,27 @@ if (has('--solve')) {
     let bad = 0;
     for (let r = 1; r <= ch.height && bad < 3; r++) {
       const R = ch.row(r);
-      // the left needle: row r-1's live stitches, tip first (RS: rightmost first; WS: leftmost first)
-      const q = R.prevCols.map((c, i) => i).sort((a, b) => (R.rs ? R.prevCols[b] - R.prevCols[a] : R.prevCols[a] - R.prevCols[b]));
+      // the left needle: row r-1's live stitches, tip first (RS: rightmost first; WS: leftmost first). In a
+      // round piece: in ring order from the row's cut, without the held sts (on waste yarn or a spare DPN)
+      const W0 = ch.width, ring = (c) => (ch.round ? (((c - R.cut) % W0) + W0) % W0 : c);
+      const heldSet = new Set(R.held || []);
+      const q = R.prevCols.map((c, i) => i).filter((i) => !heldSet.has(R.prevCols[i])).sort((a, b) => (R.rs ? ring(R.prevCols[b]) - ring(R.prevCols[a]) : ring(R.prevCols[a]) - ring(R.prevCols[b])));
+      if (R.step && !R.runs.length) {
+        // a step row: its taps take what they name, in their own order; the rest stays live
+        const left = new Set(q);
+        for (const e of R.map) {
+          const nd = ch.needles(ch.rowStart(r) + e.k);
+          if (nd.next !== e) { err(`row ${r} (${R.step.kind}) tap ${e.k + 1}: needles().next is not the step's entry`); bad++; }
+          if (nd.step !== R.step.kind) { err(`row ${r}: needles().step is ${nd.step}`); bad++; }
+          for (const t of e.takes) { if (!left.has(t) && !heldSet.has(R.prevCols[t]) && !(R.held || []).length) { err(`row ${r} (${R.step.kind}): tap ${e.k + 1} takes a st that isn't on the needle`); bad++; } left.delete(t); }
+          taps++;
+          const w = stripWording(ch, r, e.k);
+          if (wordingCursor(w, e.k).token < 0) { err(`row ${r} tap ${e.k + 1}: no strip token`); bad++; }
+        }
+        const after = R.prevCols.length - R.map.reduce((a, e) => a + e.takes.length, 0);
+        if (after !== R.cols.length) { err(`row ${r} (${R.step.kind}): ${after} sts left, outCols has ${R.cols.length}`); bad++; }
+        continue;
+      }
       const takeTip = (list, what) => {
         const want = new Set(list);
         const got = q.splice(0, list.length);
@@ -224,7 +325,7 @@ if (has('--solve')) {
         if (cur.token < 0) { err(`row ${r} st ${e.k + 1}: the wording strip has no token for it ("${w.text}")`); bad++; }
       }
       if (q.length) { err(`row ${r}: ${q.length} stitch(es) left on the needle`); bad++; }
-      if (R.map.length !== R.cols.length) { err(`row ${r}: map has ${R.map.length} entries for ${R.cols.length} cells`); bad++; }
+      if (!ch.round && R.map.length !== R.cols.length) { err(`row ${r}: map has ${R.map.length} entries for ${R.cols.length} cells`); bad++; }
     }
     const end = ch.needles(ch.total);
     if (taps !== ch.total) err(`${taps} taps, total ${ch.total}`);
@@ -284,7 +385,8 @@ if (!quiet) {
     console.log(`${String(i + 1).padStart(2)}  ${p.name.padEnd(30)} ${`${ch.width}×${ch.height}`.padEnd(7)} ${co.padEnd(6)} ${String(ch.total).padStart(5)} ${String(d[2]).padStart(6)} ${(diff > 0 ? '+' : '') + diff + '%'}`.padEnd(70) + `${p.repeat.width}+${p.repeat.edges} (r${at}: ${ch.row(at).cols.length})`);
   });
   const total = PATTERNS.reduce((t, p) => t + (charts.get(p.id)?.total || 0), 0);
-  console.log(`\nbook total: ${total} stitches (design: about 19,000)`);
+  console.log(`\nbook total: ${total} stitches (design: about 24,600, no more than 26,000)`);
+  if (total > 26000) fail('book', `${total} stitches, more than 26,000`);
   if (knit.length) console.log('\nreal-knitting checks:\n  ' + knit.join('\n  '));
 }
 if (has('--solve')) console.log(`\n--solve: ${solved} of ${PATTERNS.length} patterns knit through their whole stitch order cleanly`);

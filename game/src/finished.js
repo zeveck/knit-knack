@@ -6,7 +6,7 @@ import { onTap, setKeyHandler } from './input.js';
 import * as S from './state.js';
 import * as audio from './audio.js';
 import * as toasts from './toasts.js';
-import { pieceRender, cellFor, chartOf } from './render.js';
+import { pieceRender, cellFor, recordChart } from './render.js';
 import { drawObject, objectReady } from './cardRenderer.js';
 import { isToy } from './plush.js';
 import { drawNook, drawStack, image, catHit } from './scene.js';
@@ -226,8 +226,8 @@ function paintObject(px, q) {
   if (c.width !== px) { c.width = px; c.height = px; }
   const cg = c.getContext('2d');
   cg.setTransform(1, 0, 0, 1, 0, 0); cg.clearRect(0, 0, px, px);
-  const piece = { id: gal.id, yarns: gal.yarns, slots: gal.slots || {}, castOn: gal.castOn, updated: gal.finished };
-  try { drawObject(cg, { pattern: pat, chart: chartOf(pat), piece, w: px, h: px, dpr: Math.min(3, window.devicePixelRatio || 1), flat: null, finish: q, state: S.get() }); } catch (e) { console.warn('finish object', e); }
+  const piece = { id: gal.id, ed: gal.ed, yarns: gal.yarns, slots: gal.slots || {}, castOn: gal.castOn, updated: gal.finished };
+  try { drawObject(cg, { pattern: pat, chart: recordChart(gal, pat), piece, w: px, h: px, dpr: Math.min(3, window.devicePixelRatio || 1), flat: null, finish: q, state: S.get() }); } catch (e) { console.warn('finish object', e); }
 }
 const tintCache = new Map();
 function tinted(g, key, color, x, y, size) {

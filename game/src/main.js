@@ -9,7 +9,7 @@ import { pet, petCount } from './pet.js';
 import { loadYarnImages, normYarn, registerColorNames } from './yarn.js';
 import { setFibreTexture } from './stitches.js';
 import { writtenPattern } from './chart.js';
-import { chartOf, suggestedSlots } from './render.js';
+import { recordChart, loadFlatV1, isOldEdition, suggestedSlots } from './render.js';
 import { slotYarnNames } from './sheets.js';
 import { previewCard } from './previewCard.js';
 import * as title from './title.js';
@@ -96,6 +96,10 @@ async function boot() {
     document.fonts ? Promise.race([document.fonts.load('600 20px Fredoka'), new Promise((r) => setTimeout(r, 2500))]).then(() => document.fonts.load('24px Caveat')) : null,
   ]);
   S.setBook(book);
+  // (Change 2) pieces saved before the round editions need the flat edition 1 of their patterns: fetched
+  // only then, and the title waits for it a little (it's small); if it can't load they show plain swatches
+  const old = [...Object.values(sv.pieces), ...sv.gallery].some((r) => isOldEdition(r, S.patternById(r.pattern)));
+  if (old) await Promise.race([loadFlatV1(), new Promise((r) => setTimeout(r, 4000))]);
   // painted fibre tiles into the stitch sprites
   Promise.all(['assets/tex/tex-fibre.png', 'assets/tex/tex-fibre-fuzzy.png'].map((src) => new Promise((res) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = src; })))
     .then(([a, b]) => { if (a) setFibreTexture(a, b); });
@@ -231,7 +235,7 @@ window.__game = {
     if (!p) return null;
     return { id, yarns: p.yarns.map((y) => ({ color: y.color, type: y.type })), count: p.yarns.length, hash: hashYarns(p.yarns) };
   },
-  writtenPattern: (id) => { const p = S.patternById(id); if (!p) return null; const piece = S.getPiece(id); return writtenPattern(chartOf(p), { name: p.name, source: p.source, yarns: slotYarnNames(piece ? piece.slots : p.slots) }).text; },
+  writtenPattern: (id) => { const p = S.patternById(id); if (!p) return null; const piece = S.getPiece(id); return writtenPattern(recordChart(piece, p), { name: p.name, source: p.source, yarns: slotYarnNames(piece ? piece.slots : p.slots) }).text; },
   addStitches: (n) => { S.addStitches(n); S.checkUnlocks(); toasts.pump(); S.saveSoon(); return S.get().lifetimeStitches; },
   equip: (kind, id) => { const ok = S.equip(kind, id); knit.onEquipChange(); return ok; },
   dress: (dollId, galleryId) => features.dress(dollId, galleryId),

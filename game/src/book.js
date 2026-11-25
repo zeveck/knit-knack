@@ -7,7 +7,7 @@ import { toggleMute } from './knit.js';
 import * as S from './state.js';
 import * as audio from './audio.js';
 import * as toasts from './toasts.js';
-import { chartOf, suggestedSlots, patternRender, silhouette, fitCanvas, cellFor } from './render.js';
+import { chartOf, recordChart, suggestedSlots, patternRender, silhouette, fitCanvas, cellFor } from './render.js';
 import { openPattern, openPicker } from './sheets.js';
 import { paintBallInto, yarnName } from './yarn.js';
 
@@ -46,7 +46,7 @@ function renderBook() {
   const last = s.lastPiece && S.getPiece(s.lastPiece) ? S.patternById(s.lastPiece) : null;
   if (last) {
     const p = S.getPiece(last.id);
-    const b = el('button', { class: 'btn primary big continue' }, el('span', { class: 'icw', html: ICON.play }), el('span', { class: 'lbl' }, 'Continue', el('span', { class: 'sub', text: `${last.name} · ${Math.round((100 * p.yarns.length) / chartOf(last).total)}%` })));
+    const b = el('button', { class: 'btn primary big continue' }, el('span', { class: 'icw', html: ICON.play }), el('span', { class: 'lbl' }, 'Continue', el('span', { class: 'sub', text: `${last.name} · ${Math.round((100 * p.yarns.length) / recordChart(p, last).total)}%` })));
     b.addEventListener('click', () => { audio.play('ui'); go('knit', last.id); });
     btns.append(b);
   }
@@ -109,6 +109,8 @@ function card(p, i, unlockedN) {
   const locked = !S.patternUnlocked(p.id);
   const chart = chartOf(p);
   const pv = el('div', { class: 'pv' });
+  // (Change 2) a piece on the needles from before its pattern's round edition reads and counts on its own chart
+  const pieceChart = (pc) => (pc ? recordChart(pc, p) : chart);
   const c = el('div', { class: 'card' + (locked ? ' locked' : ''), 'data-id': p.id });
   if (locked) {
     pv.dataset.sil = p.id;
@@ -122,11 +124,11 @@ function card(p, i, unlockedN) {
   const times = S.get().gallery.filter((g) => g.pattern === p.id).length;
   const meta = el('div', { class: 'meta' }, `${fmt(chart.total)} stitches`, times ? el('span', { class: 'done-tag', text: times > 1 ? `knit ${times}×` : 'knit' }) : null, p.wear ? el('span', { class: 'icw', title: 'Wearable', html: ICON.doll }) : null);
   const read = el('button', { class: 'read', text: 'Read the pattern' });
-  read.addEventListener('click', (e) => { e.stopPropagation(); audio.play('card'); openPattern({ chart, pattern: p, slots: piece ? piece.slots : suggestedSlots(p), currentIndex: piece ? piece.yarns.length : null }); });
+  read.addEventListener('click', (e) => { e.stopPropagation(); audio.play('card'); openPattern({ chart: pieceChart(piece), pattern: p, slots: piece ? piece.slots : suggestedSlots(p), currentIndex: piece ? piece.yarns.length : null }); });
   const btn = el('button', { class: 'card-open', style: { all: 'unset', display: 'flex', flexDirection: 'column', gap: '6px', cursor: 'pointer' }, 'aria-label': `${p.name}${piece ? ', in progress' : ''}` }, pv, el('h3', { text: p.name }), el('div', { class: 'tech', text: p.blurb || p.technique || '' }), meta);
   btn.addEventListener('click', () => { audio.play('ui'); if (piece) go('knit', p.id); else go('caston', p.id); });
   c.append(btn);
-  if (piece) { c.classList.add('started'); c.append(el('div', { class: 'prog' }, el('i', { style: { width: `${(100 * piece.yarns.length) / chart.total}%` } }))); }
+  if (piece) { c.classList.add('started'); c.append(el('div', { class: 'prog' }, el('i', { style: { width: `${(100 * piece.yarns.length) / pieceChart(piece).total}%` } }))); }
   c.append(read);
   void s;
   return c;

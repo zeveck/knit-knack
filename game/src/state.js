@@ -199,7 +199,10 @@ function migrate(raw) {
   s.scarf = { ...fresh().scarf, ...(raw.scarf || {}) };
   s.pieces = {};
   for (const [id, p] of Object.entries(raw.pieces || {})) if (p && typeof p === 'object' && p.pattern) s.pieces[id] = { ...p, slots: p.slots && typeof p.slots === 'object' ? p.slots : {}, yarns: Array.isArray(p.yarns) ? p.yarns.map((y) => normYarn(y)) : decYarns(p.yarns) };
-  s.gallery = (raw.gallery || []).map((g) => ({ ...g, slots: g.slots && typeof g.slots === 'object' ? g.slots : {}, yarns: Array.isArray(g.yarns) ? g.yarns.map((y) => normYarn(y)) : decYarns(g.yarns) }));
+  // (Change 2) every piece and gallery record carries its chart edition; records saved before editions
+  // existed were knit on edition 1 (for the patterns Change 2 knits in the round: the flat one)
+  for (const p of Object.values(s.pieces)) if (!(p.ed >= 1)) p.ed = 1;
+  s.gallery = (raw.gallery || []).map((g) => ({ ...g, ed: g.ed >= 1 ? g.ed : 1, slots: g.slots && typeof g.slots === 'object' ? g.slots : {}, yarns: Array.isArray(g.yarns) ? g.yarns.map((y) => normYarn(y)) : decYarns(g.yarns) }));
   // saves from before the unlock counters: rebuild them from what's there
   if (typeof raw.lifetimeStitches !== 'number') {
     s.lifetimeStitches = s.gallery.reduce((t, g) => t + g.yarns.length, 0) + Object.values(s.pieces).reduce((t, p) => t + p.yarns.length, 0) + (s.scarf.stitches || 0);
@@ -361,7 +364,7 @@ export function useUnlock(u) {
 export const pieceId = (patternId) => `w-${patternId}`;
 export function getPiece(patternId) { return get().pieces[pieceId(patternId)] || null; }
 export function startPiece(pattern, slots) {
-  const p = { id: pieceId(pattern.id), pattern: pattern.id, yarns: [], slots: { ...slots }, follow: true, free: null, castOn: slots.A || Object.values(slots)[0], started: Date.now(), updated: Date.now() };
+  const p = { id: pieceId(pattern.id), pattern: pattern.id, ed: pattern.edition || 1, yarns: [], slots: { ...slots }, follow: true, free: null, castOn: slots.A || Object.values(slots)[0], started: Date.now(), updated: Date.now() };
   get().pieces[p.id] = p;
   get().lastPiece = pattern.id;
   saveNow();
@@ -373,7 +376,7 @@ export function dropPiece(patternId) { delete get().pieces[pieceId(patternId)]; 
 export function finishPiece(piece, pattern) {
   const s = get();
   s.serial += 1;
-  const g = { id: `g${s.serial}`, pattern: pattern.id, name: pattern.name, yarns: piece.yarns.slice(), slots: { ...piece.slots }, castOn: piece.castOn, finished: Date.now(), hung: false, pending: true };
+  const g = { id: `g${s.serial}`, pattern: pattern.id, ed: piece.ed || pattern.edition || 1, name: pattern.name, yarns: piece.yarns.slice(), slots: { ...piece.slots }, castOn: piece.castOn, finished: Date.now(), hung: false, pending: true };
   s.gallery.push(g);
   s.piecesFinished += 1;
   const first = !s.finishedPatterns.includes(pattern.id);

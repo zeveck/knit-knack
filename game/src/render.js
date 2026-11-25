@@ -1,16 +1,62 @@
 // render.js — charts per pattern (cached) and finished-looking renders of pieces (renderSwatch), cached.
-import { parseChart } from './chart.js';
+import { parseChart, fill } from './chart.js';
 import { pageZoom } from './ui.js';
 import { renderSwatch } from './work.js';
 import { normYarn } from './yarn.js';
 import { isToy, toyEyes, plushify } from './plush.js';
 
+// Charts are cached by pattern and edition (Change 2, CHANGE_2.md G). Edition 1 of a pattern that
+// Change 2 rewrote for knitting in the round is built from patterns-flat-v1.json (loaded at boot only
+// when the save holds such a record, see loadFlatV1), so pieces made before the change bake, wear and
+// finish flat exactly as knit. Until it's there (or if it can't load) such a record gets a plain
+// stand-in swatch in its yarns (chart.placeholder), and an in-progress one can't be opened.
 const charts = new Map();
-export function chartOf(pattern) {
-  let c = charts.get(pattern.id);
-  if (!c) { c = parseChart(pattern); charts.set(pattern.id, c); if (c.errors.length) console.warn(`chart ${pattern.id}:`, c.errors.slice(0, 3)); }
+let FLAT_V1 = null, flatV1State = 'idle'; // 'idle' | 'loading' | 'ok' | 'failed'
+const V1_NOTE = 'This piece was started before the pattern was rewritten for knitting in the round, so it finishes flat.';
+const editionOf = (pattern) => pattern.edition || 1;
+// does this piece or gallery record need the flat edition 1 of its pattern?
+export const isOldEdition = (rec, pattern) => !!(rec && pattern && (rec.ed || 1) < editionOf(pattern));
+export const flatV1Ready = () => flatV1State === 'ok';
+export const flatV1Status = () => flatV1State;
+export function setFlatV1(json) {
+  FLAT_V1 = json && json.patterns ? json.patterns : null;
+  flatV1State = FLAT_V1 ? 'ok' : 'failed';
+  for (const k of [...charts.keys()]) if (k.endsWith('|plain')) charts.delete(k);
+  forget('');
+}
+export async function loadFlatV1(src = 'src/patterns-flat-v1.json') {
+  if (flatV1State === 'ok') return true;
+  flatV1State = 'loading';
+  try {
+    const r = await fetch(src);
+    if (!r.ok) throw new Error(String(r.status));
+    setFlatV1(await r.json());
+  } catch (e) { console.warn('patterns-flat-v1', e); FLAT_V1 = null; flatV1State = 'failed'; }
+  return flatV1State === 'ok';
+}
+// chartOf(pattern, ed): the chart of a pattern's edition ed (default: its current edition)
+export function chartOf(pattern, ed) {
+  const cur = editionOf(pattern);
+  const e = ed == null ? cur : ed;
+  if (e >= cur) {
+    const k = `${pattern.id}|${cur}`;
+    let c = charts.get(k);
+    if (!c) { c = parseChart(pattern); charts.set(k, c); if (c.errors.length) console.warn(`chart ${pattern.id}:`, c.errors.slice(0, 3)); }
+    return c;
+  }
+  const v1 = FLAT_V1 && FLAT_V1[pattern.id];
+  const k = `${pattern.id}|${e}${v1 ? '' : '|plain'}`;
+  let c = charts.get(k);
+  if (!c) {
+    if (v1) c = parseChart({ ...v1, edition: e, notes: [...(v1.notes || []), V1_NOTE] });
+    else { c = parseChart({ ...pattern, round: false, flat: null, sections: null, stitch: fill(12, 40, 'stockinette'), shape: null, color: null, cables: [], edition: e, repeat: { width: 1, edges: 0, rows: 1 } }); c.placeholder = true; }
+    charts.set(k, c);
+    if (c.errors.length) console.warn(`chart ${pattern.id} ed ${e}:`, c.errors.slice(0, 3));
+  }
   return c;
 }
+// the chart a piece or gallery record was knit on
+export const recordChart = (rec, pattern) => chartOf(pattern, rec ? rec.ed : undefined);
 
 export const suggestedSlots = (pattern) => {
   const out = {};
@@ -41,9 +87,9 @@ export function patternRender(pattern, slots, cellPx, key = '') {
 
 // A gallery piece exactly as knit.
 export function pieceRender(g, pattern, cellPx) {
-  const k = `g|${g.id}|${cellPx}`;
+  const chart = recordChart(g, pattern);
+  const k = `g|${g.id}|${cellPx}${chart.placeholder ? '|plain' : ''}`;
   if (cache.has(k)) return cache.get(k);
-  const chart = chartOf(pattern);
   const ys = g.yarns;
   let c;
   try { c = renderSwatch(chart, { yarnAt: (i) => ys[i] || ys[ys.length - 1], cellPx, castOnYarn: g.castOn || ys[0], background: null }).canvas; } catch (e) { console.warn('render', g.id, e); c = document.createElement('canvas'); }
@@ -57,7 +103,7 @@ export function objectRender(g, pattern, cellPx) {
   const k = `t|${g.id}|${cellPx}`;
   if (cache.has(k)) return cache.get(k);
   const flat = pieceRender(g, pattern, cellPx);
-  const chart = chartOf(pattern);
+  const chart = recordChart(g, pattern);
   // renderSwatch's geometry: margin round(W * 0.6), the cast-on row 0.4 rows below it
   const W = Math.round(cellPx), H = Math.round(W * 0.72), m = Math.round(W * 0.6);
   const eyes = toyEyes(pattern, chart, g.slots).map((e) => ({ x: m + e.c * W + W / 2, y: m + 0.4 * H + (chart.height - e.r) * H + H * 0.55, color: e.color }));
