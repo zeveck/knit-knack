@@ -5,7 +5,7 @@ import { renderSwatch } from './work.js';
 import { normYarn } from './yarn.js';
 import { isToy, toyEyes, plushify } from './plush.js';
 import { shapeOf, localBounds } from './tube.js';
-import { roundObject, POSE_OF, forgetBakes } from './worn.js';
+import { roundObject, POSE_OF, forgetBakes, bakeChart } from './worn.js';
 
 // Charts are cached by pattern and edition (Change 2, CHANGE_2.md G). Edition 1 of a pattern that
 // Change 2 rewrote for knitting in the round is built from patterns-flat-v1.json (loaded at boot only
@@ -83,8 +83,16 @@ export function patternRender(pattern, slots, cellPx, key = '') {
   const k = `p|${pattern.id}|${cellPx}|${key || JSON.stringify(slots)}`;
   if (cache.has(k)) return cache.get(k);
   const yarnAt = slotYarnAt(chart, slots);
-  let c;
-  try { c = renderSwatch(chart, { yarnAt, cellPx, castOnYarn: yarnAt(0), background: null }).canvas; } catch (e) { console.warn('render', pattern.id, e); c = document.createElement('canvas'); }
+  let c = null;
+  // (a pattern knit in the round shows as the object, the tube the Basket draws, in these yarns)
+  if (shapeOf(chart, pattern)) {
+    try {
+      const W = Math.max(6, Math.min(32, Math.round(cellPx * 1.8)));
+      const bake = bakeChart(chart, yarnAt, W, { castOnYarn: yarnAt(0), key: `pv|${pattern.id}|${key || JSON.stringify(slots)}` });
+      if (bake) c = roundObject({ preview: { bake, chart, slots, done: chart.total }, yarns: [] }, pattern, cellPx);
+    } catch (e) { console.warn('round preview', pattern.id, e); }
+  }
+  if (!c) try { c = renderSwatch(chart, { yarnAt, cellPx, castOnYarn: yarnAt(0), background: null }).canvas; } catch (e) { console.warn('render', pattern.id, e); c = document.createElement('canvas'); }
   return remember(k, c);
 }
 
@@ -131,6 +139,16 @@ export function silhouette(pattern, cellPx) {
   const k = `s|${pattern.id}|${cellPx}`;
   if (cache.has(k)) return cache.get(k);
   const chart = chartOf(pattern);
+  // (a round pattern: the object's own outline)
+  if (shapeOf(chart, pattern)) {
+    const obj = patternRender(pattern, { A: { color: '#8a7f86', type: 'wool' } }, cellPx, 'sil');
+    if (obj && obj.width > 1) {
+      const c = document.createElement('canvas'); c.width = obj.width; c.height = obj.height;
+      const g = c.getContext('2d');
+      g.drawImage(obj, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = 'rgba(70,40,72,0.55)'; g.fillRect(0, 0, c.width, c.height);
+      return remember(k, c);
+    }
+  }
   const W = cellPx, H = Math.round(cellPx * 0.72);
   const c = document.createElement('canvas');
   c.width = chart.width * W + 4; c.height = chart.height * H + 4;
@@ -213,8 +231,9 @@ export function fitCanvas(src, maxW, maxH) {
 
 // cell size (device px) so a chart fits a box of CSS px. A record (rec) with a round chart: the object's size
 // (a tube shows about half its stitches across)
+// rec === true: the pattern itself as the object (a preview: the book, Cast On)
 export function cellFor(pattern, maxW, maxH, lo = 3, hi = 24, rec = null) {
-  const chart = rec ? recordChart(rec, pattern) : chartOf(pattern);
+  const chart = rec && rec !== true ? recordChart(rec, pattern) : chartOf(pattern);
   const sh = rec ? shapeOf(chart, pattern) : null;
   if (sh) {
     const dpr = Math.min(3, window.devicePixelRatio || 1) * pageZoom();

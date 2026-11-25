@@ -159,7 +159,7 @@ function queuePreviews(root) {
       else {
         const piece = S.getPiece(p.id);
         const slots = piece ? piece.slots : suggestedSlots(p);
-        box.replaceChildren(fitCanvas(patternRender(p, slots, cellFor(p, w - 12, h - 12, 4, 10)), w - 12, h - 12));
+        box.replaceChildren(fitCanvas(patternRender(p, slots, cellFor(p, w - 12, h - 12, 4, 10, true)), w - 12, h - 12));
       }
     }
     if (items.length) requestAnimationFrame(step);
@@ -253,7 +253,7 @@ function renderCastOn(p) {
   requestAnimationFrame(() => {
     // a phone held upright: a shorter preview, so the yarn rows fit above the pinned Cast on bar
     const w = Math.min(pv.clientWidth - 24, 560), h = phoneUpright() ? Math.max(130, Math.min(innerHeight * 0.24, 200)) : Math.max(240, Math.min(innerHeight * 0.5, 460));
-    pv.replaceChildren(fitCanvas(patternRender(p, co.slots, cellFor(p, w, h, 4, 22)), w, h));
+    pv.replaceChildren(fitCanvas(patternRender(p, co.slots, cellFor(p, w, h, 4, 22, true)), w, h));
     scrollCue();
   });
 }
