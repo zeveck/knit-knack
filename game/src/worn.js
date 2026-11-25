@@ -1045,45 +1045,74 @@ export { chartInfo, planFit, drawParts, partsBox, TUNE };
 // device px; k: about the stitch width wanted (≥ 2 px). The whole blanket, baked small, is laid row strip by
 // row strip into the quads (its top rows on part 0, folded at the part boundary onto part 1), with a little
 // shading: part 0 lying flat catches the light, part 1 hangs, darker toward its edge and under the fold.
+// opts.bows: per part [top, bottom], how far each edge sags at its middle (px, negative = up), so a drape
+// can arch over a chair's back or hang lower in the middle; the last part's lower edge is a soft, wavy hem.
 // Returns [{canvas, x, y}] per part (x, y: the canvas's top-left in the mesh's px).
-export function drapeOnto(gid, mesh, k) {
+export function drapeOnto(gid, mesh, k, opts = {}) {
   const g = S.galleryById(gid);
   const b = g && bakeGallery(g, Math.max(3, Math.round(k)));
   if (!b || !mesh || mesh.length < 2) return null;
+  const bows = opts.bows || mesh.map(() => [0, 0]);
   const hOf = (q) => (Math.hypot(q[3][0] - q[0][0], q[3][1] - q[0][1]) + Math.hypot(q[2][0] - q[1][0], q[2][1] - q[1][1])) / 2;
   const hs = mesh.map(hOf), tot = hs[0] + hs[1] || 1;
   const sx = b.x0, sw = b.gw;
   let sy = b.y0 - b.H * 0.4; const sh = b.gh + b.H * 0.8;
   const lerp = (p, q, t) => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t];
   return mesh.map((q, part) => {
+    const [bt, bb] = bows[part] || [0, 0];
+    // a point of the part: bilinear in the quad, the edges bowed (most in the middle)
+    const P = (u, v) => { const L = lerp(q[0], q[3], v), R = lerp(q[1], q[2], v); const p = lerp(L, R, u); p[1] += (bt + (bb - bt) * v) * 4 * u * (1 - u); return p; };
     const ph = (sh * hs[part]) / tot, y0 = sy; sy += ph;
     const xs = q.map((p) => p[0]), ys = q.map((p) => p[1]);
-    const bx = Math.floor(Math.min(...xs)) - 2, by = Math.floor(Math.min(...ys)) - 2;
-    const c = mk(Math.max(...xs) - bx + 3, Math.max(...ys) - by + 3), cg = c.getContext('2d');
+    const bx = Math.floor(Math.min(...xs)) - 2, by = Math.floor(Math.min(...ys) + Math.min(0, bt, bb)) - 2;
+    const c = mk(Math.max(...xs) - bx + 3, Math.max(...ys) + Math.max(0, bt, bb) - by + 6), cg = c.getContext('2d');
     cg.imageSmoothingQuality = 'high';
     const n = Math.max(1, Math.round(ph / Math.max(1, b.H)));
+    const m = bt || bb ? 12 : 1; // columns, only where an edge bows
+    const ssh = ph / n, ssw = sw / m;
     for (let i = 0; i < n; i++) {
       const v0 = i / n, v1 = (i + 1) / n;
-      const L0 = lerp(q[0], q[3], v0), R0 = lerp(q[1], q[2], v0), L1 = lerp(q[0], q[3], v1);
-      const ssy = y0 + ph * v0, ssh = ph / n;
-      cg.setTransform((R0[0] - L0[0]) / sw, (R0[1] - L0[1]) / sw, (L1[0] - L0[0]) / ssh, (L1[1] - L0[1]) / ssh, L0[0] - bx, L0[1] - by);
-      cg.drawImage(b.canvas, sx, ssy, sw, Math.min(ssh + 1, b.canvas.height - ssy), 0, 0, sw, Math.min(ssh + 1, b.canvas.height - ssy));
+      const ssy = y0 + ph * v0, hgt = Math.min(ssh + 1, b.canvas.height - ssy);
+      if (hgt <= 0) continue;
+      for (let j = 0; j < m; j++) {
+        const u0 = j / m, u1 = (j + 1) / m;
+        const A = P(u0, v0), Bx = P(u1, v0), C = P(u0, v1);
+        cg.setTransform((Bx[0] - A[0]) / ssw, (Bx[1] - A[1]) / ssw, (C[0] - A[0]) / ssh, (C[1] - A[1]) / ssh, A[0] - bx, A[1] - by);
+        cg.drawImage(b.canvas, sx + ssw * j, ssy, Math.min(ssw + 1, sx + sw - ssw * j), hgt, 0, 0, Math.min(ssw + 1, sx + sw - ssw * j), hgt);
+      }
     }
     cg.setTransform(1, 0, 0, 1, 0, 0);
+    const path = (pts) => { cg.beginPath(); pts.forEach(([x, y], i2) => (i2 ? cg.lineTo(x - bx, y - by) : cg.moveTo(x - bx, y - by))); };
+    // the hem: the last part's lower edge falls in soft, uneven waves (cut below a wavy line)
+    if (part === mesh.length - 1) {
+      const amp = Math.max(2, b.H * 0.7), pts = [];
+      for (let j = 0; j <= 24; j++) { const u = j / 24; const p = P(u, 1); pts.push([p[0], p[1] - amp * (0.55 + 0.45 * Math.cos(u * Math.PI * 5.2 + 0.6)) * (0.35 + 0.65 * Math.sin(u * Math.PI))]); }
+      cg.globalCompositeOperation = 'destination-out';
+      path([...pts, [pts[pts.length - 1][0] + 40, by + c.height + 40], [pts[0][0] - 40, by + c.height + 40]]); cg.closePath(); cg.fill();
+      cg.globalCompositeOperation = 'source-over';
+    }
     // shading, on the blanket only
     cg.globalCompositeOperation = 'source-atop';
-    const top = lerp(q[0], q[1], 0.5), bot = lerp(q[3], q[2], 0.5);
+    const top = P(0.5, 0), bot = P(0.5, 1);
     const gr = cg.createLinearGradient(top[0] - bx, top[1] - by, bot[0] - bx, bot[1] - by);
-    if (part === 0) { gr.addColorStop(0, 'rgba(255,240,215,0.16)'); gr.addColorStop(0.8, 'rgba(255,240,215,0)'); gr.addColorStop(1, 'rgba(40,14,30,0.18)'); }
-    else { gr.addColorStop(0, 'rgba(40,14,30,0.34)'); gr.addColorStop(0.18, 'rgba(40,14,30,0.06)'); gr.addColorStop(0.75, 'rgba(40,14,30,0.12)'); gr.addColorStop(1, 'rgba(40,14,30,0.32)'); }
+    if (part === 0) { gr.addColorStop(0, 'rgba(255,240,215,0.2)'); gr.addColorStop(0.7, 'rgba(255,240,215,0)'); gr.addColorStop(1, 'rgba(40,14,30,0.22)'); }
+    else { gr.addColorStop(0, 'rgba(40,14,30,0.34)'); gr.addColorStop(0.18, 'rgba(40,14,30,0.06)'); gr.addColorStop(0.75, 'rgba(40,14,30,0.12)'); gr.addColorStop(1, 'rgba(40,14,30,0.3)'); }
     cg.fillStyle = gr; cg.fillRect(0, 0, c.width, c.height);
+    // the sides roll away a little (soft, not a box's edge)
+    const L0 = P(0, 0.5), R0 = P(1, 0.5), wid = Math.hypot(R0[0] - L0[0], R0[1] - L0[1]) || 1;
+    const sg = cg.createLinearGradient(L0[0] - bx, L0[1] - by, R0[0] - bx, R0[1] - by);
+    const e = Math.min(0.2, (b.H * 2.5) / wid);
+    sg.addColorStop(0, 'rgba(40,14,30,0.3)'); sg.addColorStop(e, 'rgba(40,14,30,0)'); sg.addColorStop(1 - e, 'rgba(40,14,30,0)'); sg.addColorStop(1, 'rgba(40,14,30,0.3)');
+    cg.fillStyle = sg; cg.fillRect(0, 0, c.width, c.height);
     // soft folds along the hang
     if (part === 1) {
-      for (let f = 1; f < 4; f++) {
-        const a = lerp(q[0], q[1], f / 4), z = lerp(q[3], q[2], f / 4 + 0.02);
-        const fg = cg.createLinearGradient(a[0] - bx - 6, 0, a[0] - bx + 6, 0);
-        fg.addColorStop(0, 'rgba(40,14,30,0)'); fg.addColorStop(0.5, 'rgba(40,14,30,0.14)'); fg.addColorStop(1, 'rgba(255,240,215,0.05)');
-        cg.strokeStyle = fg; cg.lineWidth = Math.max(2, (c.width / 4) * 0.25);
+      for (let f = 1; f < 5; f++) {
+        const u = f / 5 + (f % 2 ? 0.03 : -0.02);
+        const a = P(u, 0.08), z = P(u + 0.015, 1);
+        const fw = Math.max(3, wid * 0.06);
+        const fg = cg.createLinearGradient(a[0] - bx - fw, 0, a[0] - bx + fw, 0);
+        fg.addColorStop(0, 'rgba(40,14,30,0)'); fg.addColorStop(0.45, 'rgba(40,14,30,0.16)'); fg.addColorStop(0.7, 'rgba(255,240,215,0.1)'); fg.addColorStop(1, 'rgba(255,240,215,0)');
+        cg.strokeStyle = fg; cg.lineWidth = fw * 2; cg.lineCap = 'round';
         cg.beginPath(); cg.moveTo(a[0] - bx, a[1] - by); cg.lineTo(z[0] - bx, z[1] - by); cg.stroke();
       }
     }
