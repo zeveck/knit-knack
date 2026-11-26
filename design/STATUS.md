@@ -9,6 +9,7 @@
 5. `--change knit hats, socks, mittens, mitts, cowls, headbands and the sweater's body in the round as real knitters do: show the work as a tube on circular needles (or double-pointed needles for socks and mittens), word their patterns by round ("Rnd", every round from the right side, garter as knit and purl rounds), and finish them without seams (crown gathered, heel turned, toe grafted), so they wear on the dolls as true tubes. Keep flat what's really knit flat (dishcloths, coasters, blankets, scarves, the toys' pieces). Fix anything else we knit flat that shouldn't be. Playability and a strong feel of really knitting matter more than proving every rule: loosen the pattern checks where they get in the way, but keep the written patterns honest. Also give the cables a more raised, rope-like look.`
 6. `--change let finished toys and dolls sit together in a little cozy room scene you can arrange: drag them onto a rug, an armchair, shelves and a window seat, dressed in what you knit, with the arrangement saved; unlock a few room pieces as you knit`
 7. `--fix all --publish --no-confirm` — #1: Swipe back (https://github.com/zeveck/knit-knack/issues/1); #2: Cat (https://github.com/zeveck/knit-knack/issues/2); #3: Menu location (https://github.com/zeveck/knit-knack/issues/3); #4: Unlock all toggle (https://github.com/zeveck/knit-knack/issues/4)
+8. `--fix all --publish --no-confirm` — no open issues this time; publishes changes 2 and 3
 
 ## Settings
 
@@ -85,6 +86,10 @@ Budget for this change: $20 (default).
 - [x] #2 cat coat/name/petting (ef81f17 + 4bd9a8b neutral captions), #4 unlock-all setting (e117309)
 - [x] Replays 47/47 ✓; published 2026-11-25 (deploy c985fa3), issues #1–#4 closed, live check on iPhone 15 OK
 Order: these land before changes 2 and 3 are built.
+
+## Publish (request 8)
+
+- [ ] Push changes 2 and 3, deploy, live check, gallery (plans pages) push
 
 ## Handoff (2026-11-25 02:46 UTC, before context compaction)
 
