@@ -69,6 +69,11 @@ you hang it on your gallery wall.
 |---|---|
 | ![The finished screen: "Bound off and blocked!", the Snowflake Mitten shown on Pip the doll](media/screenshots/finished.jpg) | ![The gallery wall: a star, socks, a teddy bear, a sweater, a blanket, a strawberry pouch, a fox, a shawlette, a cowl and a stocking hanging on pegs](media/screenshots/gallery.jpg) |
 
+Pillows and toys are sewn up and stuffed, so they look soft and plump wherever they show: in
+the gallery, the close-up, the finished screen, the Pattern Book and the room.
+
+<img src="media/screenshots/pillow-closeup.jpg" width="320" alt="A close-up of a finished Heart Pillow: a cream heart knit into cranberry stockinette, puffed up and stuffed, with soft pinched corners">
+
 ## The dolls
 
 Meet Pip, Clementine, Bramble, Juniper, Basil, Mabel and Purl herself, and dress them in the hats,
@@ -83,13 +88,20 @@ pieces wear as true tubes: a hat wraps the head, a cowl circles the neck, socks 
 
 Bring everyone together in a little painted room. Drag your dolls, Purl, the toys you knit,
 your pillows and blankets onto the rug, the armchair, the shelves and the window seat, dressed
-in whatever they wear. Unlock room pieces as you knit (a side table, a plant, storybooks, a toy
-chest, a tea set, a star garland, a floor lamp and a frame that shows your newest piece). The
-room stays just as you left it.
+in whatever they wear. Your toys and pillows sit there plump and stuffed, and the shelves have
+room enough for the dolls up top to stand tall. Unlock room pieces as you knit (a side table, a
+plant, storybooks, a toy chest, a tea set, a star garland, a floor lamp and a frame that shows
+your newest piece). The room stays just as you left it.
+
+Your Infinite Scarf hangs on a peg rail above the armchair, in the colours you knit it, with its
+needles still in the last row and a tag with its length. It grows as you knit: a scarf folded
+over a peg, then swags from peg to peg, then rows of garlands (on a phone, loops hanging down),
+and past 100 m a knitting bag on the last peg, stuffed with the rest. Tap it for **Knit more**,
+and come back to see how far it has grown.
 
 | | |
 |---|---|
-| ![The cozy room: dolls and knitted toys on a braided rug, Purl in the armchair under a patchwork blanket, a star garland in the snowy window and a bunny and a penguin on the shelves](media/screenshots/room.jpg) | ![The same room on a phone, with the fox doll selected and its Move, Look closer and Put away buttons showing](media/screenshots/room-phone.jpg) |
+| ![The cozy room: Pip in a bobble hat and Clementine in a cowl on the top shelf with a knitted bunny, Bramble and a penguin on the low shelf, a heart pillow and Juniper on the window seat, Purl in the armchair, Basil, a fox, a teddy bear, a cushion and a whale on the rug, and a 7 m striped scarf swagging across three pegs with its tag and needles](media/screenshots/room.jpg) | ![The same room on a phone, the scarf, now 21 m, hanging down beside the shelves in two long loops](media/screenshots/room-phone.jpg) |
 
 ## The Knitting Bag
 
@@ -104,7 +116,8 @@ nothing ever knits for you.
 
 A scarf that never ends. Every row adds a centimeter. **How long is it?** stands it up beside
 the last thing it passed and the next one, from a mug and a guitar to a giraffe, a blue whale,
-the Leaning Tower of Pisa and, someday, the Moon, with a knitting fact every so often.
+the Leaning Tower of Pisa and, someday, the Moon, with a knitting fact every so often. It also
+hangs on the wall of the cozy room, growing across its pegs as you knit.
 
 | | |
 |---|---|
@@ -162,12 +175,29 @@ Meanwhile, four reports filed with the game's own "Report a bug" button (going b
 
 > --fix all --publish --no-confirm
 
+And three more changes, all asked for at once:
+
+> Do all three gamegen changes you suggested then publish no-confirm.
+
+The three were:
+
+- `--change repaint the cozy room's landscape picture with more space between the shelves so dolls up top are bigger`:
+  the room's shelves were moved apart and the dolls on them drawn about a third bigger, with a
+  peg rail painted in for the scarf. The pictures were recomposed in Pillow from the old ones,
+  with no new generation ($0).
+- `--change make pillows and toys look soft and stuffed in the gallery close-up too`: pillows and
+  toys are drawn sewn up and stuffed everywhere they show, not as flat knitted pieces.
+- `--change let the infinite scarf hang in the cozy room, growing across the wall as it gets longer`:
+  the Infinite Scarf hangs on the room's pegs in your own colours, from a fold to swags,
+  garlands or loops, and a knitting bag past 100 m, with its length tag, live needles, Knit more
+  and a little moment when you come back and it has grown.
+
 gamegen designed the game, had review agents polish the design, made the art, animation, music
 and sound with these plugins, built it, and play-tested it:
 
 | | |
 |---|---|
-| <img src="media/made-with/nanogen-nook.jpg" width="180" alt="The painted knitting nook"> | [nanogen](https://github.com/zeveck/nanogen): the knitting nook and the cozy room (landscape and portrait), the wood, paper and yarn-fibre textures, and the knitted swatches the stitch drawing was tuned against. |
+| <img src="media/made-with/nanogen-nook.jpg" width="180" alt="The painted knitting nook"> | [nanogen](https://github.com/zeveck/nanogen): the knitting nook and the cozy room (landscape and portrait, later recomposed in Pillow for roomier shelves and the scarf's pegs), the wood, paper and yarn-fibre textures, and the knitted swatches the stitch drawing was tuned against. |
 | <img src="media/made-with/imagegen2-cast.png" width="180" alt="Purl, a teacup yarn bowl, and the dolls Pip, Clementine, Bramble and Basil, and a giraffe"> | [imagegen2](https://github.com/zeveck/imagegen2): Purl, her basket, the yarn balls, the six dolls, the 20 scarf comparisons (mug to redwood), the yarn holders, nook decor and finishing touches, the props, the room pieces (table, plant, storybooks, toy chest, tea set, garland and lamp) and the app icon. |
 | <img src="media/made-with/anim8gen-purl-cheer.gif" width="120" alt="Purl waking up in her basket and waving a paw"> | [anim8gen](https://github.com/zeveck/anim8gen): Purl's cheer when you finish a piece. |
 | <img src="media/made-with/audiogen-wave.png" width="180" alt="The waveform of one of the nook songs"> | [audiogen](https://github.com/zeveck/audiogen): 5 songs (three for the nook, one for the gallery, one for the scarf) and 23 sounds, from wooden, metal and glass needle clicks to Purl's mew and purr, and the soft click of a round being joined. |
