@@ -98,8 +98,8 @@ Order: these land before changes 2 and 3 are built.
 
 ## Changes 9a–9c (request 9), then publish
 
-- [ ] 9b plush look in the gallery close-up (art/render only) — helper RUNNING (progress plush9.md)
-- [ ] 9a+9c spec (CHANGE_4.md) + one short review round
+- [x] 9b plush look in the gallery close-up — fe58996 (plush.js dome + pillows, render/finished/cardRenderer); check-chart/patterns pass; room tray thumbnails still flat (room build to use plushPiece)
+- [ ] 9a+9c spec (CHANGE_4.md, d92962b) + one short review round — player/art review DONE (.gamegen/review/c4-player-art.md), builder review RUNNING
 - [ ] 9a repaint room-land with more shelf space (own $20) + 9c scarf in the room — build
 - [ ] Play-test changed parts; solutions 47/47 + migration; polish check
 - [ ] README/design/art page updates; publish; live check
