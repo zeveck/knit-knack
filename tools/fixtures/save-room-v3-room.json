@@ -1,0 +1,142 @@
+[
+ {
+  "ref": "doll:pip",
+  "surface": "shelf-top",
+  "t": 0.3,
+  "flip": false,
+  "z": 0
+ },
+ {
+  "ref": "doll:clementine",
+  "surface": "shelf-top",
+  "t": 1,
+  "flip": false,
+  "z": 1
+ },
+ {
+  "ref": "doll:bramble",
+  "surface": "shelf-top",
+  "t": 1.7,
+  "flip": false,
+  "z": 2
+ },
+ {
+  "ref": "g1",
+  "surface": "shelf-top",
+  "t": 2.25,
+  "flip": false,
+  "z": 3
+ },
+ {
+  "ref": "doll:juniper",
+  "surface": "shelf-low",
+  "t": 0.4,
+  "flip": false,
+  "z": 0
+ },
+ {
+  "ref": "piece:books",
+  "surface": "chair-arm-l",
+  "t": 0.4,
+  "flip": false,
+  "z": 0
+ },
+ {
+  "ref": "piece:plant",
+  "surface": "shelf-low",
+  "t": 2,
+  "flip": false,
+  "z": 1
+ },
+ {
+  "ref": "piece:lamp",
+  "surface": "floor-back",
+  "t": 0.5,
+  "flip": false,
+  "z": 0
+ },
+ {
+  "ref": "doll:basil",
+  "surface": "floor-back",
+  "t": 1.1,
+  "flip": false,
+  "z": 1
+ },
+ {
+  "ref": "piece:garland",
+  "surface": "garland-hook",
+  "t": 0.5,
+  "flip": false,
+  "z": 0
+ },
+ {
+  "ref": "piece:frame",
+  "surface": "frame-hook",
+  "t": 0.5,
+  "flip": false,
+  "z": 0
+ },
+ {
+  "ref": "g4",
+  "surface": "chair-drape",
+  "t": 0.5,
+  "flip": false,
+  "z": 0
+ },
+ {
+  "ref": "g5",
+  "surface": "seat-drape",
+  "t": 0.5,
+  "flip": false,
+  "z": 0
+ },
+ {
+  "ref": "g3",
+  "surface": "window-seat",
+  "t": 0.4,
+  "flip": false,
+  "z": 0
+ },
+ {
+  "ref": "piece:teaset",
+  "surface": "window-seat",
+  "t": 1.4,
+  "flip": false,
+  "z": 1
+ },
+ {
+  "ref": "g2",
+  "surface": "chair-arm-r",
+  "t": 0.4,
+  "flip": false,
+  "z": 0
+ },
+ {
+  "ref": "doll:purl",
+  "surface": "chair-seat",
+  "t": 0.6,
+  "flip": false,
+  "z": 0
+ },
+ {
+  "ref": "doll:mabel",
+  "surface": "rug",
+  "t": 0.8,
+  "flip": false,
+  "z": 0
+ },
+ {
+  "ref": "piece:table",
+  "surface": "rug",
+  "t": 2,
+  "flip": false,
+  "z": 1
+ },
+ {
+  "ref": "piece:chest",
+  "surface": "rug-front",
+  "t": 1.2,
+  "flip": false,
+  "z": 0
+ }
+]
