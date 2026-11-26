@@ -10,6 +10,11 @@
 6. `--change let finished toys and dolls sit together in a little cozy room scene you can arrange: drag them onto a rug, an armchair, shelves and a window seat, dressed in what you knit, with the arrangement saved; unlock a few room pieces as you knit`
 7. `--fix all --publish --no-confirm` — #1: Swipe back (https://github.com/zeveck/knit-knack/issues/1); #2: Cat (https://github.com/zeveck/knit-knack/issues/2); #3: Menu location (https://github.com/zeveck/knit-knack/issues/3); #4: Unlock all toggle (https://github.com/zeveck/knit-knack/issues/4)
 8. `--fix all --publish --no-confirm` — no open issues this time; publishes changes 2 and 3
+9. `Do all three gamegen changes you suggested then publish no-confirm.` — the three suggested changes, in Claude's words:
+   - 9a `--change repaint the cozy room's landscape picture with more space between the shelves so dolls up top are bigger`
+   - 9b `--change make pillows and toys look soft and stuffed in the gallery close-up too`
+   - 9c `--change let the infinite scarf hang in the cozy room, growing across the wall as it gets longer`
+   then publish (--no-confirm)
 
 ## Settings
 
@@ -90,6 +95,14 @@ Order: these land before changes 2 and 3 are built.
 ## Publish (request 8)
 
 - [x] Published 2026-11-26: changes 2 and 3 pushed (3146fb3, deploy OK), live check on desktop 1280x800 and iPhone 15 (title, first launch, Cozy Sock on DPNs, finish, room: no errors, text scan clean); plans design + art pages pushed (gallery 278e041) and live. Gallery entry unchanged (same title, tagline, card).
+
+## Changes 9a–9c (request 9), then publish
+
+- [ ] 9b plush look in the gallery close-up (art/render only) — helper RUNNING (progress plush9.md)
+- [ ] 9a+9c spec (CHANGE_4.md) + one short review round
+- [ ] 9a repaint room-land with more shelf space (own $20) + 9c scarf in the room — build
+- [ ] Play-test changed parts; solutions 47/47 + migration; polish check
+- [ ] README/design/art page updates; publish; live check
 
 ## Handoff (2026-11-25 02:46 UTC, before context compaction)
 
