@@ -101,7 +101,7 @@ Order: these land before changes 2 and 3 are built.
 - [x] 9b plush look in the gallery close-up — fe58996 (plush.js dome + pillows, render/finished/cardRenderer); check-chart/patterns pass; room tray thumbnails still flat (room build to use plushPiece)
 - [x] 9a+9c spec (CHANGE_4.md, d92962b) + one short review round; refined 2385666 — player/art review DONE (.gamegen/review/c4-player-art.md), builder review DONE (c4-builder.md: 1 must-fix hook handling, 5 should)
 - [x] 9a repaint room-land ($0, Pillow recompose, 4de375e; top-shelf doll 58–59 px at 844x390) + 9c scarf on pegs (roomScarf.js, 30f8423, ef0d4f8; fixture 6e3a7b7; GAME_DESIGN fold d4f4045); solutions 47/47 + migration
-- [ ] Final review (playtester+bug+polish) RUNNING (progress fr9.md); then fixes
+- [ ] Final review DONE (.gamegen/review/fr9.md: needles hidden, scarf hit rect over frame, stage line under toast + nice; 40 km scarf-screen crash below bar); fixes RUNNING (progress fix9.md)
 - [ ] README/design/art page updates; publish; live check
 
 ## Handoff (2026-11-25 02:46 UTC, before context compaction)
