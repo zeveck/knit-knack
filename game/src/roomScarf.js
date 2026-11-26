@@ -73,23 +73,32 @@ export function drapePath(cm, zone) {
     const L = Math.max(0.1, cm / 150) * (hangYAt(zone, p1[0]) - p1[1]);
     const xl = p1[0] - bw * 0.5, xr = p1[0] + bw * 0.5;
     segs.push({ pts: [...vert(xl, p1[1] + L, p1[1], 8), [p1[0], p1[1] - bw * 0.3], ...vert(xr, p1[1], p1[1] + L, 8)], z: 0 });
-    out.tag = [xl, p1[1] + clamp(L * 0.55, bw * 0.6, 1.1 * U)];
+    // (the tag reads to the right of its pin: pinned to the right end's outer edge it hangs beside the little
+    // scarf over the bare wall, not across it)
+    // (below peg 2's knob; the room hides it while it would still cover the needles at the end's foot)
+    out.tag = [xr + bw * 0.3, p1[1] + Math.max(bw * 1.15, Math.min(L * 0.45, 1.1 * U))];
     out.folds.push({ x: p1[0], y: p1[1], at: 0.5 });
   } else {
     // the cast-on end hangs at peg 1, down behind the chair back (portrait: a set length)
     const castLen = zone.down ? 0.8 * U : hangYAt(zone, p1[0] - bw * 0.5) - p1[1] + bw;
-    segs.push({ pts: vert(p1[0] - bw * 0.45, p1[1] + castLen, top(p1)[1], 10), z: 1 });
+    segs.push({ pts: vert(p1[0] - bw * 0.45, p1[1] + castLen, top(p1)[1], 10), z: 1, cast: true });
     out.tag = [p1[0] - bw * 0.45, p1[1] + Math.min(castLen * 0.6, 1.1 * U)]; // (pinned on the cast-on end)
     const pegsUsed = zone.down ? [p1, last] : stage === 'peg2' ? P.slice(0, 2) : P;
     let rows = 1;
     if (stage === 'g2' || stage === 'l2') rows = 2;
     if (stage === 'g3' || stage === 'l3' || stage === 'bag') rows = 3;
     const drop = (x) => hangYAt(zone, x) - p1[1];
+    // an even number of rows would end back at peg 1, the live end over the cast-on end and its tag: the
+    // last row stops short (landscape: at the peg before peg 1, the live end hanging on its near side;
+    // portrait, two pegs: a fifth of the way along its loop) and the live end hangs from there
+    const halfEnd = stage !== 'bag' && rows % 2 === 0;
+    let endAt = null;
     for (let k = 0; k < rows; k++) {
       // each row back and forth along the pegs; deeper rows hang behind (drawn first)
       const seq = k % 2 ? [...pegsUsed].reverse() : pegsUsed;
       const pts = [];
-      for (let i = 1; i < seq.length; i++) {
+      const stop = halfEnd && k === rows - 1 && seq.length > 2 ? seq.length - 1 : seq.length;
+      for (let i = 1; i < stop; i++) {
         const a = top(seq[i - 1]), b = top(seq[i]);
         let part;
         if (zone.down) {
@@ -102,9 +111,11 @@ export function drapePath(cm, zone) {
           const base = rows === 1 ? bh * (0.04 + 0.14 * g) : bh * 0.18;
           part = swag(a, b, base + (rows - 1 - k) * 0.09 * bh);
         }
+        if (halfEnd && k === rows - 1 && stop === seq.length && i === seq.length - 1) part = part.slice(0, Math.round(part.length * 0.2) + 1);
         pts.push(...(i > 1 ? part.slice(1) : part));
       }
       segs.push({ pts, z: 2 + (rows - 1 - k) * -0.01 + k * 0.1 });
+      if (halfEnd && k === rows - 1) endAt = stop < seq.length ? [top(seq[stop - 1])[0] - bw * 0.5, top(seq[stop - 1])[1]] : pts[pts.length - 1];
     }
     for (const p of pegsUsed) out.folds.push({ x: p[0], y: p[1] });
     // where the scarf leaves the rail: the last peg of the last row
@@ -121,10 +132,15 @@ export function drapePath(cm, zone) {
       const e = top(endPeg);
       segs.push({ pts: [e, [lerp(e[0], cx, 0.5), lerp(e[1], rimY, 0.5) + bw * 0.2], [cx - 30 * s, rimY]], z: 3 });
       out.needles = { x: cx + 26 * s, y: rimY - 6 * s, ang: -1.15, bag: true };
+    } else if (halfEnd) {
+      // the live end hangs from where the last (part) swag stops, its needles through the last row
+      const e = endAt;
+      segs.push({ pts: vert(e[0], e[1], e[1] + (zone.down ? liveLen * 0.7 : liveLen), 8), z: 3 });
     } else {
-      // the live end hangs free from the last peg with its needles through the last row
+      // the live end hangs free from the last peg with its needles through the last row, inside the box
+      // (portrait's last peg is near the picture's right edge: there it hangs on the peg's inner side)
       const e = top(endPeg);
-      const x = e[0] + (endPeg === p1 ? -bw * 0.5 : bw * 0.45);
+      const x = Math.min(e[0] + (endPeg === p1 ? -bw * 0.5 : bw * 0.45), bx + bwid - bw * 0.95);
       segs.push({ pts: vert(x, e[1], e[1] + liveLen, 8), z: 3 });
     }
   }
@@ -136,7 +152,7 @@ export function drapePath(cm, zone) {
   let acc = 0;
   for (const s of segs) { const L = lenOf(s.pts); s.t0 = (acc / total) * span; acc += L; s.t1 = (acc / total) * span; }
   out.len = total;
-  out.parts = segs.slice().sort((a, b) => a.z - b.z).map(({ pts, t0, t1 }) => ({ pts, t0, t1 }));
+  out.parts = segs.slice().sort((a, b) => a.z - b.z).map(({ pts, t0, t1, cast }) => ({ pts, t0, t1, cast: !!cast }));
   // the folds' colour: where the path passes each peg
   for (const f of out.folds) {
     let best = 1e9, bt = 0;
@@ -150,18 +166,20 @@ export function drapePath(cm, zone) {
   return out;
 }
 
-// the visible hit areas (picture px): the path's points above the chair back (and the bag, the tag), split
-// into the part over the chair (main) and the part in the bare strip right of it; each padded
+// the visible hit areas (picture px): the path's points above the chair back (and the bag, the tag's pin),
+// split into the cast-on end hanging at peg 1 (cast), the rest over the chair (main) and the part in the bare
+// strip right of it; each padded half the band and a little. Kept apart so the wall between them (the frame
+// and the sconce left of peg 1, the bare wall under the swags) stays tappable for what's there.
 export function hitAreas(D, zone) {
-  if (D.stage === 'none') return { main: null, strip: null };
+  if (D.stage === 'none') return { main: null, cast: null, strip: null };
   const pad = D.bw / 2 + 6;
-  const main = [], strip = [];
+  const main = [], cast = [], strip = [];
   for (const p of D.parts) for (const [x, y] of p.pts) {
     if (y > hangYAt(zone, x) + 1) continue; // tucked behind the chair: not tappable
-    (zone.strip && x >= zone.strip[0] ? strip : main).push([x, y]);
+    (p.cast ? cast : zone.strip && x >= zone.strip[0] ? strip : main).push([x, y]);
   }
   for (const f of D.folds) main.push([f.x, f.y - D.bw * 0.4]);
-  main.push([D.tag[0] - D.bw, D.tag[1]], [D.tag[0] + D.bw, D.tag[1] + D.bw]);
+  (cast.length ? cast : main).push([D.tag[0], D.tag[1]]);
   if (D.bag) (zone.strip && D.bag.cx >= zone.strip[0] ? strip : main).push([D.bag.cx - 91 * D.bag.s, D.bag.rimY - 30 * D.bag.s], [D.bag.cx + 91 * D.bag.s, D.bag.rimY + 168 * D.bag.s]);
   const box = (pts) => {
     if (!pts.length) return null;
@@ -169,14 +187,18 @@ export function hitAreas(D, zone) {
     for (const [x, y] of pts) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
     return [x0 - pad, y0 - pad, x1 - x0 + pad * 2, y1 - y0 + pad * 2];
   };
-  const m = box(main);
   // never lower than the chair back's top anywhere along it (so the empty chair stays the chair's)
-  if (m) {
+  const clip = (m) => {
+    if (!m) return m;
     let lo = Infinity;
     for (let x = m[0]; x <= m[0] + m[2]; x += 4) if (!zone.strip || x < zone.strip[0]) lo = Math.min(lo, hangYAt(zone, x));
     if (m[1] + m[3] > lo) m[3] = Math.max(8, lo - m[1]);
-  }
-  return { main: m, strip: box(strip) };
+    return m;
+  };
+  const m = clip(box(main)), c = clip(box(cast));
+  // the cast-on end sits under peg 1's fold: its area starts below the main one's top
+  if (m && c && c[1] < m[1]) { const b0 = c[1] + c[3]; c[1] = m[1]; c[3] = Math.max(8, b0 - c[1]); }
+  return { main: m, cast: c, strip: box(strip) };
 }
 
 // ---------------------------------------------------------------- the colour strip
@@ -252,21 +274,43 @@ export function bakeScarf(D, zone, k, opts) {
   // each part: its outline, the band in its rows' colours (short slices of the strip along the path),
   // a soft light down its middle
   const step = 1.6 / k;
+  // the strip's middle column, read once: a row's own colour (the folds, the bag's coils, the band's shade)
+  const mid = st.canvas.getContext('2d').getImageData(5, 0, 1, st.N).data;
+  const rgbAtT = (t) => { const o = rowAt(t) * 4; return [mid[o], mid[o + 1], mid[o + 2]]; };
   const ribbon = (p) => {
     const pts = p.pts;
-    let L = 0; const cum = [0];
-    for (let i = 1; i < pts.length; i++) { L += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); cum.push(L); }
+    let L = 0; const cum = [0], angs = [];
+    for (let i = 1; i < pts.length; i++) { L += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); cum.push(L); angs.push(Math.atan2(pts[i][1] - pts[i - 1][1], pts[i][0] - pts[i - 1][0])); }
+    // under the band, a darker shade of its own yarn (what shows between the slices on a curve's outside)
+    for (let i = 1; i < pts.length; i++) {
+      const [r, gg, b] = rgbAtT(lerp(p.t0, p.t1, (cum[i - 1] + cum[i]) / 2 / (L || 1)));
+      stroke([pts[i - 1], pts[i]], bw, `rgb(${r * 0.72 | 0},${gg * 0.72 | 0},${b * 0.72 | 0})`, 'round');
+    }
+    // the band turns smoothly (its angle eased from one segment's to the next across each joint, not
+    // snapped at it), and a slice on a curve's outside is longer by how sharply it turns there, so the
+    // slices meet on the outside of a swag too
+    const dAng = (a0, a1) => { let d = a1 - a0; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return d; };
+    const angAt = (j, f) => { // segment j - 1, f along it
+      const i = j - 1;
+      if (f < 0.5) { const p0 = angs[Math.max(0, i - 1)]; return p0 + dAng(p0, angs[i]) * (f + 0.5); }
+      const p1 = angs[Math.min(angs.length - 1, i + 1)]; return angs[i] + dAng(angs[i], p1) * (f - 0.5);
+    };
+    const bend = (j) => {
+      const i = j - 1, a0 = angs[Math.max(0, i - 1)], a1 = angs[Math.min(angs.length - 1, i + 1)];
+      return Math.abs(dAng(a0, a1)) / Math.max(1e-6, (cum[Math.min(pts.length - 1, j + 1)] - cum[Math.max(0, j - 2)]) / 2 + 1e-6);
+    };
     let j = 1;
     for (let s = 0; s < L; s += step) {
       while (j < pts.length - 1 && cum[j] < s) j++;
       const a = pts[j - 1], b = pts[j];
       const f = (s - cum[j - 1]) / Math.max(1e-6, cum[j] - cum[j - 1]);
       const x = lerp(a[0], b[0], f), y = lerp(a[1], b[1], f);
-      const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
+      const ang = angAt(j, f);
       const cs = Math.cos(ang), sn = Math.sin(ang);
+      const ext = Math.min(step * 3, step * bend(j) * bw * 0.6);
       // the strip's 12 stitches across the band, its row along the path
       g.setTransform(-sn * k, cs * k, cs * k, sn * k, (x - bx) * k, (y - by) * k);
-      g.drawImage(st.canvas, 0, rowAt(lerp(p.t0, p.t1, s / L)), 12, 1, -bw / 2, -0.2, bw, step + 0.5);
+      g.drawImage(st.canvas, 0, rowAt(lerp(p.t0, p.t1, s / L)), 12, 1, -bw / 2, -0.2 - ext / 2, bw, step + 0.5 + ext);
     }
     g.setTransform(k, 0, 0, k, -bx * k, -by * k);
   };
@@ -276,7 +320,7 @@ export function bakeScarf(D, zone, k, opts) {
     stroke(p.pts, bw * 0.34, 'rgba(255,244,222,0.12)');
   }
   // the folds over the pegs: a soft bulge in that row's colour
-  const colAt = (t) => { const d = st.canvas.getContext('2d').getImageData(5, rowAt(t), 1, 1).data; return `rgb(${d[0]},${d[1]},${d[2]})`; };
+  const colAt = (t) => { const d = rgbAtT(t); return `rgb(${d[0]},${d[1]},${d[2]})`; };
   for (const f of D.folds) {
     g.beginPath(); g.ellipse(f.x, f.y - bw * 0.18, bw * 0.62, bw * 0.42, 0, 0, Math.PI * 2);
     g.fillStyle = colAt(f.t); g.fill(); g.lineWidth = 1.3; g.strokeStyle = INK; g.stroke();

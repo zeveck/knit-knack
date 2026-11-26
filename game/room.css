@@ -67,6 +67,7 @@
 .room-body.side .tray-list { grid-auto-rows: auto; }
 .room-body.side .ti { height: 72px; }
 .tray-empty { color: var(--cream); opacity: 0.8; font-size: 14px; padding: 0 10px; white-space: nowrap; }
+.room-body.side .tray-empty { grid-column: 1 / -1; white-space: normal; text-align: center; padding: 10px 6px; line-height: 1.3; }
 .tidy-sheet p { color: var(--ink-soft); margin-bottom: 12px; }
 .tidy-sheet .acts { display: flex; gap: 10px; flex-wrap: wrap; }
 .closer-big { display: flex; justify-content: center; align-items: flex-end; padding: 8px; background: radial-gradient(circle at 45% 35%, #f3e1bd, #b98d62); border-radius: 14px; min-height: 120px; }

@@ -19,7 +19,7 @@ import { detail as galleryDetail } from './gallery.js';
 import { coatNow } from './catCoat.js';
 import { store as scarfStore } from './scarfStore.js';
 import { init as scarfInit, goalText, statText } from './scarf.js';
-import { lastPassed, goalAfter, slotCard, fmtLen } from './scarfFacts.js';
+import { lastPassed, goalAfter, slotCard, fmtLen, FACTS } from './scarfFacts.js';
 import { NEEDLE_STYLES } from './work.js';
 import { drapePath, hitAreas, bakeScarf, drawScarfIcon, stageOf, stageRank, stageLine, forgetStrip } from './roomScarf.js';
 
@@ -376,6 +376,9 @@ function addThing(e) {
       // the live end in the bare wall right of the chair: a second hit area of its own
       const p2 = el('span', { class: 'rt-drape2 rs-strip', 'data-key': key });
       T.part2 = p2; dom.box.append(p2);
+      // the cast-on end hanging at peg 1 (and its tag): a third, so the wall between them stays the wall's
+      const p3 = el('span', { class: 'rt-drape2 rs-cast', 'data-key': key });
+      T.part3 = p3; dom.box.append(p3);
     }
   } else if (kind === 'blanket' && R.SURFACES[e.surface] && R.SURFACES[e.surface].kind === 'drape') {
     const D = renderDrape(ref, e.surface);
@@ -412,7 +415,7 @@ function label(T) {
 }
 function removeThing(key) {
   const T = things.get(key); if (!T) return;
-  T.btn.remove(); if (T.part2) T.part2.remove();
+  T.btn.remove(); if (T.part2) T.part2.remove(); if (T.part3) T.part3.remove();
   things.delete(key);
   if (selected === key) deselect();
 }
@@ -516,14 +519,27 @@ function placeScarf(T, li) {
   // the tag on its string from peg 1 (from 10 cm)
   const cm = scarfStore.cm();
   if (T.tag) {
-    T.tag.hidden = cm < 10;
     if (!T.rolling) T.tag.textContent = fmtLen(cm);
     Object.assign(T.tag.style, { left: `${I.D.tag[0] * f - zx}px`, top: `${I.D.tag[1] * f - zy}px` });
+    // a very short scarf: the tag waits until it can hang clear of the needles at the live end's foot
+    T.tagBlocked = false;
+    if (I.D.stage === 'hang' && I.D.needles && cm >= 10) {
+      T.tag.hidden = false;
+      const tx = I.D.tag[0] * f - 9, ty = I.D.tag[1] * f, tw = T.tag.offsetWidth, th = T.tag.offsetHeight;
+      const nx = I.D.needles.x * f, ny = I.D.needles.y * f, nh = I.D.bw * 1.1 * f, nw = I.D.bw * 0.45 * f;
+      T.tagBlocked = tx < nx + nw + 3 && tx + tw > nx - nw - 3 && ty < ny + nh + 3 && ty + th > ny - nh - 3;
+    }
+    T.tag.hidden = cm < 10 || T.tagBlocked;
   }
   if (T.part2) {
     const s2 = T.part2.style;
     if (H.strip && I.D.stage !== 'none') { const [x, y, w, h] = H.strip.map((v) => v * f); Object.assign(s2, { display: '', width: `${w}px`, height: `${h}px`, transform: `translate(${x}px, ${y}px)`, zIndex: li * 100 + 10 }); T.hit2 = [x, y, w, h]; }
     else { s2.display = 'none'; T.hit2 = null; }
+  }
+  if (T.part3) {
+    const s3 = T.part3.style;
+    if (H.cast && I.D.stage !== 'none') { const [x, y, w, h] = H.cast.map((v) => v * f); Object.assign(s3, { display: '', width: `${w}px`, height: `${h}px`, transform: `translate(${x}px, ${y}px)`, zIndex: li * 100 + 10 }); T.hit3 = [x, y, w, h]; }
+    else { s3.display = 'none'; T.hit3 = null; }
   }
 }
 // on entering the room: if the scarf grew since the room last showed it, its tag counts up from then, it
@@ -536,18 +552,28 @@ function scarfMoment() {
   s.roomScarfCm = cm; S.saveSoon();
   const down = !!(T.scarf.zone && T.scarf.zone.down);
   const line = stageRank(stageOf(cm, down)) > stageRank(stageOf(was, down)) ? stageLine(stageOf(cm, down)) : null;
-  if (line) setTimeout(() => { if (dom && here()) { say(line, 3800, true); speak(line); } }, reduceMotion() ? 0 : 700);
+  if (line) setTimeout(() => stageSay(line), reduceMotion() ? 0 : 700);
   if (reduceMotion() || !T.tag) return;
   T.rolling = true;
   const t0 = performance.now(), dur = 900;
   const step = (t) => {
     if (!dom || !T.tag.isConnected) { T.rolling = false; return; }
     const e = Math.min(1, (t - t0) / dur), v = was + (cm - was) * (1 - Math.pow(1 - e, 3));
-    T.tag.hidden = v < 10; T.tag.textContent = fmtLen(v);
+    T.tag.hidden = v < 10 || T.tagBlocked; T.tag.textContent = fmtLen(v);
     if (e < 1) requestAnimationFrame(step); else T.rolling = false;
   };
   requestAnimationFrame(step);
   sway(T);
+}
+// the stage line waits for the unlock toasts (they sit where it would): up to 12 s, then at the bottom
+// (one waiting in the queue between two toasts counts for a moment; a queue that doesn't move, e.g. under a
+// sheet, sends the line to the bottom of the room, clear of where its toast will show)
+function stageSay(line, waited = 0, gap = 0) {
+  if (!dom || !here()) return;
+  const q = toasts.queueState();
+  const queued = q.queued.length > 0;
+  if (waited < 12000 && (q.showing || (queued && gap < 3))) { setTimeout(() => stageSay(line, waited + 250, q.showing ? 0 : gap + 1), 250); return; }
+  say(line, 3800, !q.showing && !queued); speak(line);
 }
 function sway(T) {
   if (reduceMotion()) return;
@@ -561,8 +587,7 @@ function refreshScarf() {
   if (e && visibleEntry(e)) addThing(e);
   layout(); renderTray(); scarfMoment();
 }
-// Look closer: the length, the last milestone passed, the next goal, one fact (the next each time)
-let scarfFact = 0;
+// Look closer: the length, the last milestone passed, the next goal, one fact (the next each time, saved)
 function scarfCloser() {
   const cm = scarfStore.cm();
   const box0 = el('div', { class: 'detail closer scarf-closer' });
@@ -571,7 +596,9 @@ function scarfCloser() {
   if (m) box0.append(el('div', { class: 'scl-mile' }, el('img', { src: `assets/cmp/${m.img}.webp`, alt: '' }), el('span', { text: `Taller than ${m.name}` })));
   const g = goalAfter(cm);
   if (g) box0.append(el('p', { class: 'scl-next', text: `${fmtLen(Math.max(1, Math.ceil(g.cm - cm)))} to go: ${goalText(g)}` }));
-  const c = slotCard(scarfFact++);
+  // (round and round: every fact, then the scarf's seven stats, then the facts again)
+  const st0 = S.get(); const c = slotCard((st0.roomScarfFact || 0) % (FACTS.length + 7));
+  st0.roomScarfFact = ((st0.roomScarfFact || 0) + 1) % (FACTS.length + 7); S.saveSoon();
   box0.append(el('p', { class: 'scl-fact', text: c.kind === 'fact' ? c.text : statText(c.n) }));
   const more = el('button', { class: 'btn primary', text: 'Knit more' });
   more.addEventListener('click', () => { audio.play('ui'); closeSheet(); go('scarf', { from: 'room' }); });
@@ -711,11 +738,14 @@ function showBar(T) {
 }
 function placeBar() {
   const T = things.get(selected); const bar = dom.bar; if (!T || !bar || !T.hit) return;
-  const [hx, hy, hw] = T.hit;
+  // (the scarf: all of it, its cast-on end's area too)
+  const H = T.kind === 'scarf' && T.hit3 ? [Math.min(T.hit[0], T.hit3[0]), Math.min(T.hit[1], T.hit3[1]), 0, 0] : T.hit.slice();
+  if (T.kind === 'scarf' && T.hit3) { H[2] = Math.max(T.hit[0] + T.hit[2], T.hit3[0] + T.hit3[2]) - H[0]; H[3] = Math.max(T.hit[1] + T.hit[3], T.hit3[1] + T.hit3[3]) - H[1]; }
+  const [hx, hy, hw] = H;
   const bw = bar.offsetWidth || 260, bh = bar.offsetHeight || 44;
   let x = hx + hw / 2 - bw / 2, y = hy - bh - 6;
   x = Math.max(4 - box.x, Math.min(box.w + box.x - bw - 4, x));
-  if (y < 4 - box.y) y = hy + (T.kind === 'scarf' ? T.hit[3] : Math.min(T.hit[3], 60)) + 6; // (the scarf: under all of it)
+  if (y < 4 - box.y) y = hy + (T.kind === 'scarf' ? H[3] : Math.min(H[3], 60)) + 6; // (the scarf: under all of it)
   bar.style.transform = `translate(${x}px, ${y}px)`;
 }
 function turn(key) {
@@ -837,7 +867,7 @@ function dropAt(ref, fx, fy) {
 function heldEl(ref) {
   // the thing as it's carried: its own button if it's in the room (a blanket: its flat stand-in)
   let T = things.get(ref);
-  if (T && (T.drape || T.scarf)) { T.btn.style.opacity = '0.25'; if (T.part2) T.part2.style.opacity = '0.25'; T = null; }
+  if (T && (T.drape || T.scarf)) { T.btn.style.opacity = '0.25'; if (T.part2) T.part2.style.opacity = '0.25'; if (T.part3) T.part3.style.opacity = '0.25'; T = null; }
   if (!T) {
     // (the scarf: its small folded icon, never the whole wall)
     const info = R.kindOf(ref) === 'scarf' ? scarfIcon() : renderThing(ref); if (!info) return null;
@@ -891,7 +921,7 @@ function endHold() {
   if (h.T.carry) h.T.btn.remove();
   else { h.T.btn.classList.remove('dragging'); }
   const T = things.get(h.ref);
-  if (T && (T.drape || T.scarf)) { T.btn.style.opacity = ''; if (T.part2) T.part2.style.opacity = ''; }
+  if (T && (T.drape || T.scarf)) { T.btn.style.opacity = ''; if (T.part2) T.part2.style.opacity = ''; if (T.part3) T.part3.style.opacity = ''; }
   try { if (h.pointerId != null && root.hasPointerCapture(h.pointerId)) root.releasePointerCapture(h.pointerId); } catch { /* */ }
 }
 // a cancelled hold: back where it came from, nothing saved
@@ -1285,7 +1315,7 @@ export const debug = {
     const tray = [...dom.list.querySelectorAll('.ti')].map((b) => { const r = b.getBoundingClientRect(); return { ref: b.dataset.tref, rect: { x: r.left, y: r.top, w: r.width, h: r.height } }; });
     const trayRect = dom.tray.getBoundingClientRect();
     const ST = things.get('scarf');
-    const scarf = ST && ST.scarf ? { ms: Math.round(ST.scarf.ms * 10) / 10, stage: ST.scarf.D.stage, cm: scarfStore.cm(), bake: [ST.scarf.el.width, ST.scarf.el.height], hit: ST.hit ? ST.hit.map((v, i) => Math.round(v + (i === 0 ? br.left : i === 1 ? br.top : 0))) : null, strip: ST.hit2 ? ST.hit2.map((v, i) => Math.round(v + (i === 0 ? br.left : i === 1 ? br.top : 0))) : null, tag: ST.tag && !ST.tag.hidden ? ST.tag.textContent : null, label: ST.btn.getAttribute('aria-label'), shown: ST.btn.style.display !== 'none' } : null;
+    const scarf = ST && ST.scarf ? { ms: Math.round(ST.scarf.ms * 10) / 10, stage: ST.scarf.D.stage, cm: scarfStore.cm(), bake: [ST.scarf.el.width, ST.scarf.el.height], hit: ST.hit ? ST.hit.map((v, i) => Math.round(v + (i === 0 ? br.left : i === 1 ? br.top : 0))) : null, strip: ST.hit2 ? ST.hit2.map((v, i) => Math.round(v + (i === 0 ? br.left : i === 1 ? br.top : 0))) : null, cast: ST.hit3 ? ST.hit3.map((v, i) => Math.round(v + (i === 0 ? br.left : i === 1 ? br.top : 0))) : null, tag: ST.tag && !ST.tag.hidden ? ST.tag.textContent : null, label: ST.btn.getAttribute('aria-label'), shown: ST.btn.style.display !== 'none', needles: ST.scarf.D.needles ? [Math.round(br.left + ST.scarf.D.needles.x * box.w / ST.scarf.zone.W), Math.round(br.top + ST.scarf.D.needles.y * box.w / ST.scarf.zone.W)] : null, tagRect: ST.tag && !ST.tag.hidden ? (({ left, top, width, height }) => [left, top, width, height].map(Math.round))(ST.tag.getBoundingClientRect()) : null } : null;
     return { scarf, picture: pic, box: { x: br.left, y: br.top, w: br.width, h: br.height }, trayRect: { x: trayRect.left, y: trayRect.top, w: trayRect.width, h: trayRect.height }, surfaces, things: tl, tray };
   },
   clearRoom: () => clearRoom(),

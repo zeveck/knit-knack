@@ -147,6 +147,8 @@ function fresh() {
     room: freshRoom(), roomV: 2,
     // (Change 4) the scarf's length the room last showed (its growth moment counts up from it)
     roomScarfCm: null,
+    // the next fact the scarf's Look closer shows (it carries on from session to session)
+    roomScarfFact: 0,
   };
 }
 const scarfEntry = () => ({ ref: 'scarf', surface: 'scarf-pegs', t: 0.5, flip: false, z: 0 });
@@ -248,6 +250,7 @@ function migrate(raw) {
     s.roomV = 2;
   }
   if (!(typeof raw.roomScarfCm === 'number' && raw.roomScarfCm >= 0)) s.roomScarfCm = null;
+  if (!(Number.isInteger(s.roomScarfFact) && s.roomScarfFact >= 0)) s.roomScarfFact = 0;
   if (!Array.isArray(raw.finishedPatterns)) s.finishedPatterns = [...new Set(s.gallery.map((g) => g.pattern))];
   s.v = VERSION;
   return s;

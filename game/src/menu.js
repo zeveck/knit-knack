@@ -20,8 +20,9 @@ export function openMenu() {
   if (currentScreen() === 'title') return;
   const s = S.get();
   const list = el('div', { class: 'menu-list' });
-  list.append(item('play', 'Resume', () => closeSheet(), 'primary'));
+  // (Change 4) from Knit more in the room: "Back to the room" heads the menu
   if (hooks.backToRoom && hooks.backToRoom()) list.append(item('back', 'Back to the room', () => { closeSheet(); go('room'); }));
+  list.append(item('play', 'Resume', () => closeSheet(), 'primary'));
   list.append(item('book', 'Pattern Book', () => go('book')));
   list.append(item('frame', 'Gallery', () => go('gallery')));
   list.append(item('bag', 'Knitting Bag', () => go('bag')));

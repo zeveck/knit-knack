@@ -297,6 +297,7 @@ function setDigits(cm) {
 }
 
 function refreshBar() {
+  if (!dom.skein) return; // (scarfAddRows before the scarf screen was ever built)
   const size = layout === 'desk' ? 46 : S.get().settings.big && layout !== 'land' ? 50 : 44;
   paintBallInto(dom.skein.querySelector('canvas'), store.current, size);
   dom.skein.title = `Scarf yarn: ${yarnName(store.current)} (1)`;
