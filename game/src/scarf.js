@@ -457,13 +457,21 @@ async function enter() {
   if (!store.n) { audio.play('caston'); showChip('Cast on 12 stitches. Tap to knit!', store.current); }
 }
 function leave() {
-  entering++;
+  entering++; fromRoom = false;
   setKeyHandler(null); if (holds) holds.releaseAll(); audio.ripLoopStop(); toasts.anchor(null);
   closeHow(true);
   store.saveNow(); S.saveNow();
 }
 export function applySettings() { if (built && currentScreen() === 'scarf') { relayout(); refreshMute(); } }
-registerScreen('scarf', { enter: () => { enter(); }, leave });
+registerScreen('scarf', { enter: (arg) => { fromRoom = !!(arg && arg.from === 'room'); enter(); }, leave });
+// (Change 4) opened from the cozy room's Knit more: Back (the browser's, the phone's, or the menu's "Back
+// to the room") goes back to the room, where the scarf shows what the knitting did
+let fromRoom = false;
+export const openedFromRoom = () => fromRoom && currentScreen() === 'scarf';
+export function backToRoom() {
+  if (!openedFromRoom() || how || openSheetName()) return false;
+  fromRoom = false; go('room'); return true;
+}
 
 // ---------------------------------------------------------------- the debug hook: rows through the same data path, no animation
 export async function addRows(n, yarn, pattern) {

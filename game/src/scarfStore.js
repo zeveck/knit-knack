@@ -71,10 +71,15 @@ function open() {
   if (db) return Promise.resolve(db);
   return new Promise((res, rej) => {
     if (!('indexedDB' in window)) { rej(new Error('no IndexedDB')); return; }
-    const rq = indexedDB.open(DB, 1);
+    let rq;
+    try { rq = indexedDB.open(DB, 1); } catch (e) { rej(e); return; }
+    // (Change 4) an open that never answers (blocked by another tab, a stuck browser) gives up after 4 s,
+    // so nothing waiting on the scarf hangs
+    const timer = setTimeout(() => rej(new Error('IndexedDB open timed out')), 4000);
     rq.onupgradeneeded = () => { const d = rq.result; if (!d.objectStoreNames.contains('chunks')) d.createObjectStore('chunks'); if (!d.objectStoreNames.contains('meta')) d.createObjectStore('meta'); };
-    rq.onsuccess = () => { db = rq.result; res(db); };
-    rq.onerror = () => rej(rq.error);
+    rq.onsuccess = () => { clearTimeout(timer); db = rq.result; res(db); };
+    rq.onerror = () => { clearTimeout(timer); rej(rq.error); };
+    rq.onblocked = () => { clearTimeout(timer); rej(new Error('IndexedDB open blocked')); };
   });
 }
 
@@ -85,7 +90,7 @@ class ScarfStore {
     this.runs = [{ row: 1, pattern: 'garter' }];
     this.current = { color: '#9e2a3a', type: 'wool' };
     this.dirty = new Set(); this.metaDirty = false;
-    this.version = 0; this.loaded = false;
+    this.version = 0; this.loaded = false; this.broken = false;
     this._timer = 0; this._last = 0;
     this.listeners = [];
     this._strips = []; this._stripDone = 0;
@@ -144,7 +149,7 @@ class ScarfStore {
         for (const [k, v] of all) if (k < chunks) this.idx.set(new Uint16Array(v).subarray(0, Math.min(CHUNK, n - k * CHUNK)), k * CHUNK);
         this.n = n;
       }
-    } catch (e) { console.warn('scarf load', e); }
+    } catch (e) { console.warn('scarf load', e); this.broken = true; }
     this.loaded = true; this.version++;
     return this;
   }
@@ -156,6 +161,8 @@ class ScarfStore {
   async saveNow() {
     clearTimeout(this._timer); this._timer = 0; this._last = performance.now();
     if (!this.loaded) return false;
+    // a store that didn't load never writes over what may still be there (it would save an empty scarf)
+    if (this.broken) { this.listeners.forEach((f) => f(false, new Error('scarf store not loaded'))); return false; }
     const dirty = [...this.dirty]; this.dirty.clear();
     const metaDirty = true; this.metaDirty = false;
     try {

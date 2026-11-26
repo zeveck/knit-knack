@@ -7,7 +7,7 @@ import * as audio from './audio.js';
 import { image as sceneImage } from './scene.js';
 import { catImage, COAT_LIST } from './catCoat.js';
 
-let hooks = { toggleMute: () => {}, resume: () => {}, onReset: () => {}, onSettings: () => {}, onUnlocks: () => {} };
+let hooks = { toggleMute: () => {}, resume: () => {}, onReset: () => {}, onSettings: () => {}, onUnlocks: () => {}, backToRoom: () => false };
 export const setMenuHooks = (h) => { hooks = { ...hooks, ...h }; };
 
 const item = (icon, label, fn, cls = '') => {
@@ -21,6 +21,7 @@ export function openMenu() {
   const s = S.get();
   const list = el('div', { class: 'menu-list' });
   list.append(item('play', 'Resume', () => closeSheet(), 'primary'));
+  if (hooks.backToRoom && hooks.backToRoom()) list.append(item('back', 'Back to the room', () => { closeSheet(); go('room'); }));
   list.append(item('book', 'Pattern Book', () => go('book')));
   list.append(item('frame', 'Gallery', () => go('gallery')));
   list.append(item('bag', 'Knitting Bag', () => go('bag')));

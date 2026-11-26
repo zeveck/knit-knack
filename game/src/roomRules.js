@@ -24,6 +24,8 @@ export const SURFACES = {
   // the rug holds a group in two rows: its middle, and its front edge (drawn over the middle row)
   rug: { kind: 'line', layer: 'rug', capacity: 4.0, maxH: 3.0, accepts: ALL_FLOOR, name: 'the rug' },
   'rug-front': { kind: 'line', layer: 'rug-front', capacity: 3.5, maxH: 3.0, accepts: ALL_FLOOR, name: 'the front of the rug' },
+  // (Change 4) the Infinite Scarf's own pegs, above the armchair
+  'scarf-pegs': { kind: 'hook', layer: 'wall', capacity: 1, accepts: ['scarf'], name: 'the pegs' },
 };
 export const SURFACE_IDS = Object.keys(SURFACES);
 export const LINE_IDS = SURFACE_IDS.filter((id) => SURFACES[id].kind === 'line');
@@ -49,9 +51,11 @@ const BLANKETS = ['chevron-baby-blanket', 'patchwork-blanket', 'heirloom-afghan'
 const DOLL_H = { pip: 1, clementine: 1.01, bramble: 1.01, juniper: 1.14, basil: 1.08, mabel: 1 };
 
 // ---------------------------------------------------------------- what a ref is
-// kind: 'doll' | 'purl' | 'toy' | 'pillow' | 'blanket' | 'piece' | null
+// kind: 'doll' | 'purl' | 'toy' | 'pillow' | 'blanket' | 'piece' | 'scarf' | null
+export const SCARF = 'scarf';
 export function kindOf(ref) {
   if (typeof ref !== 'string') return null;
+  if (ref === SCARF) return 'scarf';
   if (ref === 'doll:purl') return 'purl';
   if (ref.startsWith('doll:')) return DOLLS.includes(ref.slice(5)) ? 'doll' : null;
   if (ref.startsWith('piece:')) return PIECES[ref.slice(6)] ? 'piece' : null;
@@ -63,7 +67,13 @@ export function kindOf(ref) {
   return null;
 }
 export const acceptKey = (ref) => { const k = kindOf(ref); return k === 'piece' ? ref : k; };
-export const isHookThing = (ref) => kindOf(ref) === 'piece' && !!PIECES[ref.slice(6)].hook;
+// the hook a thing hangs on (a hook piece's own, the scarf's pegs), else null
+export function hookOf(ref) {
+  const k = kindOf(ref);
+  if (k === 'scarf') return 'scarf-pegs';
+  return k === 'piece' ? PIECES[ref.slice(6)].hook || null : null;
+}
+export const isHookThing = (ref) => !!hookOf(ref);
 export const goesOnDrape = (ref) => kindOf(ref) === 'blanket';
 // in the player's hands: an unlocked doll (the cat always), a gallery piece, an unlocked room piece
 export function available(ref) {
@@ -72,12 +82,14 @@ export function available(ref) {
   if (k === 'purl') return true;
   if (k === 'doll') return S.isUnlocked(ref);
   if (k === 'piece') return S.isUnlocked(`room:${ref.slice(6)}`);
+  if (k === 'scarf') return (S.get().scarf.stitches || 0) > 0; // (kept in step with the store by scarf.js)
   return true;
 }
 export function nameOf(ref) {
   const k = kindOf(ref);
   if (k === 'doll' || k === 'purl') return DOLL_NAMES[ref.slice(5)];
   if (k === 'piece') return PIECES[ref.slice(6)].name;
+  if (k === 'scarf') return 'Your Infinite Scarf';
   const g = S.galleryById(ref); return g ? g.name : 'It';
 }
 // a short name for lines like "Pip can't go on the chair arm"
@@ -110,7 +122,7 @@ export function sizeOf(ref) {
     if (w > hi) { w = hi; h = hi / a; }
     return { h, foot: Math.max(lo, w), w };
   }
-  if (k === 'blanket') return { h: 0, foot: 1 };
+  if (k === 'blanket' || k === 'scarf') return { h: 0, foot: 1 };
   return { h: 1, foot: 0.6 };
 }
 
@@ -161,7 +173,8 @@ export function reasonText(reason, ref, sid) {
     if (ref === 'piece:chest' || ref === 'piece:table') return `${nameOf(ref)} stands on the floor`;
     if (kindOf(ref) === 'blanket') return 'Blankets go over the armchair or the window seat';
     if (ref === 'piece:garland') return 'The garland hangs in the window';
-    if (ref === 'piece:frame') return 'The picture hangs on the wall by the window';
+    if (ref === 'piece:frame') return 'The picture hangs on its own hook on the wall';
+    if (ref === SCARF) return 'The scarf hangs on the pegs';
     return `${nameOf(ref)} can't go on ${where}`;
   }
   if (reason === 'too-tall') return `Too tall for ${where}`;
@@ -262,6 +275,7 @@ export function allThings() {
   const gal = s.gallery.slice().sort((a, b) => b.finished - a.finished);
   for (const g of gal) if (kindOf(g.id) === 'toy') out.push({ ref: g.id, sec: 'Toys' });
   for (const g of gal) { const k = kindOf(g.id); if (k === 'pillow' || k === 'blanket') out.push({ ref: g.id, sec: 'Soft things' }); }
+  if (available(SCARF)) out.push({ ref: SCARF, sec: 'Soft things' }); // (Change 4) after the gallery's soft things
   for (const it of PIECE_ORDER) if (S.isUnlocked(`room:${it}`)) out.push({ ref: `piece:${it}`, sec: 'Room pieces' });
   return out;
 }

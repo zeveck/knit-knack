@@ -142,11 +142,15 @@ function fresh() {
     bookComplete: false, bookCompleteShown: false, seenPatterns: [],
     started: false,
     cat: { coat: pickOne(CAT_COATS), name: randomCatName() },
-    // (Change 3) the cozy room: [{ref, surface, t, flip, z}], seeded with the cat on the armchair
-    room: freshRoom(),
+    // (Change 3) the cozy room: [{ref, surface, t, flip, z}], seeded with the cat on the armchair and
+    // (Change 4, roomV 2) the Infinite Scarf on its pegs (hidden until its first stitch)
+    room: freshRoom(), roomV: 2,
+    // (Change 4) the scarf's length the room last showed (its growth moment counts up from it)
+    roomScarfCm: null,
   };
 }
-export const freshRoom = () => [{ ref: 'doll:purl', surface: 'chair-seat', t: 0.6, flip: false, z: 0 }];
+const scarfEntry = () => ({ ref: 'scarf', surface: 'scarf-pegs', t: 0.5, flip: false, z: 0 });
+export const freshRoom = () => [{ ref: 'doll:purl', surface: 'chair-seat', t: 0.6, flip: false, z: 0 }, scarfEntry()];
 // the room's entries as saved: well-formed ones only, each ref once (the rest of its cleaning, which needs
 // the book, is roomRules.cleanRoom at boot)
 function migrateRoom(raw) {
@@ -236,6 +240,14 @@ function migrate(raw) {
   const rc = raw.cat && typeof raw.cat === 'object' ? raw.cat : {};
   s.cat = { coat: CAT_COATS.includes(rc.coat) ? rc.coat : 'cream', name: cleanName(rc.name) || 'Purl' };
   s.room = migrateRoom(raw.room);
+  // (Change 4) a room saved before the scarf hung in it: it's already on its pegs, first in the list (so
+  // cleanRoom's 40-thing limit, which keeps the saved order, can't drop it). Tested on raw: s starts as
+  // fresh(), whose roomV is already 2. A scarf put away later stays away.
+  if (!(raw.roomV >= 2)) {
+    if (!s.room.some((e) => e.ref === 'scarf')) s.room.unshift(scarfEntry());
+    s.roomV = 2;
+  }
+  if (!(typeof raw.roomScarfCm === 'number' && raw.roomScarfCm >= 0)) s.roomScarfCm = null;
   if (!Array.isArray(raw.finishedPatterns)) s.finishedPatterns = [...new Set(s.gallery.map((g) => g.pattern))];
   s.v = VERSION;
   return s;

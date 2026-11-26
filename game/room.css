@@ -86,3 +86,21 @@
   .rbar { gap: 2px; padding: 3px; }
   .rbar .btn.small { min-height: 34px; padding: 3px 9px; font-size: 13px; }
 }
+
+/* (Change 4) the Infinite Scarf on its pegs: its tag, its sway about peg 1, its Look closer sheet */
+.rt-scarf .rt-vis { overflow: visible; }
+.rs-tag { position: absolute; transform: translate(-50%, 0) rotate(-5deg); transform-origin: 50% 0; white-space: nowrap; pointer-events: none;
+  font-family: 'Caveat', cursive; font-weight: 700; font-size: clamp(13px, 1.1vmin + 9px, 20px); line-height: 1; color: #3b2738;
+  background: linear-gradient(#fbf2dc, #efdfbd); padding: 2px 6px 1px 12px; border-radius: 3px 7px 7px 3px;
+  box-shadow: 0 1px 2px rgba(40, 14, 30, 0.45); }
+/* the tag's hole and the brass pin through it into the scarf */
+.rs-tag::before { content: ''; position: absolute; left: 4px; top: 50%; width: 5px; height: 5px; margin-top: -2.5px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #f4d98a, #a2781e); box-shadow: 0 0 0 1px rgba(60, 40, 20, 0.5); }
+.rt-bob.sway { animation: rsway 0.6s ease-in-out; }
+@keyframes rsway { 0% { transform: none; } 25% { transform: rotate(1.5deg); } 60% { transform: rotate(-1.2deg); } 85% { transform: rotate(0.4deg); } 100% { transform: none; } }
+.scarf-closer { text-align: center; }
+.scl-len { font-family: 'Caveat', cursive; font-weight: 700; font-size: 44px; line-height: 1; color: var(--plum, #3b2738); margin: 4px 0 8px; }
+.scl-mile { display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 600; color: var(--ink); }
+.scl-mile img { height: 72px; width: auto; }
+.scl-next { color: var(--ink-soft); margin: 8px 0 4px; }
+.scl-fact { color: var(--ink-soft); font-size: 15px; margin: 6px auto 10px; max-width: 34em; }
+@media (prefers-reduced-motion: reduce) { .rt-bob.sway, .rt-bob.hop { animation: none; } }

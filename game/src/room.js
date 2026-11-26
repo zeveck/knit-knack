@@ -14,10 +14,14 @@ import * as R from './roomRules.js';
 import { loadDolls, composeDoll, dressedDoll, outfitOf, dollSize, DOLL_NAMES, drapeOnto } from './worn.js';
 import { renderSwatch } from './work.js';
 import { recordChart, pieceRender } from './render.js';
-import { plushify, toyEyes, isToy } from './plush.js';
+import { plushPiece } from './plush.js';
 import { detail as galleryDetail } from './gallery.js';
 import { coatNow } from './catCoat.js';
 import { store as scarfStore } from './scarfStore.js';
+import { init as scarfInit, goalText, statText } from './scarf.js';
+import { lastPassed, goalAfter, slotCard, fmtLen } from './scarfFacts.js';
+import { NEEDLE_STYLES } from './work.js';
+import { drapePath, hitAreas, bakeScarf, drawScarfIcon, stageOf, stageRank, stageLine, forgetStrip } from './roomScarf.js';
 
 let root = null, menuFn = () => {};
 export const setMenu = (fn) => { menuFn = fn; };
@@ -27,7 +31,7 @@ const qs = new URLSearchParams(location.search);
 const SURF = qs.has('surfaces'), FILL = SURF && qs.has('fill');
 
 // ---------------------------------------------------------------- the art
-const ART = { land: null, port: null, pieces: {}, frame: null, fronts: {} };
+const ART = { land: null, port: null, pieces: {}, frame: null, fronts: {}, bag: null };
 let artP = null;
 const loadImg = (src) => new Promise((res) => { const im = new Image(); im.decoding = 'async'; im.onload = () => res(im); im.onerror = () => res(null); im.src = src; });
 export function loadRoomArt() {
@@ -44,6 +48,7 @@ export function loadRoomArt() {
     for (const p of pics) for (const [id, f] of Object.entries((p.json && p.json.fronts) || {})) jobs.push(loadImg(`assets/bg/${f.file}`).then((im) => { ART.fronts[`${p.o}|${id}`] = im; }));
     for (const it of Object.keys(R.PIECES)) if (it !== 'frame') jobs.push(loadImg(`assets/items/room-${it}.png`).then((im) => { ART.pieces[it] = im; }));
     jobs.push(loadImg('assets/items/decor-frame.png').then((im) => { ART.frame = im; }));
+    jobs.push(loadImg('assets/items/holder-bag.png').then((im) => { ART.bag = im; })); // (Change 4) the scarf's bag
     await Promise.all(jobs);
     return ART;
   })();
@@ -141,13 +146,14 @@ const dollSig = (id) => {
 };
 function renderKey(ref, pic) {
   const k = R.kindOf(ref);
+  if (k === 'scarf') return `s|${pic || ''}|${scarfStore.version}|${Math.round(box.w)}|${DPR()}`;
   if (k === 'doll' || k === 'purl') return `d|${ref}|${dollSig(ref.slice(5)).key}`;
   if (k === 'piece') return ref === 'piece:frame' ? `f|${(newestPiece() || {}).id || ''}` : `p|${ref}`;
   if (k === 'blanket') return `b|${ref}|${pic || ''}`;
   return `g|${ref}|${(S.galleryById(ref) || {}).name || ''}`;
 }
 function renderThing(ref) {
-  const key = renderKey(ref);
+  const key = renderKey(ref, R.kindOf(ref) === 'scarf' ? pic : undefined);
   if (cache.has(key)) return cache.get(key);
   let info = null;
   try { info = renderNew(ref); } catch (e) { console.warn('room render', ref, e); }
@@ -156,6 +162,7 @@ function renderThing(ref) {
 }
 function renderNew(ref) {
   const kind = R.kindOf(ref);
+  if (kind === 'scarf') return renderScarf();
   if (kind === 'doll' || kind === 'purl') {
     const id = ref.slice(5);
     const { o } = dollSig(id);
@@ -193,13 +200,9 @@ function renderNew(ref) {
   }
   const W = Math.max(2, Math.round((h * kDev) / (chart.height * 0.72 + 3.6)));
   const flat = renderSwatch(chart, { yarnAt, cellPx: W, castOnYarn: g.castOn || ys[0], background: null }).canvas;
-  let eyes = [];
-  if (isToy(p)) {
-    const H = Math.round(W * 0.72), m = Math.round(W * 0.6);
-    eyes = toyEyes(p, chart, g.slots).map((e) => ({ x: m + e.c * W + W / 2, y: m + 0.4 * H + (chart.height - e.r) * H + H * 0.55, color: e.color }));
-  }
-  const pl = plushify(flat, { cell: W, eyes, shape: kind === 'pillow' ? 'pillow' : 'toy' }).canvas;
-  flat.width = flat.height = 0;
+  // sewn up and stuffed as the gallery shows it (plush.js's one path: a toy's eyes, a pillow's pinched square)
+  const pl = plushPiece(flat, p, chart, g.slots, W);
+  if (pl !== flat) flat.width = flat.height = 0;
   const tb = alphaBox(pl);
   return { el: pl, bw: pl.width, bh: pl.height, ax: (tb[0] + tb[2]) / 2, ay: tb[3] - (tb[3] - tb[1]) * 0.04, ppr: (tb[3] - tb[1]) / h, trim: tb };
 }
@@ -220,6 +223,42 @@ function renderDrape(ref, sid) {
   cache.set(key, info);
   return info;
 }
+// ---------------------------------------------------------------- (Change 4) the Infinite Scarf on its pegs
+// its zone in the picture's own px, from the JSON (see roomScarf.js drapePath)
+function scarfZone(which = pic) {
+  const A = ART[which]; const js = A && A.json && A.json.surfaces['scarf-pegs']; if (!js) return null;
+  const [W, H] = A.json.size;
+  return {
+    W, H, box: [js.box[0] * W, js.box[1] * H, js.box[2] * W, js.box[3] * H],
+    pegs: js.pegs.map(([x, y]) => [x * W, y * H]), hang: js.hang.map(([x, y]) => [x * W, y * H]),
+    strip: js.strip ? [js.strip[0] * W, js.strip[1] * W, js.strip[2] * H] : null, U: js.scale * H, down: !!js.down,
+  };
+}
+// baked once per entry (the scarf can't change while you're in the room): {el, D, zone, k, ms, scarf}
+function renderScarf() {
+  const zone = scarfZone(); if (!zone || !box.w) return null;
+  // one bake at a time (a rotation or resize bakes it again for the new picture or size)
+  for (const [k, v] of cache) if (v.scarf) { v.el.width = v.el.height = 0; cache.delete(k); }
+  const k = (box.w / zone.W) * DPR();
+  const D = drapePath(scarfStore.cm(), zone);
+  const st = NEEDLE_STYLES[S.get().equipped.needles] || NEEDLE_STYLES.bamboo;
+  const { canvas, ms } = bakeScarf(D, zone, k, { store: scarfStore, needles: st.body, bagImg: ART.bag });
+  return { el: canvas, D, zone, k, ms, scarf: true, hook: true };
+}
+// in Your things and in the hand: a small folded scarf in its newest colours
+function scarfIcon() {
+  const key = `si|${scarfStore.version}`;
+  if (cache.has(key)) return cache.get(key);
+  const d = DPR(), c = mk(72 * d, 72 * d);
+  const n = scarfStore.n, at = (back) => (n ? scarfStore.yarnAt(Math.max(0, n - 1 - back * 12)).color : scarfStore.current.color);
+  drawScarfIcon(c, [at(0), at(40), at(120)]);
+  const info = { el: c, bw: c.width, bh: c.height, ax: c.width / 2, ay: c.height * 0.86, ppr: (c.height * 0.72) / 0.6, trim: [c.width * 0.12, c.height * 0.14, c.width * 0.88, c.height * 0.86], hook: true, icon: true };
+  cache.set(key, info);
+  return info;
+}
+const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const scarfLabel = (cm) => `Your Infinite Scarf, ${fmtLen(cm)}, on the pegs`;
+
 function freeCache() {
   for (const info of cache.values()) {
     if (info.el && info.el.tagName === 'CANVAS') { info.el.width = info.el.height = 0; }
@@ -299,7 +338,7 @@ function render() {
   const L = (sid) => R.LAYERS.indexOf(sid);
   for (const [id, f] of Object.entries((A && A.json && A.json.fronts) || {})) {
     const im = ART.fronts[`${pic}|${id}`]; if (!im) continue;
-    const layer = id === 'chair' ? 'chair' : id;
+    const layer = f.layer || (id === 'chair' ? 'chair' : id); // (Change 4: chair-back and pegs are over the wall)
     bx.append(el('img', { class: 'room-front', src: im.src, alt: '', draggable: 'false', style: { left: `${f.offset[0] * w}px`, top: `${f.offset[1] * h}px`, width: `${f.size[0] * w}px`, height: `${f.size[1] * h}px`, zIndex: L(layer) * 100 + 80 } }));
   }
   // the room scale: rendered once (again only if it grows by more than a quarter)
@@ -309,6 +348,9 @@ function render() {
   layout();
   renderTray();
   softLine();
+  // (Change 4) the scarf's store: never waited on to draw the room (a stuck IndexedDB times out in 4 s)
+  if (!scarfStore.loaded) scarfInit().catch(() => {}).then(() => { if (here() && dom) refreshScarf(); });
+  else scarfMoment();
   if (SURF) drawSurfaces();
   // the dressing of the cat and the dolls may have changed while away: those re-render by their keys
   bindPointers();
@@ -317,13 +359,25 @@ function render() {
 function addThing(e) {
   const ref = e.ref, key = keyOf(e);
   const kind = R.kindOf(ref);
+  if (kind === 'scarf' && !scarfStore.loaded) return null; // (it joins when its store arrives: refreshScarf)
   const btn = el('button', { class: 'rt', 'data-key': key, draggable: 'false', type: 'button' });
   const vis = el('span', { class: 'rt-vis' });
   const shadow = el('span', { class: 'rt-shadow' });
   const bob = el('span', { class: 'rt-bob' });
   vis.append(shadow, bob); btn.append(vis);
   const T = { ref, key, e, btn, vis, bob, shadow, info: null, part2: null, kind };
-  if (kind === 'blanket' && R.SURFACES[e.surface] && R.SURFACES[e.surface].kind === 'drape') {
+  if (kind === 'scarf') {
+    T.scarf = renderThing(ref);
+    btn.classList.add('rt-scarf');
+    if (T.scarf) {
+      bob.append(T.scarf.el);
+      T.tag = el('span', { class: 'rs-tag', 'aria-hidden': 'true' });
+      bob.append(T.tag);
+      // the live end in the bare wall right of the chair: a second hit area of its own
+      const p2 = el('span', { class: 'rt-drape2 rs-strip', 'data-key': key });
+      T.part2 = p2; dom.box.append(p2);
+    }
+  } else if (kind === 'blanket' && R.SURFACES[e.surface] && R.SURFACES[e.surface].kind === 'drape') {
     const D = renderDrape(ref, e.surface);
     T.drape = D;
     btn.classList.add('rt-drape');
@@ -351,6 +405,7 @@ function addThing(e) {
   return T;
 }
 function label(T) {
+  if (T.kind === 'scarf') { T.btn.setAttribute('aria-label', scarfLabel(scarfStore.cm())); return; }
   const where = T.e && R.SURFACES[T.e.surface] ? R.SURFACES[T.e.surface].name : 'the room';
   const on = T.e && R.SURFACES[T.e.surface] && ['hook', 'drape'].includes(R.SURFACES[T.e.surface].kind) ? (T.e.surface === 'frame-hook' ? 'on the wall' : T.e.surface === 'garland-hook' ? 'in the window' : `over ${where}`) : `on ${where}`;
   T.btn.setAttribute('aria-label', `${R.nameOf(T.ref)}, ${on}`);
@@ -373,6 +428,7 @@ function layout() {
     const p = pl.get(T.e); if (!p) continue;
     const li = R.LAYERS.indexOf(R.SURFACES[T.e.surface].layer);
     if (p.quads) { placeDrape(T, p, li); order.push([li, -1, T]); continue; }
+    if (T.kind === 'scarf') { placeScarf(T, li); order.push([li, p.box ? p.box[0] : 0, T]); continue; }
     if (p.box) {
       const info = T.info; if (!info) continue;
       const [x, y, bw, bh] = p.box;
@@ -438,6 +494,94 @@ function placeDrape(T, p, li) {
   T.hit = [Math.min(A[0], B[0]), Math.min(A[1], B[1]), Math.max(A[0] + A[2], B[0] + B[2]) - Math.min(A[0], B[0]), Math.max(A[1] + A[3], B[1] + B[3]) - Math.min(A[1], B[1])];
 }
 
+// the scarf: its bake over its zone, its hit areas (from the drape's geometry, clipped above the chair
+// back: the empty chair stays the chair's), at least 44 × 44 round peg 1's fold
+function placeScarf(T, li) {
+  const I = T.scarf; if (!I) { T.btn.style.display = 'none'; return; }
+  const f = box.w / I.zone.W;
+  const [zx, zy, zw, zh] = I.zone.box.map((v) => v * f);
+  const H = hitAreas(I.D, I.zone);
+  const p1 = I.zone.pegs[0].map((v) => v * f);
+  let m = H.main ? H.main.map((v) => v * f) : [p1[0] - 22, p1[1] - 22, 44, 44];
+  if (m[2] < 44) { m[0] = Math.min(m[0], p1[0]) - (44 - m[2]) / 2; m[2] = 44; }
+  if (m[3] < 44) { m[1] -= (44 - m[3]) / 2; m[3] = 44; }
+  const [hx, hy, hw, hh] = m;
+  T.hit = m; T.feet = [p1[0], p1[1]]; T.U = I.zone.U * f;
+  const st = T.btn.style;
+  st.display = I.D.stage === 'none' ? 'none' : '';
+  st.width = `${hw}px`; st.height = `${hh}px`; st.transform = `translate(${hx}px, ${hy}px)`; st.zIndex = li * 100 + 10;
+  Object.assign(T.vis.style, { left: `${zx - hx}px`, top: `${zy - hy}px`, width: `${zw}px`, height: `${zh}px`, transform: 'none' });
+  T.bob.style.transformOrigin = `${p1[0] - zx}px ${p1[1] - zy}px`;
+  T.shadow.style.display = 'none';
+  // the tag on its string from peg 1 (from 10 cm)
+  const cm = scarfStore.cm();
+  if (T.tag) {
+    T.tag.hidden = cm < 10;
+    if (!T.rolling) T.tag.textContent = fmtLen(cm);
+    Object.assign(T.tag.style, { left: `${I.D.tag[0] * f - zx}px`, top: `${I.D.tag[1] * f - zy}px` });
+  }
+  if (T.part2) {
+    const s2 = T.part2.style;
+    if (H.strip && I.D.stage !== 'none') { const [x, y, w, h] = H.strip.map((v) => v * f); Object.assign(s2, { display: '', width: `${w}px`, height: `${h}px`, transform: `translate(${x}px, ${y}px)`, zIndex: li * 100 + 10 }); T.hit2 = [x, y, w, h]; }
+    else { s2.display = 'none'; T.hit2 = null; }
+  }
+}
+// on entering the room: if the scarf grew since the room last showed it, its tag counts up from then, it
+// sways once, and a stage it reached gets one gentle line (reduced motion: the new length at once, the line)
+function scarfMoment() {
+  const T = things.get('scarf'); if (!T || !T.scarf || fillList) return;
+  const s = S.get(), cm = scarfStore.cm(), was = s.roomScarfCm;
+  if (was == null || cm < was) { s.roomScarfCm = cm; S.saveSoon(); return; }
+  if (cm < was + 0.5) return;
+  s.roomScarfCm = cm; S.saveSoon();
+  const down = !!(T.scarf.zone && T.scarf.zone.down);
+  const line = stageRank(stageOf(cm, down)) > stageRank(stageOf(was, down)) ? stageLine(stageOf(cm, down)) : null;
+  if (line) setTimeout(() => { if (dom && here()) { say(line, 3800, true); speak(line); } }, reduceMotion() ? 0 : 700);
+  if (reduceMotion() || !T.tag) return;
+  T.rolling = true;
+  const t0 = performance.now(), dur = 900;
+  const step = (t) => {
+    if (!dom || !T.tag.isConnected) { T.rolling = false; return; }
+    const e = Math.min(1, (t - t0) / dur), v = was + (cm - was) * (1 - Math.pow(1 - e, 3));
+    T.tag.hidden = v < 10; T.tag.textContent = fmtLen(v);
+    if (e < 1) requestAnimationFrame(step); else T.rolling = false;
+  };
+  requestAnimationFrame(step);
+  sway(T);
+}
+function sway(T) {
+  if (reduceMotion()) return;
+  T.bob.classList.remove('sway'); void T.bob.offsetWidth; T.bob.classList.add('sway');
+}
+// the store arrives after the room drew (a quick first visit): the scarf joins it then
+function refreshScarf() {
+  if (!dom) return;
+  if (things.has('scarf')) removeThing('scarf');
+  const e = list().find((x) => x.ref === 'scarf');
+  if (e && visibleEntry(e)) addThing(e);
+  layout(); renderTray(); scarfMoment();
+}
+// Look closer: the length, the last milestone passed, the next goal, one fact (the next each time)
+let scarfFact = 0;
+function scarfCloser() {
+  const cm = scarfStore.cm();
+  const box0 = el('div', { class: 'detail closer scarf-closer' });
+  box0.append(el('div', { class: 'scl-len', text: fmtLen(cm) }));
+  const m = lastPassed(cm);
+  if (m) box0.append(el('div', { class: 'scl-mile' }, el('img', { src: `assets/cmp/${m.img}.webp`, alt: '' }), el('span', { text: `Taller than ${m.name}` })));
+  const g = goalAfter(cm);
+  if (g) box0.append(el('p', { class: 'scl-next', text: `${fmtLen(Math.max(1, Math.ceil(g.cm - cm)))} to go: ${goalText(g)}` }));
+  const c = slotCard(scarfFact++);
+  box0.append(el('p', { class: 'scl-fact', text: c.kind === 'fact' ? c.text : statText(c.n) }));
+  const more = el('button', { class: 'btn primary', text: 'Knit more' });
+  more.addEventListener('click', () => { audio.play('ui'); closeSheet(); go('scarf', { from: 'room' }); });
+  const close = el('button', { class: 'btn', text: 'Close' });
+  close.addEventListener('click', () => { audio.play('ui'); closeSheet(); });
+  box0.append(el('div', { class: 'acts' }, more, close));
+  openSheet('closer', box0, { title: 'Your Infinite Scarf', cls: 'closer-sheet' });
+  audio.play('card');
+}
+
 // ---------------------------------------------------------------- Your things
 function trayRefs() {
   const inRoom = new Set(S.get().room.filter((e) => R.available(e.ref)).map((e) => e.ref));
@@ -472,7 +616,7 @@ function renderTray() {
   trayRaf = requestAnimationFrame(step);
 }
 function thumbInto(ref, cv) {
-  const info = renderThing(ref); if (!info) return;
+  const info = R.kindOf(ref) === 'scarf' ? scarfIcon() : renderThing(ref); if (!info) return;
   const d = Math.min(2, window.devicePixelRatio || 1), size = 64;
   cv.width = size * d; cv.height = size * d; cv.style.width = cv.style.height = `${size}px`;
   const g = cv.getContext('2d');
@@ -534,8 +678,9 @@ function select(key, { quiet = false, focus = false } = {}) {
   selected = key;
   T.btn.classList.add('sel');
   if (!quiet) {
-    T.bob.classList.remove('hop'); void T.bob.offsetWidth; T.bob.classList.add('hop');
-    audio.play('peg', { gain: 0.45 });
+    if (T.kind === 'scarf') sway(T); // (it sways about peg 1; reduced motion: only the glow)
+    else if (!reduceMotion()) { T.bob.classList.remove('hop'); void T.bob.offsetWidth; T.bob.classList.add('hop'); }
+    audio.play('peg', { gain: T.kind === 'scarf' ? 0.3 : 0.45 });
     if (!fillList && R.bringToFront(S.get().room, T.ref)) { S.saveNow(); layout(); }
   }
   showBar(T);
@@ -548,14 +693,15 @@ function deselect() {
 }
 function closerKind(ref) {
   const k = R.kindOf(ref);
-  if (k === 'doll' || k === 'purl' || k === 'toy' || k === 'pillow' || k === 'blanket') return true;
+  if (k === 'doll' || k === 'purl' || k === 'toy' || k === 'pillow' || k === 'blanket' || k === 'scarf') return true;
   return ref === 'piece:frame' && !!newestPiece();
 }
 function showBar(T) {
   if (dom.bar) dom.bar.remove();
   const bar = el('div', { class: 'rbar', role: 'toolbar', 'aria-label': `${R.nameOf(T.ref)}` });
   const b = (label, fn) => { const x = el('button', { class: 'btn small', type: 'button', text: label }); x.addEventListener('click', (e) => { e.stopPropagation(); audio.play('ui'); fn(); }); bar.append(x); return x; };
-  b('Move', () => arm(T.ref));
+  if (T.kind === 'scarf') b('Knit more', () => go('scarf', { from: 'room' }));
+  else b('Move', () => arm(T.ref));
   if (R.turns(T.ref)) b('Turn', () => turn(T.key));
   if (closerKind(T.ref)) b('Look closer', () => lookCloser(T.ref));
   b('Put away', () => putAway(T.key));
@@ -665,7 +811,8 @@ function afterPlace(ref, res, { quiet = false } = {}) {
   softLine();
   if (!quiet) audio.play('peg');
   speak(`On ${R.SURFACES[res.surface].name}`);
-  if (T) { T.bob.classList.remove('hop'); void T.bob.offsetWidth; T.bob.classList.add('hop'); }
+  if (T && T.kind === 'scarf') sway(T);
+  else if (T && !reduceMotion()) { T.bob.classList.remove('hop'); void T.bob.offsetWidth; T.bob.classList.add('hop'); }
 }
 function failLine(ref, reason, sid) {
   const text = R.reasonText(reason, ref, sid);
@@ -690,12 +837,15 @@ function dropAt(ref, fx, fy) {
 function heldEl(ref) {
   // the thing as it's carried: its own button if it's in the room (a blanket: its flat stand-in)
   let T = things.get(ref);
-  if (T && T.drape) { T.btn.style.opacity = '0.25'; if (T.part2) T.part2.style.opacity = '0.25'; T = null; }
+  if (T && (T.drape || T.scarf)) { T.btn.style.opacity = '0.25'; if (T.part2) T.part2.style.opacity = '0.25'; T = null; }
   if (!T) {
-    const info = renderThing(ref); if (!info) return null;
+    // (the scarf: its small folded icon, never the whole wall)
+    const info = R.kindOf(ref) === 'scarf' ? scarfIcon() : renderThing(ref); if (!info) return null;
     const btn = el('button', { class: 'rt carry', type: 'button', tabindex: '-1', 'aria-hidden': 'true' });
     const vis = el('span', { class: 'rt-vis' }), shadow = el('span', { class: 'rt-shadow' }), bob = el('span', { class: 'rt-bob' });
-    bob.append(info.el);
+    let im = info.el;
+    if (info.icon) { const c = mk(im.width, im.height); c.getContext('2d').drawImage(im, 0, 0); im = c; } // (the tray keeps its own)
+    bob.append(im);
     vis.append(shadow, bob); btn.append(vis); dom.box.append(btn);
     return { ref, key: `carry:${ref}`, e: null, btn, vis, bob, shadow, info, kind: R.kindOf(ref), carry: true };
   }
@@ -741,7 +891,7 @@ function endHold() {
   if (h.T.carry) h.T.btn.remove();
   else { h.T.btn.classList.remove('dragging'); }
   const T = things.get(h.ref);
-  if (T && T.drape) { T.btn.style.opacity = ''; if (T.part2) T.part2.style.opacity = ''; }
+  if (T && (T.drape || T.scarf)) { T.btn.style.opacity = ''; if (T.part2) T.part2.style.opacity = ''; }
   try { if (h.pointerId != null && root.hasPointerCapture(h.pointerId)) root.releasePointerCapture(h.pointerId); } catch { /* */ }
 }
 // a cancelled hold: back where it came from, nothing saved
@@ -914,7 +1064,7 @@ function keyPickFromTray(ref) {
   const L = S.get().room;
   const order = ['rug', ...[...R.LINE_ORDER].reverse().filter((x) => x !== 'rug')];
   let sid = null;
-  if (R.isHookThing(ref)) sid = R.PIECES[ref.slice(6)].hook;
+  if (R.isHookThing(ref)) sid = R.hookOf(ref);
   else if (R.goesOnDrape(ref)) sid = L.some((e) => e.surface === 'chair-drape') ? 'seat-drape' : 'chair-drape';
   else sid = order.find((s) => !R.fitReason(L, ref, s)) || 'rug';
   keyShow(sid, R.SURFACES[sid].kind === 'line' ? R.SURFACES[sid].capacity / 2 : 0.5);
@@ -926,6 +1076,7 @@ function keyShow(sid, t) {
   const J = ART[pic].json;
   let feet, U;
   if (Sf.kind === 'line') { const G = lineGeom(J, sid, box.w, box.h); feet = lerp(G.p0, G.p1, held.t / G.cap); U = G.U; }
+  else if (sid === 'scarf-pegs') { const js = J.surfaces[sid]; U = js.scale * box.h; feet = [js.pegs[0][0] * box.w, js.pegs[0][1] * box.h + U * 0.55]; } // (in hand, just under peg 1)
   else if (Sf.kind === 'hook') { const b = J.surfaces[sid].box; feet = [(b[0] + b[2] / 2) * box.w, (b[1] + b[3]) * box.h]; U = (b[3] * box.h) / 1.05; }
   else { const q = J.surfaces[sid].parts[0]; feet = [((q[0][0] + q[1][0]) / 2) * box.w, ((q[2][1] + q[3][1]) / 2) * box.h]; U = J.surfaces[sid === 'chair-drape' ? 'chair-seat' : 'window-seat'].scale * box.h; }
   held.fx = feet[0]; held.fy = feet[1] - U * 0.12; // lifted a little: it's in your hand
@@ -982,6 +1133,7 @@ function focusTray(ref) { if (!dom) return; const b = dom.list.querySelector(`[d
 // ---------------------------------------------------------------- Look closer, Tidy up
 function lookCloser(ref) {
   const k = R.kindOf(ref);
+  if (k === 'scarf') { scarfCloser(); return; }
   if (k === 'piece') { const n = newestPiece(); if (n) galleryDetail(n.id); return; }
   if (k !== 'doll' && k !== 'purl') { galleryDetail(ref); return; }
   const id = ref.slice(5);
@@ -1103,7 +1255,7 @@ registerScreen('room', {
     if (dom) for (const c of dom.list.querySelectorAll('canvas')) { c.width = c.height = 0; }
     if (root) root.replaceChildren();
     things.clear(); dom = null; selected = null; armed = null;
-    freeCache(); kDev = 0;
+    freeCache(); forgetStrip(); kDev = 0;
   },
 });
 // a resize or rotation: whatever is held goes back (nothing saved), and the room lays out again
@@ -1132,7 +1284,9 @@ export const debug = {
     });
     const tray = [...dom.list.querySelectorAll('.ti')].map((b) => { const r = b.getBoundingClientRect(); return { ref: b.dataset.tref, rect: { x: r.left, y: r.top, w: r.width, h: r.height } }; });
     const trayRect = dom.tray.getBoundingClientRect();
-    return { picture: pic, box: { x: br.left, y: br.top, w: br.width, h: br.height }, trayRect: { x: trayRect.left, y: trayRect.top, w: trayRect.width, h: trayRect.height }, surfaces, things: tl, tray };
+    const ST = things.get('scarf');
+    const scarf = ST && ST.scarf ? { ms: Math.round(ST.scarf.ms * 10) / 10, stage: ST.scarf.D.stage, cm: scarfStore.cm(), bake: [ST.scarf.el.width, ST.scarf.el.height], hit: ST.hit ? ST.hit.map((v, i) => Math.round(v + (i === 0 ? br.left : i === 1 ? br.top : 0))) : null, strip: ST.hit2 ? ST.hit2.map((v, i) => Math.round(v + (i === 0 ? br.left : i === 1 ? br.top : 0))) : null, tag: ST.tag && !ST.tag.hidden ? ST.tag.textContent : null, label: ST.btn.getAttribute('aria-label'), shown: ST.btn.style.display !== 'none' } : null;
+    return { scarf, picture: pic, box: { x: br.left, y: br.top, w: br.width, h: br.height }, trayRect: { x: trayRect.left, y: trayRect.top, w: trayRect.width, h: trayRect.height }, surfaces, things: tl, tray };
   },
   clearRoom: () => clearRoom(),
   state: () => ({ count: S.get().room.length, held: held ? held.ref : armed ? armed.ref : null, selected: selected ? (things.get(selected) || {}).ref || null : null, focus: document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.key || document.activeElement.dataset.tref || null : null, picture: dom ? pic : null, kRoom: kDev, cached: cache.size }),

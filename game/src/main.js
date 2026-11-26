@@ -74,6 +74,7 @@ function applySettings() {
 }
 setMenuHooks({
   toggleMute,
+  backToRoom: () => features.scarfFromRoom(), // (Change 4) the scarf opened from the room's Knit more
   onReset: () => { S.resetSave(); features.resetScarf().finally(() => location.reload()); },
   onSettings: () => { applySettings(); knit.applySettings(); features.applySettings(); },
   // "Unlock everything" switched: the open screen redraws (switching off may put back equipped things)
