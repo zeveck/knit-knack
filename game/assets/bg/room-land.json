@@ -1,5 +1,5 @@
 {
- "_note": "Fractions of the picture. line: where feet rest, [x0,y0]->[x1,y1]; scale: height of 1 ru there as a fraction of the image height; capacity/maxH in ru. hook box: [x, y, w, h]. drape parts: two quads [[x,y]x4] (TL, TR, BR, BL), over says whether the part is drawn over the layer front. fronts: polygons cut from the picture by tools/cut-room-fronts.py into bg/<file>, drawn at offset (top-left) and size, after the layer's things. Draw order: wall, shelf-top, shelf-low, floor-back, window-seat, chair, rug, rug-front. Toys on the chair arms only if footprint <= maxFoot. rug area: the painted rug's ellipse [cx, cy, rx, ry]; a drop inside it goes to the nearer rug row. drape bows: per part [top, bottom] edge sag at the middle (fraction of the height, negative = up).",
+ "_note": "Fractions of the picture. line: where feet rest, [x0,y0]->[x1,y1]; scale: height of 1 ru there as a fraction of the image height; capacity/maxH in ru. hook box: [x, y, w, h]. drape parts: two quads [[x,y]x4] (TL, TR, BR, BL), over says whether the part is drawn over the layer front. fronts: polygons cut from the picture by tools/cut-room-fronts.py into bg/<file>, drawn at offset (top-left) and size, after the layer's things. Draw order: wall, shelf-top, shelf-low, floor-back, window-seat, chair, rug, rug-front. Toys on the chair arms only if footprint <= maxFoot. rug area: the painted rug's ellipse [cx, cy, rx, ry]; a drop inside it goes to the nearer rug row. drape bows: per part [top, bottom] edge sag at the middle (fraction of the height, negative = up). scarf-pegs (Change 4): pegs [x, y] the scarf hangs from; hang: the chair back's top edge (the scarf tucks behind it); strip [x0, x1, yBottom]: bare wall right of the chair where the live end hangs free; scale: 1 ru at the wall; down: (portrait) the scarf grows downward. A front's layer: the layer it is drawn over (default its own id).",
  "image": "room-land.webp",
  "size": [
   1536,
@@ -24,10 +24,10 @@
     "piece:frame"
    ],
    "box": [
-    0.362,
-    0.1914,
-    0.0677,
-    0.1025
+    0.708,
+    0.236,
+    0.054,
+    0.088
    ]
   },
   "garland-hook": {
@@ -48,15 +48,15 @@
    "kind": "line",
    "line": [
     [
-     0.4557,
-     0.1523
+     0.43,
+     0.235
     ],
     [
-     0.6641,
-     0.1523
+     0.69,
+     0.235
     ]
    ],
-   "scale": 0.125,
+   "scale": 0.17,
    "capacity": 2.5,
    "maxH": 1.15,
    "accepts": [
@@ -73,15 +73,15 @@
    "kind": "line",
    "line": [
     [
-     0.4557,
-     0.3037
+     0.415,
+     0.455
     ],
     [
-     0.6641,
-     0.3037
+     0.66,
+     0.455
     ]
    ],
-   "scale": 0.125,
+   "scale": 0.17,
    "capacity": 2.5,
    "maxH": 1.15,
    "accepts": [
@@ -407,6 +407,166 @@
    ],
    "layer": "rug-front",
    "front": null
+  },
+  "scarf-pegs": {
+   "kind": "hook",
+   "capacity": 1,
+   "layer": "wall",
+   "accepts": [
+    "scarf"
+   ],
+   "box": [
+    0.775,
+    0.05,
+    0.22,
+    0.63
+   ],
+   "pegs": [
+    [
+     0.8,
+     0.088
+    ],
+    [
+     0.875,
+     0.088
+    ],
+    [
+     0.95,
+     0.088
+    ]
+   ],
+   "hang": [
+    [
+     0.7,
+     0.3589
+    ],
+    [
+     0.7079,
+     0.351
+    ],
+    [
+     0.7157,
+     0.3462
+    ],
+    [
+     0.7236,
+     0.3413
+    ],
+    [
+     0.7314,
+     0.3374
+    ],
+    [
+     0.7393,
+     0.3335
+    ],
+    [
+     0.7471,
+     0.3315
+    ],
+    [
+     0.755,
+     0.3305
+    ],
+    [
+     0.7628,
+     0.3305
+    ],
+    [
+     0.7707,
+     0.3286
+    ],
+    [
+     0.7785,
+     0.3286
+    ],
+    [
+     0.7864,
+     0.3286
+    ],
+    [
+     0.7942,
+     0.3296
+    ],
+    [
+     0.8021,
+     0.3296
+    ],
+    [
+     0.8099,
+     0.3315
+    ],
+    [
+     0.8178,
+     0.3325
+    ],
+    [
+     0.8256,
+     0.3344
+    ],
+    [
+     0.8335,
+     0.3364
+    ],
+    [
+     0.8413,
+     0.3383
+    ],
+    [
+     0.8492,
+     0.3403
+    ],
+    [
+     0.857,
+     0.3432
+    ],
+    [
+     0.8649,
+     0.3462
+    ],
+    [
+     0.8727,
+     0.3501
+    ],
+    [
+     0.8806,
+     0.3559
+    ],
+    [
+     0.8884,
+     0.3618
+    ],
+    [
+     0.8963,
+     0.3716
+    ],
+    [
+     0.9041,
+     0.3852
+    ],
+    [
+     0.912,
+     0.3852
+    ],
+    [
+     0.9059,
+     0.3863
+    ],
+    [
+     0.9124,
+     0.405
+    ],
+    [
+     0.9157,
+     0.4238
+    ]
+   ],
+   "strip": [
+    0.918,
+    0.995,
+    0.676
+   ],
+   "scale": 0.13
   }
  },
  "fronts": {
@@ -415,29 +575,29 @@
    "polygons": [
     [
      [
-      0.4349,
-      0.1475
+      0.4155,
+      0.2302
      ],
      [
-      0.6836,
-      0.1455
+      0.7045,
+      0.2282
      ],
      [
-      0.6836,
-      0.167
+      0.7045,
+      0.2497
      ],
      [
-      0.4362,
-      0.1689
+      0.417,
+      0.2516
      ]
     ]
    ],
    "offset": [
-    0.43099,
-    0.13965
+    0.41146,
+    0.22266
    ],
    "size": [
-    0.25651,
+    0.29688,
     0.03516
    ]
   },
@@ -446,29 +606,29 @@
    "polygons": [
     [
      [
-      0.4349,
-      0.2988
+      0.406,
+      0.4501
      ],
      [
-      0.6836,
-      0.2969
+      0.662,
+      0.4482
      ],
      [
-      0.6836,
-      0.3184
+      0.662,
+      0.4697
      ],
      [
-      0.4362,
-      0.3203
+      0.4074,
+      0.4716
      ]
     ]
    ],
    "offset": [
-    0.43099,
-    0.29102
+    0.40169,
+    0.44238
    ],
    "size": [
-    0.25651,
+    0.26432,
     0.03516
    ]
   },
@@ -632,6 +792,370 @@
    "size": [
     0.39518,
     0.24023
+   ]
+  },
+  "chair-back": {
+   "file": "room-land-front-chair-back.png",
+   "layer": "wall",
+   "polygons": [
+    [
+     [
+      0.7,
+      0.356
+     ],
+     [
+      0.7079,
+      0.3481
+     ],
+     [
+      0.7157,
+      0.3433
+     ],
+     [
+      0.7236,
+      0.3384
+     ],
+     [
+      0.7314,
+      0.3345
+     ],
+     [
+      0.7393,
+      0.3306
+     ],
+     [
+      0.7471,
+      0.3286
+     ],
+     [
+      0.755,
+      0.3276
+     ],
+     [
+      0.7628,
+      0.3276
+     ],
+     [
+      0.7707,
+      0.3257
+     ],
+     [
+      0.7785,
+      0.3257
+     ],
+     [
+      0.7864,
+      0.3257
+     ],
+     [
+      0.7942,
+      0.3267
+     ],
+     [
+      0.8021,
+      0.3267
+     ],
+     [
+      0.8099,
+      0.3286
+     ],
+     [
+      0.8178,
+      0.3296
+     ],
+     [
+      0.8256,
+      0.3315
+     ],
+     [
+      0.8335,
+      0.3335
+     ],
+     [
+      0.8413,
+      0.3354
+     ],
+     [
+      0.8492,
+      0.3374
+     ],
+     [
+      0.857,
+      0.3403
+     ],
+     [
+      0.8649,
+      0.3433
+     ],
+     [
+      0.8727,
+      0.3472
+     ],
+     [
+      0.8806,
+      0.353
+     ],
+     [
+      0.8884,
+      0.3589
+     ],
+     [
+      0.8963,
+      0.3687
+     ],
+     [
+      0.9041,
+      0.3823
+     ],
+     [
+      0.912,
+      0.3823
+     ],
+     [
+      0.9059,
+      0.3863
+     ],
+     [
+      0.9124,
+      0.405
+     ],
+     [
+      0.9157,
+      0.4238
+     ],
+     [
+      0.9176,
+      0.4425
+     ],
+     [
+      0.917,
+      0.4613
+     ],
+     [
+      0.9157,
+      0.48
+     ],
+     [
+      0.9124,
+      0.4988
+     ],
+     [
+      0.9098,
+      0.5175
+     ],
+     [
+      0.9059,
+      0.5363
+     ],
+     [
+      0.902,
+      0.555
+     ],
+     [
+      0.902,
+      0.555
+     ],
+     [
+      0.7,
+      0.555
+     ]
+    ]
+   ],
+   "offset": [
+    0.69596,
+    0.31934
+   ],
+   "size": [
+    0.22591,
+    0.24219
+   ]
+  },
+  "pegs": {
+   "file": "room-land-front-pegs.png",
+   "layer": "wall",
+   "polygons": [
+    [
+     [
+      0.8107,
+      0.0893
+     ],
+     [
+      0.8097,
+      0.0958
+     ],
+     [
+      0.8069,
+      0.1011
+     ],
+     [
+      0.8029,
+      0.104
+     ],
+     [
+      0.7984,
+      0.104
+     ],
+     [
+      0.7944,
+      0.1011
+     ],
+     [
+      0.7916,
+      0.0958
+     ],
+     [
+      0.7906,
+      0.0893
+     ],
+     [
+      0.7916,
+      0.0827
+     ],
+     [
+      0.7944,
+      0.0774
+     ],
+     [
+      0.7984,
+      0.0745
+     ],
+     [
+      0.8029,
+      0.0745
+     ],
+     [
+      0.8069,
+      0.0774
+     ],
+     [
+      0.8097,
+      0.0827
+     ]
+    ],
+    [
+     [
+      0.8857,
+      0.0893
+     ],
+     [
+      0.8847,
+      0.0958
+     ],
+     [
+      0.8819,
+      0.1011
+     ],
+     [
+      0.8779,
+      0.104
+     ],
+     [
+      0.8734,
+      0.104
+     ],
+     [
+      0.8694,
+      0.1011
+     ],
+     [
+      0.8666,
+      0.0958
+     ],
+     [
+      0.8656,
+      0.0893
+     ],
+     [
+      0.8666,
+      0.0827
+     ],
+     [
+      0.8694,
+      0.0774
+     ],
+     [
+      0.8734,
+      0.0745
+     ],
+     [
+      0.8779,
+      0.0745
+     ],
+     [
+      0.8819,
+      0.0774
+     ],
+     [
+      0.8847,
+      0.0827
+     ]
+    ],
+    [
+     [
+      0.9607,
+      0.0893
+     ],
+     [
+      0.9597,
+      0.0958
+     ],
+     [
+      0.9569,
+      0.1011
+     ],
+     [
+      0.9529,
+      0.104
+     ],
+     [
+      0.9484,
+      0.104
+     ],
+     [
+      0.9444,
+      0.1011
+     ],
+     [
+      0.9416,
+      0.0958
+     ],
+     [
+      0.9406,
+      0.0893
+     ],
+     [
+      0.9416,
+      0.0827
+     ],
+     [
+      0.9444,
+      0.0774
+     ],
+     [
+      0.9484,
+      0.0745
+     ],
+     [
+      0.9529,
+      0.0745
+     ],
+     [
+      0.9569,
+      0.0774
+     ],
+     [
+      0.9597,
+      0.0827
+     ]
+    ]
+   ],
+   "offset": [
+    0.78646,
+    0.06836
+   ],
+   "size": [
+    0.17839,
+    0.04199
    ]
   }
  }

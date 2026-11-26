@@ -72,3 +72,17 @@ Change 3 art total: 6 nanogen pro calls ($0.80) + 1 imagegen2 sheet (≈ $0.06) 
 | sfx-join | game/assets/audio/sfx/sfx-join.mp3 | audiogen sfx (eleven_text_to_sound_v3), 0.8 s | "the soft click of two wooden knitting needle tips meeting and a loop of wool yarn drawn closed, gentle, close-up, quiet room" | 1 | $0.12 | A soft click and a short pull; quiet (peak −30 dB), so audio.js plays it at +20 dB with the usual onset trim. Plays on the join, and on the last tap of a gather, graft and seam |
 
 **Running total: + $0.12**
+
+## Change 4: the roomier landscape room and the scarf's pegs (9a)
+
+Every take is in `.gamegen/candidates/room4/` (`src/` holds the Change 3 pictures, `t1`–`t16` the runs of `tools/room-recompose.py`). No generator was called: the Pillow path held, so the nanogen fallback wasn't needed.
+
+| ID | File | Tool | Tries | Cost | Verdict |
+|---|---|---|---|---|---|
+| room-land | game/assets/bg/room-land.webp (1536×1024) | Pillow + numpy (tools/room-recompose.py) | 16 runs (t1 boxes round the lifted layers; t2 lifted alpha gated near each thing; t3–t4 the rail's lip trimmed; t16 kept) | $0 | Accepted. Shelves at y 0.235 and 0.455 (scale 0.17), straight, brackets whole; the low board passes behind the armchair; sconce 0.04 higher with a small glow at its shade; a 3-peg rail cut from the shelf's own plank at y 0.088 with the shelves' plum shadow. 200% crops of every patch edge: no seam, halo or doubled outline |
+| room-port | game/assets/bg/room-port.webp (1024×1313) | Pillow + numpy (same script) | 16 runs (t5 nconv ran out at the edge; t6–t12 the sconce's lit box, which the shelves had bounded, blurred into a soft glow right of their new ends; t13 the boards re-pasted over the blur; t16 kept) | $0 | Accepted. Shelves end at x 0.80 (lines 0.445–0.785, scale 0.117), their own right end and bracket moved in, colour-matched and cross-faded; a 2-peg rail at x 0.83 and 0.975, y 0.055 |
+| room fronts | bg/room-{land,port}-front-{shelf-top,shelf-low,window-seat,chair,chair-back,pegs}.png | Pillow (tools/cut-room-fronts.py) | – | $0 | Re-cut from the new pictures. New: `chair-back` (the back's top edge, traced from the picture, round its right side to the arms) and `pegs` (the knobs), both `layer: "wall"` |
+
+Change 4 art total: **$0** of the $20 (no generation calls).
+
+**Running total: unchanged**
