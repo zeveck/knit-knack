@@ -193,12 +193,12 @@ function renderNew(ref) {
   const { h } = R.sizeOf(ref);
   const ys = g.yarns; const yarnAt = (i) => ys[i] || ys[ys.length - 1] || { color: '#9e2a3a', type: 'wool' };
   if (kind === 'blanket') {
-    const W = Math.max(3, Math.round((0.9 * kDev) / Math.max(chart.width, chart.height * 0.72)));
+    const W = Math.max(7, Math.round((0.9 * kDev) / Math.max(chart.width, chart.height * 0.72)));
     const flat = renderSwatch(chart, { yarnAt, cellPx: W, castOnYarn: g.castOn || ys[0], background: null }).canvas;
     const tb = alphaBox(flat);
     return { el: flat, bw: flat.width, bh: flat.height, ax: (tb[0] + tb[2]) / 2, ay: tb[3], ppr: (tb[3] - tb[1]) / 0.8, trim: tb };
   }
-  const W = Math.max(2, Math.round((h * kDev) / (chart.height * 0.72 + 3.6)));
+  const W = Math.max(7, Math.round((h * kDev) / (chart.height * 0.72 + 3.6))); // ≥7 so a row's rounded height keeps the 0.72 stitch shape (at 2 px rows round to half height and plush looks squashed wide)
   const flat = renderSwatch(chart, { yarnAt, cellPx: W, castOnYarn: g.castOn || ys[0], background: null }).canvas;
   // sewn up and stuffed as the gallery shows it (plush.js's one path: a toy's eyes, a pillow's pinched square)
   const pl = plushPiece(flat, p, chart, g.slots, W);
