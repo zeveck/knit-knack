@@ -35,7 +35,6 @@
 - Credit: Rich Conlan (from GAMEGEN_CREDIT)
 - ElevenLabs tier: creator (paid: no credit line)
 
-- GitHub preview image: to upload (none set)
 - Repo: zeveck/knit-knack (public), address https://knitknack.synapticnoise.com
 
 ## Available
@@ -104,7 +103,7 @@ Order: these land before changes 2 and 3 are built.
 - [x] Final review DONE (.gamegen/review/fr9.md: needles hidden, scarf hit rect over frame, stage line under toast + nice; 40 km scarf-screen crash below bar); fixes DONE (4e2fb28 needles always free, hit areas off the frame, stage line after the toasts; 2d409a0 scarf screen survives a 40 km scarf); fr9 fixed
 - [x] README (cozy room + scarf sections, request 9 quoted with 9a–9c, room/room-phone refreshed, pillow-closeup.jpg added), art sheet rebuilt (room-land/port captions; phone patch reapplied) and design page + plans card updated in the gallery clone (36fd170, 365edaf), committed locally only, not pushed. Seen in the wrap-up: in portrait, opening the room (Room tab or reload) draws toys and pillows stretched wide; a window resize redraws them right (not fixed here)
 - [x] Stretched toys/pillows in portrait at dpr 1 fixed (room.js: min 7 px stitch so rows keep the 0.72 shape)
-- [x] Published 2026-11-26 (deploy cb423af): live check desktop + iPhone 15 (teddy, heart pillow, 6 m scarf in the room; no errors); plans design + art pages pushed (gallery 365edaf) and live. Gallery entry unchanged. GitHub preview image still to upload.
+- [x] Published 2026-11-26 (deploy cb423af): live check desktop + iPhone 15 (teddy, heart pillow, 6 m scarf in the room; no errors); plans design + art pages pushed (gallery 365edaf) and live. Gallery entry unchanged.
 
 ## Handoff (2026-11-25 02:46 UTC, before context compaction)
 
