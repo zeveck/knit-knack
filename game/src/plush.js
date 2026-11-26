@@ -7,6 +7,19 @@ const mk = (w, h) => { const c = document.createElement('canvas'); c.width = Mat
 const rgba = (c, a = 1) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
 
 export const isToy = (pattern) => !!pattern && pattern.chapter === 6;
+// the pieces sewn up and stuffed: 'toy' (a Knitted Friend), 'pillow' (a pillow or cushion), else null
+export const isPillow = (pattern) => !!pattern && /pillow|cushion/i.test(pattern.id || '');
+export const plushShape = (pattern) => (isToy(pattern) ? 'toy' : isPillow(pattern) ? 'pillow' : null);
+
+// a flat render from renderSwatch (cell W px, its margin and cast-on row as work.js lays them out),
+// seamed and stuffed: a toy with its eyes as French knots, a pillow as a pinched square. -> canvas
+export function plushPiece(flat, pattern, chart, slots, W) {
+  const shape = plushShape(pattern);
+  if (!shape) return flat;
+  const H = Math.round(W * 0.72), m = Math.round(W * 0.6);
+  const eyes = shape === 'toy' ? toyEyes(pattern, chart, slots).map((e) => ({ x: m + e.c * W + W / 2, y: m + 0.4 * H + (chart.height - e.r) * H + H * 0.55, color: e.color })) : [];
+  return plushify(flat, { cell: W, eyes, shape }).canvas;
+}
 
 // the eyes of a toy, as chart cells {r, c, color}: button-eye spots, else the cells of an "Eye"/"Pupil"
 // slot, grouped into one knot per eye (neighbouring cells merge)
@@ -35,7 +48,11 @@ export function toyEyes(pattern, chart, slots) {
 // in src px. shape: 'toy' (its own outline, the stitch steps and corners rounded off as if stuffed) or
 // 'pillow' (a stuffed square: the sides drawn in, the corners poking out round). Returns {canvas, pad}:
 // the plush, `pad` px bigger on every side.
-export function plushify(src, { cell = 8, eyes = [], shape = 'toy' } = {}) {
+export function plushify(src0, { cell = 8, eyes: eyes0 = [], shape = 'toy' } = {}) {
+  // stuffing rounds the face toward you: the stitches widen a touch in the middle and crowd together
+  // toward the edges, where the cloth turns away (the eyes move with them)
+  const { canvas: src, map } = dome(src0, shape === 'pillow' ? 0.34 : 0.3);
+  const eyes = eyes0.map((e) => ({ ...e, ...map(e.x, e.y) }));
   const pad = Math.max(4, Math.round(cell * 1.4));
   const w = src.width + pad * 2, h = src.height + pad * 2;
   const out = mk(w, h), g = out.getContext('2d');
@@ -53,7 +70,7 @@ export function plushify(src, { cell = 8, eyes = [], shape = 'toy' } = {}) {
   bq.drawImage(src, pad, pad);
   if (shape === 'pillow') {
     const [x0, y0, x1, y1] = opaqueBox(base);
-    const m = Math.min(x1 - x0, y1 - y0), pin = m * 0.05;
+    const m = Math.min(x1 - x0, y1 - y0), pin = m * 0.07;
     const P = new Path2D();
     P.moveTo(x0, y0);
     P.quadraticCurveTo((x0 + x1) / 2, y0 + pin * 2, x1, y0);
@@ -66,6 +83,10 @@ export function plushify(src, { cell = 8, eyes = [], shape = 'toy' } = {}) {
   const round = Math.max(1.2, shape === 'pillow' ? cell * 1.1 : cell * 0.55);
   const mask = threshold(gauss(base, round), w, h, 0.45, 0.55);
   const body = mk(w, h), yq = body.getContext('2d');
+  // (where the rounded outline takes in a stitch step, the stuffing fills it with the neighbouring yarn)
+  const near = mk(w, h), nq = near.getContext('2d'); nq.drawImage(src, pad, pad);
+  const sm = gauss(near, Math.max(1, cell * 0.6));
+  for (let k = 0; k < 4; k++) yq.drawImage(sm, 0, 0);
   yq.drawImage(src, pad, pad);
   yq.globalCompositeOperation = 'destination-in'; yq.drawImage(mask, 0, 0);
   // seamed rim: a dark line hugging the outline
@@ -93,6 +114,10 @@ export function plushify(src, { cell = 8, eyes = [], shape = 'toy' } = {}) {
   g.globalAlpha = 1;
   const [bx0, by0, bx1, by1] = mask.box;
   const cw = bx1 - bx0, ch = by1 - by0, cx = (bx0 + bx1) / 2, cy = (by0 + by1) / 2;
+  // the lamp's side and the far side, across the whole body
+  const lin = g.createLinearGradient(bx0, by0, bx1, by1);
+  lin.addColorStop(0, 'rgba(255,240,214,0.12)'); lin.addColorStop(0.45, 'rgba(255,240,214,0)'); lin.addColorStop(0.6, 'rgba(40,14,30,0)'); lin.addColorStop(1, 'rgba(40,14,30,0.2)');
+  g.fillStyle = lin; g.fillRect(0, 0, w, h);
   // round, stuffed: a gentle fall-off toward the far edges
   const R = Math.max(cw, ch) * 0.75;
   const gr = g.createRadialGradient(cx - cw * 0.08, cy - ch * 0.12, R * 0.2, cx, cy, R);
@@ -107,12 +132,38 @@ export function plushify(src, { cell = 8, eyes = [], shape = 'toy' } = {}) {
   const sb = gauss(mask, Math.max(1, cell * 0.45));
   const groove = threshold(sb, w, h, 0.84, 0.9, 0.95), puff = threshold(sb, w, h, 0.93, 0.97, 1.01);
   tint(groove, 'rgb(40,14,30)'); tint(puff, 'rgb(255,240,215)');
-  g.globalAlpha = shape === 'pillow' ? 0.4 : 0.3; g.drawImage(groove, 0, 0);
+  g.globalAlpha = shape === 'pillow' ? 0.26 : 0.3; g.drawImage(groove, 0, 0);
   g.globalAlpha = 0.18; g.drawImage(puff, 0, 0);
   g.globalAlpha = 1;
   g.restore();
   for (const e of eyes) frenchKnot(g, e.x + pad, e.y + pad, cell * 0.5, e.color || '#2a1f26');
   return { canvas: out, pad };
+}
+// the dome of a stuffed face: a canvas warped across its opaque box so the middle widens by about a and
+// the edges crowd in (each way on its own, so rows stay rows and columns stay columns).
+// -> {canvas, map(x, y) -> {x, y}} (where a point of the source lands)
+function dome(src, a) {
+  const w = src.width, h = src.height;
+  const [x0, y0, x1, y1] = opaqueBox(src);
+  const f = (t) => (1 - a) * t + a * Math.sin((t * Math.PI) / 2); // [-1, 1] onto itself, steepest at 0
+  const fwd = (v, lo, hi) => { if (hi - lo < 2 || v <= lo || v >= hi) return v; const c = (lo + hi) / 2, r = (hi - lo) / 2; return c + r * f((v - c) / r); };
+  // f's inverse, from a table
+  const N = 256, T = Array.from({ length: N + 1 }, (_, i) => f(-1 + (2 * i) / N));
+  const inv = (u) => { let lo = 0, hi = N; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (T[m] <= u) lo = m; else hi = m; } const q = (u - T[lo]) / ((T[hi] - T[lo]) || 1); return -1 + (2 * (lo + q)) / N; };
+  const pass = (from, horiz) => {
+    const out = mk(w, h), q = out.getContext('2d');
+    q.imageSmoothingEnabled = true;
+    const lo = horiz ? x0 : y0, hi = horiz ? x1 : y1, c = (lo + hi) / 2, r = (hi - lo) / 2;
+    // (outside the box, as it was)
+    if (horiz) { q.drawImage(from, 0, 0, lo, h, 0, 0, lo, h); if (hi < w) q.drawImage(from, hi, 0, w - hi, h, hi, 0, w - hi, h); } else { q.drawImage(from, 0, 0, w, lo, 0, 0, w, lo); if (hi < h) q.drawImage(from, 0, hi, w, h - hi, 0, hi, w, h - hi); }
+    for (let d = lo; d < hi; d++) {
+      const sx = c + r * inv((d + 0.5 - c) / r) - 0.5;
+      if (horiz) q.drawImage(from, sx, 0, 1, h, d, 0, 1, h); else q.drawImage(from, 0, sx, w, 1, 0, d, w, 1);
+    }
+    return out;
+  };
+  if (x1 - x0 < 4 || y1 - y0 < 4) return { canvas: src, map: (x, y) => ({ x, y }) };
+  return { canvas: pass(pass(src, true), false), map: (x, y) => ({ x: fwd(x, x0, x1), y: fwd(y, y0, y1) }) };
 }
 // a gaussian blur of a canvas (r: its radius in px), the same size; where canvas filters aren't drawn, a
 // shrink-and-grow blur close enough to it

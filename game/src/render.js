@@ -3,7 +3,7 @@ import { parseChart, fill } from './chart.js';
 import { pageZoom } from './ui.js';
 import { renderSwatch } from './work.js';
 import { normYarn } from './yarn.js';
-import { isToy, toyEyes, plushify } from './plush.js';
+import { plushShape, plushPiece } from './plush.js';
 import { shapeOf, localBounds } from './tube.js';
 import { roundObject, POSE_OF, forgetBakes, bakeChart } from './worn.js';
 
@@ -93,6 +93,8 @@ export function patternRender(pattern, slots, cellPx, key = '') {
     } catch (e) { console.warn('round preview', pattern.id, e); }
   }
   if (!c) try { c = renderSwatch(chart, { yarnAt, cellPx, castOnYarn: yarnAt(0), background: null }).canvas; } catch (e) { console.warn('render', pattern.id, e); c = document.createElement('canvas'); }
+  // (a toy or a pillow shows sewn up and stuffed, as it will be)
+  if (plushShape(pattern) && c.width > 1) try { c = plushPiece(c, pattern, chart, slots, Math.round(cellPx)); } catch (e) { console.warn('plush', pattern.id, e); }
   return remember(k, c);
 }
 
@@ -107,8 +109,8 @@ export function pieceRender(g, pattern, cellPx) {
   return remember(k, c);
 }
 
-// A Knitted Friend, finished: seamed, stuffed into a plush, eyes embroidered as French knots.
-// Anything else: the piece as knit.
+// A Knitted Friend or a pillow, finished: seamed and stuffed into a plush (a toy's eyes embroidered as
+// French knots, a pillow a pinched square). Anything else: the piece as knit.
 // (Change 2) A piece knit in the round: the object itself, a true tube as it hangs (tube.js via worn.roundObject).
 // opts.spin turns it round its axis (the close-up). cellPx: device px per stitch (cellFor(..., rec) picks one for a box).
 export function objectRender(g, pattern, cellPx, opts = {}) {
@@ -121,16 +123,12 @@ export function objectRender(g, pattern, cellPx, opts = {}) {
     if (sp) return c || pieceRender(g, pattern, cellPx); // turning in the close-up: not kept
     return remember(k, c || pieceRender(g, pattern, cellPx));
   }
-  if (!isToy(pattern)) return pieceRender(g, pattern, cellPx);
+  if (!plushShape(pattern)) return pieceRender(g, pattern, cellPx);
   const k = `t|${g.id}|${cellPx}`;
   if (cache.has(k)) return cache.get(k);
   const flat = pieceRender(g, pattern, cellPx);
-  const chart = recordChart(g, pattern);
-  // renderSwatch's geometry: margin round(W * 0.6), the cast-on row 0.4 rows below it
-  const W = Math.round(cellPx), H = Math.round(W * 0.72), m = Math.round(W * 0.6);
-  const eyes = toyEyes(pattern, chart, g.slots).map((e) => ({ x: m + e.c * W + W / 2, y: m + 0.4 * H + (chart.height - e.r) * H + H * 0.55, color: e.color }));
   let c;
-  try { c = plushify(flat, { cell: W, eyes }).canvas; } catch (e) { console.warn('plush', g.id, e); c = flat; }
+  try { c = plushPiece(flat, pattern, recordChart(g, pattern), g.slots, Math.round(cellPx)); } catch (e) { console.warn('plush', g.id, e); c = flat; }
   return remember(k, c);
 }
 

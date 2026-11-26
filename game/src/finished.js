@@ -9,7 +9,7 @@ import * as toasts from './toasts.js';
 import { pieceRender, objectRender, cellFor, recordChart } from './render.js';
 import { shapeOf } from './tube.js';
 import { drawObject, objectReady } from './cardRenderer.js';
-import { isToy } from './plush.js';
+import { isToy, plushShape } from './plush.js';
 import { drawNook, drawStack, image, catHit } from './scene.js';
 import { pet } from './pet.js';
 import { yarnName, yarnKey } from './yarn.js';
@@ -102,7 +102,10 @@ function enter(id) {
   const w = innerWidth, h = innerHeight;
   // (Change 2) a piece knit in the round comes off the needles as the tube it is, not a flat swatch
   artRound = !!shapeOf(recordChart(gal, pat), pat);
-  art = artRound ? objectRender(gal, pat, cellFor(pat, w * 0.8, h * 0.5, 4, 26, gal)) : pieceRender(gal, pat, cellFor(pat, w * 0.8, h * 0.5, 4, 26));
+  // (a toy or a pillow comes off the needles seamed and stuffed)
+  art = artRound ? objectRender(gal, pat, cellFor(pat, w * 0.8, h * 0.5, 4, 26, gal))
+    : plushShape(pat) ? objectRender(gal, pat, cellFor(pat, w * 0.8, h * 0.5, 4, 26))
+    : pieceRender(gal, pat, cellFor(pat, w * 0.8, h * 0.5, 4, 26));
   // confetti in the piece's own yarn colors
   confetti = [];
   for (let i = 0; i < 70; i++) {

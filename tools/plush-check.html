@@ -13,12 +13,13 @@
 <body>
 <div class="row" id="out"></div>
 <script type="module">
-// tools/plush-check.html?cell=10 : every Knitted Friend as knit (left) and finished into a plush (right)
+// tools/plush-check.html?cell=10 : every Knitted Friend and pillow as knit (left) and finished into a plush (right)
 import { PATTERNS, PALETTE } from '../game/src/patterns.js';
+import { plushShape } from '../game/src/plush.js';
 import { chartOf, slotYarnAt, suggestedSlots, pieceRender, objectRender } from '../game/src/render.js';
 const CELL = +(new URLSearchParams(location.search).get('cell') || 10);
 const out = document.getElementById('out');
-for (const p of PATTERNS.filter((x) => x.chapter === 6)) {
+for (const p of PATTERNS.filter((x) => plushShape(x))) {
   const slots = Object.fromEntries(Object.entries(p.slots).map(([k, y]) => [k, { color: PALETTE[y.color] || y.color, type: y.type, label: y.label }]));
   const ch = chartOf(p), at = slotYarnAt(ch, slots);
   const g = { id: 'chk-' + p.id, yarns: Array.from({ length: ch.total }, (_, i) => at(i)), slots, castOn: slots.A };

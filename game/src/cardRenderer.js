@@ -11,7 +11,7 @@ import { shapeOf, localBounds } from './tube.js';
 import { renderSwatch } from './work.js';
 import { image as sceneImage } from './scene.js';
 import * as S from './state.js';
-import { plushify, toyEyes } from './plush.js';
+import { plushify, toyEyes, plushShape } from './plush.js';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const IMG = {};
@@ -198,8 +198,9 @@ const plushCache = new WeakMap();
 function plushBake(bake, pattern, chart, slots) {
   let p = plushCache.get(bake);
   if (p) return p;
-  const eyes = toyEyes(pattern, chart, slots).map((e) => ({ x: bake.x0 + e.c * bake.W + bake.W / 2, y: bake.y0 + (bake.rows - e.r) * bake.H + bake.H * 0.55, color: e.color }));
-  const r = plushify(bake.canvas, { cell: bake.W, eyes });
+  const shape = plushShape(pattern) || 'toy';
+  const eyes = shape !== 'toy' ? [] : toyEyes(pattern, chart, slots).map((e) => ({ x: bake.x0 + e.c * bake.W + bake.W / 2, y: bake.y0 + (bake.rows - e.r) * bake.H + bake.H * 0.55, color: e.color }));
+  const r = plushify(bake.canvas, { cell: bake.W, eyes, shape });
   p = { ...bake, canvas: r.canvas, x0: bake.x0 + r.pad, y0: bake.y0 + r.pad };
   plushCache.set(bake, p);
   return p;
@@ -319,8 +320,19 @@ function scene(g, info) {
     if (kind === 'pillow') {
       g.save(); g.fillStyle = 'rgba(40,20,20,0.3)'; g.beginPath(); g.ellipse(w * 0.47, h * 0.74, w * 0.22, h * 0.04, 0, 0, Math.PI * 2); g.fill(); g.restore();
       const cx = w * 0.46, top = h * 0.36, bot = h * 0.75, pw = w * 0.38;
-      const F = (u, v) => { const t = 2 * u - 1; return [cx + (pw / 2) * t * (1 - 0.06 * Math.sin(v * Math.PI)), bot - v * (bot - top) + Math.sin(u * Math.PI) * h * 0.018 * (v - 0.5)]; };
-      drawParts(g, bake, [{ F, u0: -0.3 / cols, u1: 1 + 0.3 / cols, v0: -1 / bake.rows, v1: 1 + 0.8 / bake.rows, nu: 8, nv: Math.min(bake.rows + 2, 24), shade: 'barrel' }], 1, 0, 0);
+      if (info.progress >= 1) {
+        // finished: seamed and stuffed, propped in the chair (at the finish it puffs up)
+        const pb = plushBake(bake, pattern, info.chart, info.piece.slots);
+        const f = info.finish != null ? info.finish : 1;
+        const puff = f < 1 ? 1 + 0.1 * Math.sin(Math.min(1, f * 1.4) * Math.PI) : 1;
+        g.save();
+        if (f < 1) { g.translate(cx, bot); g.scale(puff, 2 - puff); g.translate(-cx, -bot); }
+        drawUpright(g, pb, cx, bot + h * 0.01, pw * 1.05, (bot - top) * 1.05);
+        g.restore();
+      } else {
+        const F = (u, v) => { const t = 2 * u - 1; return [cx + (pw / 2) * t * (1 - 0.06 * Math.sin(v * Math.PI)), bot - v * (bot - top) + Math.sin(u * Math.PI) * h * 0.018 * (v - 0.5)]; };
+        drawParts(g, bake, [{ F, u0: -0.3 / cols, u1: 1 + 0.3 / cols, v0: -1 / bake.rows, v1: 1 + 0.8 / bake.rows, nu: 8, nv: Math.min(bake.rows + 2, 24), shade: 'barrel' }], 1, 0, 0);
+      }
     } else {
       // over the seat: up the back cushion, across the seat, over the front edge
       const x0 = w * 0.17, x1 = w * 0.71;
