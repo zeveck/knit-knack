@@ -715,7 +715,7 @@ function placeBar() {
   const bw = bar.offsetWidth || 260, bh = bar.offsetHeight || 44;
   let x = hx + hw / 2 - bw / 2, y = hy - bh - 6;
   x = Math.max(4 - box.x, Math.min(box.w + box.x - bw - 4, x));
-  if (y < 4 - box.y) y = hy + Math.min(T.hit[3], 60) + 6;
+  if (y < 4 - box.y) y = hy + (T.kind === 'scarf' ? T.hit[3] : Math.min(T.hit[3], 60)) + 6; // (the scarf: under all of it)
   bar.style.transform = `translate(${x}px, ${y}px)`;
 }
 function turn(key) {

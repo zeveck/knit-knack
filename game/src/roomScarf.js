@@ -340,7 +340,7 @@ export function drawScarfIcon(c, colours) {
     g.beginPath(); g.roundRect ? g.roundRect(x0, y, x1 - x0, band, band * 0.35) : g.rect(x0, y, x1 - x0, band);
     g.fillStyle = col; g.fill(); g.lineWidth = Math.max(1, w / 48); g.strokeStyle = INK; g.stroke();
     // knit columns
-    g.save(); g.globalAlpha = 0.25; g.strokeStyle = '#2a1420'; g.lineWidth = Math.max(0.8, w / 90);
+    g.save(); g.globalAlpha = 0.16; g.strokeStyle = '#2a1420'; g.lineWidth = Math.max(0.8, w / 110);
     for (let x = x0 + band * 0.3; x < x1 - band * 0.2; x += band * 0.4) { g.beginPath(); g.moveTo(x, y + band * 0.25); g.lineTo(x + band * 0.14, y + band * 0.75); g.lineTo(x + band * 0.28, y + band * 0.25); g.stroke(); }
     g.restore();
   }
