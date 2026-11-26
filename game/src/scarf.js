@@ -186,9 +186,25 @@ function drawBackdrop(g, w, h) {
 }
 
 // ---------------------------------------------------------------- the work
+// a very long scarf (past 2 million stitches, about 1.7 km) isn't copied into an array of its yarns (at 40 km
+// that is 48 million entries, twice over): the work reads them straight from the store, which already holds
+// each stitch before the work asks for it (knitOne pushes right after work.knit, ripOne pops right after)
+const LAZY_FROM = 2e6;
+function storeYarns() {
+  const lazy = new Proxy([], {
+    get(t, p) {
+      if (typeof p === 'string' && p.charCodeAt(0) >= 48 && p.charCodeAt(0) <= 57) { const i = +p; return i < store.n ? store.yarnAt(i) : undefined; }
+      if (p === 'slice') return () => lazy;
+      if (p === 'length') return store.n;
+      return Reflect.get(t, p);
+    },
+    set() { return true; }, // (the store is the record: work.knit's and work.rip's writes are no-ops)
+  });
+  return lazy;
+}
 function loadWork() {
   chart = scarfChart(store.runs);
-  const yarns = store.yarnsArray();
+  const yarns = store.n > LAZY_FROM ? storeYarns() : store.yarnsArray();
   work.load(chart, { yarns, done: store.n, castOnYarn: store.n ? store.yarnAt(0) : store.current, nextYarn: store.current });
 }
 const rowNow = () => Math.floor(store.n / WIDTH) + 1;

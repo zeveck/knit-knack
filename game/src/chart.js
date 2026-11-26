@@ -188,9 +188,11 @@ export class Chart {
     this.slotsUsed.add('A');
   }
 
+  // (rows are made on demand, each on its own: a 40 km scarf asks for row 4,000,000 without making the
+  // ones below it, which would not fit in memory)
   _endlessCells(r) {
-    while (this._cells.length <= r) {
-      const rr = this._cells.length;
+    if (Number.isInteger(r) && !this._cells[r]) {
+      const rr = r;
       const spec = this._rowFn(rr) || {};
       const W = this.width;
       const row = new Array(W).fill(null);
@@ -201,7 +203,7 @@ export class Chart {
         row[c] = { r: rr, c, s, slot, cable: null };
         this.slotsUsed.add(slot);
       }
-      this._cells.push(row);
+      this._cells[rr] = row;
       this._attachCables((spec.cables || []).map((x) => ({ row: rr, col: x.col, type: x.type })), (q) => this._cells[q], rr);
     }
     return this._cells[r];
@@ -403,7 +405,8 @@ export class Chart {
     const cells = this.cells(r);
     const cols = [];
     for (let c = 0; c < W; c++) if (cells[c]) cols.push(c);
-    const prev = r === 1 ? cols.slice() : this.rows[r - 1].cols; // row 0 = the cast-on
+    // row 0 = the cast-on; (endless) the row below may not be made yet: its columns are its cells'
+    const prev = r === 1 ? cols.slice() : this.rows[r - 1] ? this.rows[r - 1].cols : this.cells(r - 1).map((cl, c) => (cl ? c : -1)).filter((c) => c >= 0);
     const err = (m) => this.errors.push(`row ${r}: ${m}`);
     const entries = [];
     const byCol = new Map();
@@ -483,13 +486,13 @@ export class Chart {
     }
     this.rows[r] = { r, rs, round: false, flat: null, cut: 0, cols, runs, map: entries, boundOffBefore: before, boundOff, prevCols: prev, held: [], ring: cols, step: null };
     if (entries.length) entries[0].boundOffBefore = before;
-    this.rowStarts[r + 1] = this.rowStarts[r] + entries.length;
+    if (!this.endless) this.rowStarts[r + 1] = this.rowStarts[r] + entries.length; // (endless: (r - 1) × width)
     if (!entries.length && !this.endless) err('row has no stitches');
   }
 
   _ensure(r) {
     if (!this.endless) return;
-    while (this.rows.length <= r) this._buildRow(this.rows.length);
+    if (Number.isInteger(r) && r >= 1 && !this.rows[r]) this._buildRow(r);
   }
 
   // ---- queries
