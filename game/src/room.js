@@ -665,6 +665,12 @@ function softLine() {
   const s = el('div', { class: 'room-soft', text: S.catText("Purl's saving you a seat. Finish a wearable to meet Pip, or a toy from chapter 6, and bring them here.") });
   s.style.left = `${box.w * 0.06}px`; s.style.right = `${box.w * 0.06}px`; s.style.top = `${rug[0][1] * box.h - U_RUG() * 0.15}px`;
   dom.box.append(s); dom.soft = s;
+  // keep the whole card in sight: above the tray (which can overlap the picture on small phones) and the picture's bottom
+  const bx = dom.box.getBoundingClientRect(), tr = dom.tray && dom.tray.getBoundingClientRect();
+  let floor = Math.min(bx.height, window.innerHeight - bx.top);
+  if (tr && tr.height && tr.top < bx.bottom && tr.left < bx.right && tr.right > bx.left) floor = Math.min(floor, tr.top - bx.top);
+  const top = parseFloat(s.style.top), maxTop = floor - s.offsetHeight - 6;
+  if (top > maxTop) s.style.top = `${Math.max(4, maxTop)}px`;
 }
 
 // the tip card, once

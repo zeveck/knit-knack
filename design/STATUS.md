@@ -15,6 +15,7 @@
    - 9b `--change make pillows and toys look soft and stuffed in the gallery close-up too`
    - 9c `--change let the infinite scarf hang in the cozy room, growing across the wall as it gets longer`
    then publish (--no-confirm)
+10. `--fix all --publish --no-confirm` — #5: Test isn't always readable (https://github.com/zeveck/knit-knack/issues/5)
 
 ## Settings
 
@@ -104,6 +105,11 @@ Order: these land before changes 2 and 3 are built.
 - [x] README (cozy room + scarf sections, request 9 quoted with 9a–9c, room/room-phone refreshed, pillow-closeup.jpg added), art sheet rebuilt (room-land/port captions; phone patch reapplied) and design page + plans card updated in the gallery clone (36fd170, 365edaf), committed locally only, not pushed. Seen in the wrap-up: in portrait, opening the room (Room tab or reload) draws toys and pillows stretched wide; a window resize redraws them right (not fixed here)
 - [x] Stretched toys/pillows in portrait at dpr 1 fixed (room.js: min 7 px stitch so rows keep the 0.72 shape)
 - [x] Published 2026-11-26 (deploy cb423af): live check desktop + iPhone 15 (teddy, heart pillow, 6 m scarf in the room; no errors); plans design + art pages pushed (gallery 365edaf) and live. Gallery entry unchanged.
+
+## Fix (request 10): issue #5, then publish
+
+- [x] #5 framed text over pictures: room's Purl line (card kept above the tray/picture bottom on small phones, room.js softLine), scarf length + goal line, finish heading, doll name, title-screen links — shots at 1280x800, 390x844, 844x390 (+320x568, 568x320, 360x640, 667x375 by the reviewer), no errors; fresh review: 1 problem (card under tray at 320 px), fixed
+- [ ] Commit, publish, live check
 
 ## Handoff (2026-11-25 02:46 UTC, before context compaction)
 
