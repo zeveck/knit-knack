@@ -665,6 +665,14 @@ function softLine() {
   const s = el('div', { class: 'room-soft', text: S.catText("Purl's saving you a seat. Finish a wearable to meet Pip, or a toy from chapter 6, and bring them here.") });
   s.style.left = `${box.w * 0.06}px`; s.style.right = `${box.w * 0.06}px`; s.style.top = `${rug[0][1] * box.h - U_RUG() * 0.15}px`;
   dom.box.append(s); dom.soft = s;
+  // hug the balanced lines: fit-content sizes the card before text-wrap balances them, leaving it too wide
+  const rg = document.createRange(); rg.selectNodeContents(s);
+  const lines = [...rg.getClientRects()]; rg.detach && rg.detach();
+  if (lines.length) {
+    const cs = getComputedStyle(s), pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+    const w = Math.max(...lines.map((r) => r.right)) - Math.min(...lines.map((r) => r.left));
+    s.style.width = `${Math.ceil(w + pad + 2)}px`;
+  }
   // keep the whole card in sight: above the tray (which can overlap the picture on small phones) and the picture's bottom
   const bx = dom.box.getBoundingClientRect(), tr = dom.tray && dom.tray.getBoundingClientRect();
   let floor = Math.min(bx.height, window.innerHeight - bx.top);
